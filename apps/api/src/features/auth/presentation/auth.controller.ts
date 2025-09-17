@@ -2,6 +2,7 @@ import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from '../application/services/auth.service';
 import { LoginDto, RegisterDto, AuthResponseDto } from '../application/dto/auth.dto';
+import { Public } from '../application/decorators/public.decorator';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -9,6 +10,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Public()
   @ApiOperation({ summary: '회원가입' })
   @ApiResponse({ status: 201, description: '회원가입 성공', type: AuthResponseDto })
   @ApiResponse({ status: 409, description: '이미 존재하는 이메일' })
@@ -17,6 +19,7 @@ export class AuthController {
   }
 
   @Post('login')
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '로그인' })
   @ApiResponse({ status: 200, description: '로그인 성공', type: AuthResponseDto })

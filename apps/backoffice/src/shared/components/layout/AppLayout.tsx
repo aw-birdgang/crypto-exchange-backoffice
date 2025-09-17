@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Layout, Menu, Avatar, Dropdown, Button, theme } from 'antd';
 import {
   MenuFoldOutlined,
@@ -10,9 +10,12 @@ import {
   WalletOutlined,
   LogoutOutlined,
   SettingOutlined,
+  BarChartOutlined,
+  FileTextOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../../features/auth/application/stores/auth.store';
+import { MenuAccessGate } from '../common/PermissionGate';
 import { ROUTES } from '@crypto-exchange/shared';
 
 const { Header, Sider, Content } = Layout;
@@ -28,33 +31,68 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { user, logout } = useAuthStore();
   const { token } = theme.useToken();
 
-  const menuItems = [
+  const allMenuItems = [
     {
       key: ROUTES.DASHBOARD,
       icon: <DashboardOutlined />,
       label: '대시보드',
+      menuKey: 'dashboard',
     },
     {
       key: ROUTES.USERS,
       icon: <UserOutlined />,
       label: '사용자 관리',
+      menuKey: 'users',
     },
     {
       key: ROUTES.ORDERS,
       icon: <ShoppingCartOutlined />,
       label: '주문 관리',
+      menuKey: 'orders',
     },
     {
       key: ROUTES.MARKETS,
       icon: <LineChartOutlined />,
       label: '시장 관리',
+      menuKey: 'markets',
     },
     {
       key: ROUTES.WALLETS,
       icon: <WalletOutlined />,
       label: '지갑 관리',
+      menuKey: 'wallets',
+    },
+    {
+      key: '/reports',
+      icon: <BarChartOutlined />,
+      label: '리포트',
+      menuKey: 'reports',
+    },
+    {
+      key: '/settings',
+      icon: <SettingOutlined />,
+      label: '설정',
+      menuKey: 'settings',
+    },
+    {
+      key: '/audit-logs',
+      icon: <FileTextOutlined />,
+      label: '감사 로그',
+      menuKey: 'audit_logs',
     },
   ];
+
+  const menuItems = useMemo(() => {
+    return allMenuItems.map(item => ({
+      key: item.key,
+      icon: item.icon,
+      label: (
+        <MenuAccessGate menuKey={item.menuKey}>
+          {item.label}
+        </MenuAccessGate>
+      ),
+    })).filter(item => item.label !== null);
+  }, []);
 
   const userMenuItems = [
     {

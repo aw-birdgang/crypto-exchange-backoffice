@@ -33,9 +33,51 @@ export interface JwtPayload {
 }
 
 export enum UserRole {
+  SUPER_ADMIN = 'super_admin',
   ADMIN = 'admin',
+  USER_MANAGER = 'user_manager',
+  ORDER_MANAGER = 'order_manager',
+  MARKET_MANAGER = 'market_manager',
+  WALLET_MANAGER = 'wallet_manager',
   USER = 'user',
   TRADER = 'trader',
+}
+
+export enum Permission {
+  CREATE = 'create',
+  READ = 'read',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  MANAGE = 'manage', // 모든 권한 포함
+}
+
+export enum Resource {
+  DASHBOARD = 'dashboard',
+  USERS = 'users',
+  ORDERS = 'orders',
+  MARKETS = 'markets',
+  WALLETS = 'wallets',
+  SETTINGS = 'settings',
+  REPORTS = 'reports',
+  AUDIT_LOGS = 'audit_logs',
+}
+
+export interface RolePermission {
+  id: string;
+  role: UserRole;
+  resource: Resource;
+  permissions: Permission[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UserPermissions {
+  userId: string;
+  role: UserRole;
+  permissions: {
+    resource: Resource;
+    permissions: Permission[];
+  }[];
 }
 
 export enum OrderStatus {

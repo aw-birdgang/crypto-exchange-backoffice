@@ -93,6 +93,7 @@ cd apps/backoffice && pnpm dev
 - **TypeORM** - ORM
 - **PostgreSQL** - 데이터베이스
 - **JWT** - 인증
+- **RBAC** - 역할 기반 접근 제어
 - **Swagger** - API 문서화
 - **Clean Architecture** - 아키텍처 패턴
 
@@ -104,6 +105,46 @@ cd apps/backoffice && pnpm dev
 - **Zustand** - 상태 관리
 - **React Query** - 서버 상태 관리
 - **React Router** - 라우팅
+- **권한 기반 UI** - 동적 메뉴 및 컴포넌트 제어
+
+## 🔐 권한 관리 시스템 (RBAC)
+
+### 역할 (Roles)
+- **SUPER_ADMIN**: 모든 권한을 가진 최고 관리자
+- **ADMIN**: 일반 관리자 (읽기/수정 권한)
+- **USER_MANAGER**: 사용자 관리 전담
+- **ORDER_MANAGER**: 주문 관리 전담
+- **MARKET_MANAGER**: 시장 관리 전담
+- **WALLET_MANAGER**: 지갑 관리 전담
+
+### 리소스 (Resources)
+- **DASHBOARD**: 대시보드
+- **USERS**: 사용자 관리
+- **ORDERS**: 주문 관리
+- **MARKETS**: 시장 관리
+- **WALLETS**: 지갑 관리
+- **SETTINGS**: 시스템 설정
+- **REPORTS**: 리포트
+- **AUDIT_LOGS**: 감사 로그
+
+### 권한 (Permissions)
+- **CREATE**: 생성 권한
+- **READ**: 조회 권한
+- **UPDATE**: 수정 권한
+- **DELETE**: 삭제 권한
+- **MANAGE**: 모든 권한 (CRUD 포함)
+
+### 권한 검증 방식
+1. **백엔드**: JWT 토큰 기반 인증 + 권한 가드
+2. **프론트엔드**: 권한 기반 컴포넌트 렌더링
+3. **메뉴 접근**: 역할별 메뉴 표시/숨김
+4. **API 엔드포인트**: 세부 권한 검증
+
+### 자동 시드 데이터
+애플리케이션 시작 시 자동으로 다음 데이터가 생성됩니다:
+- **Admin 사용자**: `admin@crypto-exchange.com` / `admin123!` (SUPER_ADMIN 권한)
+- **역할별 권한**: 6가지 역할에 대한 26개 권한 규칙
+- **중복 방지**: 기존 데이터가 있으면 건너뛰고 업데이트만 수행
 
 ## 📁 Clean Architecture
 

@@ -23,7 +23,7 @@ type AuthStore = AuthState & AuthActions;
 
 export const useAuthStore = create<AuthStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // State
       user: null,
       accessToken: null,
@@ -79,6 +79,12 @@ export const useAuthStore = create<AuthStore>()(
         accessToken: state.accessToken,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        // 저장된 데이터가 복원된 후 로딩 상태를 false로 설정
+        if (state) {
+          state.isLoading = false;
+        }
+      },
     },
   ),
 );
