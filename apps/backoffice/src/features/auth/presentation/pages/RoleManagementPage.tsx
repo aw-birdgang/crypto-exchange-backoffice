@@ -106,7 +106,7 @@ export const RoleManagementPage: React.FC = () => {
     form.setFieldsValue({
       name: role.name,
       description: role.description,
-      permissions: role.permissions,
+      permissions: Array.isArray(role.permissions) ? role.permissions : [], // RolePermission은 별도로 관리되므로 빈 배열
     });
     setIsModalVisible(true);
   };
@@ -202,7 +202,7 @@ export const RoleManagementPage: React.FC = () => {
       children: (
         <Table
           columns={columns}
-          dataSource={roles}
+          dataSource={Array.isArray(roles) ? roles : []}
           loading={rolesLoading}
           rowKey="id"
           pagination={{
@@ -219,7 +219,7 @@ export const RoleManagementPage: React.FC = () => {
       label: '권한 매트릭스',
       children: (
         <PermissionMatrix
-          permissions={editingRole?.permissions || []}
+          permissions={Array.isArray(editingRole?.permissions) ? editingRole.permissions : []}
           role={editingRole?.name as any}
           onChange={(permissions) => {
             form.setFieldsValue({ permissions });
@@ -289,7 +289,7 @@ export const RoleManagementPage: React.FC = () => {
           initialValues={{
             name: editingRole?.name,
             description: editingRole?.description,
-            permissions: editingRole?.permissions || [],
+            permissions: Array.isArray(editingRole?.permissions) ? editingRole.permissions : [],
           }}
         >
           <Form.Item
@@ -322,7 +322,7 @@ export const RoleManagementPage: React.FC = () => {
             label="권한 설정"
           >
             <PermissionMatrix
-              permissions={editingRole?.permissions || []}
+              permissions={Array.isArray(editingRole?.permissions) ? editingRole.permissions : []}
               onChange={(permissions) => {
                 form.setFieldsValue({ permissions });
               }}

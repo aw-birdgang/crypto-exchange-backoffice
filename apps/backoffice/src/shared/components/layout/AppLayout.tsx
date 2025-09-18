@@ -41,7 +41,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       icon: <TeamOutlined />,
       label: '권한 관리',
       menuKey: 'permissions',
-      requiredPermission: { resource: Resource.SETTINGS, permission: Permission.READ },
+      requiredPermission: { resource: Resource.PERMISSIONS, permission: Permission.READ },
     },
   ];
 
@@ -56,13 +56,26 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       }));
     }
 
+    console.log('🔍 Current user permissions:', permissions);
+    console.log('🔍 User role:', permissions?.role);
+
+    // SUPER_ADMIN은 모든 메뉴에 접근 가능
+    if (permissions?.role === 'super_admin') {
+      console.log('✅ SUPER_ADMIN has access to all menus');
+      return allMenuItems.map(item => ({
+        key: item.key,
+        icon: item.icon,
+        label: item.label,
+      }));
+    }
+
     return allMenuItems
       .filter(item => {
         // 권한 확인
         if (item.requiredPermission) {
           try {
             const hasAccess = hasPermission(item.requiredPermission.resource, item.requiredPermission.permission);
-            console.log(`🔍 Permission check for ${item.label}:`, hasAccess);
+            console.log(`🔍 Permission check for ${item.label} (${item.requiredPermission.resource}.${item.requiredPermission.permission}):`, hasAccess);
             return hasAccess;
           } catch (error) {
             console.warn('Permission check failed, allowing access:', error);

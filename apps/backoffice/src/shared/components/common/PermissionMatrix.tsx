@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Checkbox, Space, Typography, Tag, Button } from 'antd';
 import { Resource, Permission, UserRole } from '@crypto-exchange/shared';
 
@@ -18,6 +18,9 @@ interface PermissionMatrixProps {
 const resourceLabels: Record<Resource, string> = {
   [Resource.DASHBOARD]: '대시보드',
   [Resource.SETTINGS]: '설정',
+  [Resource.PERMISSIONS]: '권한 관리',
+  [Resource.USERS]: '사용자 관리',
+  [Resource.ROLES]: '역할 관리',
 };
 
 const permissionLabels: Record<Permission, string> = {
@@ -39,6 +42,9 @@ const permissionColors: Record<Permission, string> = {
 const resourceDescriptions: Record<Resource, string> = {
   [Resource.DASHBOARD]: '시스템 대시보드 및 통계 정보',
   [Resource.SETTINGS]: '시스템 설정 및 구성',
+  [Resource.PERMISSIONS]: '권한 및 접근 제어 관리',
+  [Resource.USERS]: '사용자 계정 및 프로필 관리',
+  [Resource.ROLES]: '역할 및 권한 그룹 관리',
 };
 
 export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({
@@ -51,10 +57,15 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({
   const [selectedPermissions, setSelectedPermissions] = useState<{
     resource: Resource;
     permissions: Permission[];
-  }[]>(permissions);
+  }[]>(Array.isArray(permissions) ? permissions : []);
 
   const allResources = Object.values(Resource);
   const allPermissions = Object.values(Permission);
+
+  // permissions prop이 변경될 때 selectedPermissions 업데이트
+  useEffect(() => {
+    setSelectedPermissions(Array.isArray(permissions) ? permissions : []);
+  }, [permissions]);
 
   const handlePermissionChange = (resource: Resource, permission: Permission, checked: boolean) => {
     if (readOnly) return;
@@ -123,8 +134,8 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({
 
   const isResourceIndeterminate = (resource: Resource) => {
     const resourcePermission = selectedPermissions.find(p => p.resource === resource);
-    return resourcePermission && 
-           resourcePermission.permissions.length > 0 && 
+    return resourcePermission &&
+           resourcePermission.permissions.length > 0 &&
            resourcePermission.permissions.length < allPermissions.length;
   };
 
@@ -238,14 +249,14 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({
           </Space>
         )}
       </div>
-      
+
       <Table
         columns={columns}
         dataSource={dataSource}
         pagination={false}
         size="small"
         scroll={{ x: 'max-content' }}
-        style={{ 
+        style={{
           border: '1px solid #f0f0f0',
           borderRadius: '6px',
         }}

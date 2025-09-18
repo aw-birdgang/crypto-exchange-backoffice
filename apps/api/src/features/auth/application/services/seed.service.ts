@@ -21,34 +21,34 @@ export class SeedService {
 
   async seedDatabase(): Promise<void> {
     console.log('🌱 Starting database seeding...');
-    
+
     try {
       await this.seedRoles();
       console.log('✅ Roles seeding completed');
     } catch (error) {
       console.error('❌ Roles seeding failed:', error);
     }
-    
+
     try {
       await this.seedAdminUsers();
       console.log('✅ Admin users seeding completed');
     } catch (error) {
       console.error('❌ Admin users seeding failed:', error);
     }
-    
+
     try {
       await this.seedRolePermissions();
       console.log('✅ Role permissions seeding completed');
     } catch (error) {
       console.error('❌ Role permissions seeding failed:', error);
     }
-    
+
     console.log('✅ Database seeding completed!');
   }
 
   private async seedRoles(): Promise<void> {
     console.log('🎭 Seeding roles...');
-    
+
     const roles = [
       {
         name: 'super_admin',
@@ -94,7 +94,7 @@ export class SeedService {
 
   private async seedAdminUsers(): Promise<void> {
     console.log('👑 Seeding admin users...');
-    
+
     const adminUsers = [
       {
         email: 'superadmin@crypto-exchange.com',
@@ -104,9 +104,9 @@ export class SeedService {
         adminRole: AdminRole.SUPER_ADMIN,
         permissions: [
           'users:read', 'users:create', 'users:update', 'users:delete',
-          'system:configure', 'notifications:read', 'notifications:create', 
-          'notifications:delete', 'logs:read', 'system:restart', 
-          'cache:manage', 'database:manage', 'roles:manage', 
+          'system:configure', 'notifications:read', 'notifications:create',
+          'notifications:delete', 'logs:read', 'system:restart',
+          'cache:manage', 'database:manage', 'roles:manage',
           'permissions:assign', 'users:change_role', 'audit:read',
           'system:backup', 'system:restore', 'security:manage'
         ],
@@ -174,7 +174,7 @@ export class SeedService {
 
       if (!existingAdmin) {
         const hashedPassword = await bcrypt.hash(adminData.password, APP_CONSTANTS.BCRYPT_ROUNDS);
-        
+
         const adminUser = this.adminUserRepository.create({
           email: adminData.email,
           username: adminData.username,
@@ -196,21 +196,23 @@ export class SeedService {
 
   private async seedRolePermissions(): Promise<void> {
     console.log('🔐 Seeding role permissions...');
-    
-    const existingPermissions = await this.rolePermissionRepository.count();
-    if (existingPermissions > 0) {
-      console.log('✅ Role permissions already exist');
-      return;
-    }
+
+    // 기존 권한을 모두 삭제하고 새로 생성
+    await this.rolePermissionRepository.clear();
+    console.log('🗑️ Cleared existing role permissions');
 
     const rolePermissions = [
       // SUPER_ADMIN 권한
       { role: UserRole.SUPER_ADMIN, resource: Resource.DASHBOARD, permissions: [Permission.MANAGE] },
       { role: UserRole.SUPER_ADMIN, resource: Resource.SETTINGS, permissions: [Permission.MANAGE] },
+      { role: UserRole.SUPER_ADMIN, resource: Resource.PERMISSIONS, permissions: [Permission.MANAGE] },
+      { role: UserRole.SUPER_ADMIN, resource: Resource.ROLES, permissions: [Permission.MANAGE] },
 
       // ADMIN 권한
       { role: UserRole.ADMIN, resource: Resource.DASHBOARD, permissions: [Permission.READ] },
       { role: UserRole.ADMIN, resource: Resource.SETTINGS, permissions: [Permission.READ] },
+      { role: UserRole.ADMIN, resource: Resource.PERMISSIONS, permissions: [Permission.READ] },
+      { role: UserRole.ADMIN, resource: Resource.ROLES, permissions: [Permission.READ] },
     ];
 
     for (const permission of rolePermissions) {

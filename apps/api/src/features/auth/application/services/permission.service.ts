@@ -81,8 +81,22 @@ export class PermissionService {
 
   // Role 관리 메서드들
   async getAllRoles(): Promise<Role[]> {
-    const roles = await this.roleRepository.findAll();
-    return roles.map(role => role.toRoleType());
+    try {
+      console.log('🔍 PermissionService: Getting all roles from repository...');
+      const roles = await this.roleRepository.findAll();
+      console.log('✅ PermissionService: Found roles:', roles.length);
+      
+      const mappedRoles = roles.map(role => {
+        console.log('🔍 PermissionService: Mapping role:', role.name);
+        return role.toRoleType();
+      });
+      
+      console.log('✅ PermissionService: Mapped roles successfully:', mappedRoles.length);
+      return mappedRoles;
+    } catch (error) {
+      console.error('❌ PermissionService: Error in getAllRoles:', error);
+      throw error;
+    }
   }
 
   async getRoleById(id: string): Promise<Role | null> {

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Typography, Tabs, Space, Table, Tag, Badge } from 'antd';
-import { 
-  TeamOutlined, 
+import {
+  TeamOutlined,
   LockOutlined,
   BarChartOutlined,
 } from '@ant-design/icons';
@@ -25,6 +25,9 @@ export const PermissionManagementPage: React.FC = () => {
         const resourceLabels: Record<Resource, string> = {
           [Resource.DASHBOARD]: '대시보드',
           [Resource.SETTINGS]: '설정',
+          [Resource.PERMISSIONS]: '권한 관리',
+          [Resource.USERS]: '사용자 관리',
+          [Resource.ROLES]: '역할 관리',
         };
         return (
           <Tag color="blue">
@@ -65,7 +68,21 @@ export const PermissionManagementPage: React.FC = () => {
     },
   ];
 
-  const dataSource = permissions?.permissions || [];
+  // 모든 리소스에 대한 권한을 표시하도록 개선
+  const allResources = [
+    Resource.DASHBOARD,
+    Resource.SETTINGS,
+    Resource.PERMISSIONS,
+    Resource.ROLES,
+  ];
+
+  const dataSource = allResources.map(resource => {
+    const userPermission = permissions?.permissions?.find(p => p.resource === resource);
+    return {
+      resource,
+      permissions: userPermission?.permissions || [],
+    };
+  });
 
   const roleLabels: Record<UserRole, string> = {
     [UserRole.SUPER_ADMIN]: '최고 관리자',

@@ -120,10 +120,9 @@ export class PermissionRepository implements PermissionRepositoryInterface {
 
   // 초기 권한 데이터 설정
   async initializeDefaultPermissions(): Promise<void> {
-    const existingPermissions = await this.rolePermissionRepository.count();
-    if (existingPermissions > 0) {
-      return; // 이미 초기화됨
-    }
+    // 기존 권한을 모두 삭제하고 새로 생성
+    await this.rolePermissionRepository.clear();
+    console.log('🗑️ Cleared existing role permissions');
 
     const defaultPermissions: Partial<RolePermission>[] = [];
 

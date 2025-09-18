@@ -104,6 +104,16 @@ export const usePermissionStore = create<PermissionStore>()(
           console.log('🔄 Fetching permissions from server...');
           const permissions = await PermissionService.getMyPermissions();
           console.log('✅ Permissions fetched successfully:', permissions);
+          console.log('📊 Permission details:', {
+            userId: permissions.userId,
+            role: permissions.role,
+            permissionCount: permissions.permissions?.length || 0,
+            permissions: permissions.permissions?.map(p => ({
+              resource: p.resource,
+              permissionCount: p.permissions?.length || 0,
+              permissions: p.permissions
+            }))
+          });
           set({ userPermissions: permissions, permissionsLoading: false });
         } catch (error) {
           console.warn('⚠️ Failed to fetch permissions, using default permissions:', error);
@@ -112,13 +122,16 @@ export const usePermissionStore = create<PermissionStore>()(
           if (user) {
             console.log('🔧 Setting default permissions for role:', user.role);
             const defaultPermissions = PermissionService.getDefaultRolePermissions(user.role);
+            console.log('🔧 Default permissions for role:', defaultPermissions);
             const permissions = {
               userId: user.id,
               role: user.role,
-              permissions: Object.entries(defaultPermissions).map(([resource, perms]) => ({
-                resource: resource as any,
-                permissions: perms || [],
-              })),
+              permissions: Object.entries(defaultPermissions)
+                .filter(([_, perms]) => perms && perms.length > 0)
+                .map(([resource, perms]) => ({
+                  resource: resource as any,
+                  permissions: perms || [],
+                })),
             };
             console.log('✅ Default permissions set:', permissions);
             set({ userPermissions: permissions, permissionsLoading: false, error: null });
@@ -137,11 +150,12 @@ export const usePermissionStore = create<PermissionStore>()(
         set({ rolesLoading: true, error: null });
         try {
           const roles = await PermissionService.getRoles();
-          set({ roles, rolesLoading: false });
+          set({ roles: Array.isArray(roles) ? roles : [], rolesLoading: false });
         } catch (error) {
           set({ 
             error: error instanceof Error ? error.message : 'Failed to fetch roles',
-            rolesLoading: false 
+            rolesLoading: false,
+            roles: [] // 에러 발생 시 빈 배열로 초기화
           });
         }
       },
@@ -265,16 +279,28 @@ export const usePermissionStore = create<PermissionStore>()(
 
       hasPermission: (resource: Resource, permission: Permission): boolean => {
         const { userPermissions } = get();
-        if (!userPermissions) return false;
+        if (!userPermissions) {
+          console.log('❌ No user permissions found');
+          return false;
+        }
         
         // SUPER_ADMIN은 모든 권한을 가짐
-        if (userPermissions.role === UserRole.SUPER_ADMIN) return true;
+        if (userPermissions.role === UserRole.SUPER_ADMIN) {
+          console.log('✅ SUPER_ADMIN has all permissions');
+          return true;
+        }
         
         const resourcePermission = userPermissions.permissions.find(p => p.resource === resource);
-        if (!resourcePermission) return false;
+        if (!resourcePermission) {
+          console.log(`❌ No permissions found for resource: ${resource}`);
+          return false;
+        }
         
-        return resourcePermission.permissions.includes(permission) || 
+        const hasPermission = resourcePermission.permissions.includes(permission) || 
                resourcePermission.permissions.includes(Permission.MANAGE);
+        
+        console.log(`🔍 Permission check: ${resource}.${permission} = ${hasPermission}`);
+        return hasPermission;
       },
 
       hasAnyPermission: (resource: Resource, permissions: Permission[]): boolean => {
@@ -292,7 +318,9 @@ export const usePermissionStore = create<PermissionStore>()(
         // 메뉴별 기본 접근 권한 (실제로는 서버에서 확인해야 함)
         const menuPermissions: Record<string, UserRole[]> = {
           dashboard: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-          settings: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+          permissions: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+          users: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+          roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
         };
         
         const allowedRoles = menuPermissions[menuKey];

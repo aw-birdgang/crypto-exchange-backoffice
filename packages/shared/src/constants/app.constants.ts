@@ -51,6 +51,9 @@ export const ROLE_PERMISSIONS = {
     permissions: {
       dashboard: ['manage'],
       settings: ['manage'],
+      permissions: ['manage'],
+      users: ['manage'],
+      roles: ['manage'],
     },
   },
   ADMIN: {
@@ -58,6 +61,9 @@ export const ROLE_PERMISSIONS = {
     permissions: {
       dashboard: ['read'],
       settings: ['read'],
+      permissions: ['read'],
+      users: ['read'],
+      roles: ['read'],
     },
   },
 } as const;
@@ -65,4 +71,7 @@ export const ROLE_PERMISSIONS = {
 export const MENU_PERMISSIONS = {
   dashboard: ['super_admin', 'admin'],
   settings: ['super_admin', 'admin'],
+  permissions: ['super_admin', 'admin'],
+  users: ['super_admin', 'admin'],
+  roles: ['super_admin', 'admin'],
 } as const;

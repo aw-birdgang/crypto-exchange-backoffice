@@ -53,15 +53,14 @@ async function bootstrap() {
       'JWT-auth', // This name here is important for matching up with @ApiBearerAuth() in your controller!
     )
     .addTag('Authentication', '사용자 인증 관련 API')
-    .addTag('Users', '사용자 관리 API')
     .addTag('Permissions', '권한 및 역할 관리 API')
     .addTag('Admin', '관리자 전용 API')
     .build();
-    
+
   const document = SwaggerModule.createDocument(app, config, {
     operationIdFactory: (controllerKey: string, methodKey: string) => methodKey,
   });
-  
+
   SwaggerModule.setup('api-docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
@@ -84,7 +83,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3001;
   await app.listen(port);
-  
+
   console.log(`🚀 API Server is running on: http://localhost:${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api-docs`);
   console.log(`🔐 Test Authentication: POST http://localhost:${port}/auth/login`);

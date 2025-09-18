@@ -1,44 +1,31 @@
+import {Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards,} from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Query,
-  UseGuards,
-  Request,
-  HttpCode,
-  HttpStatus,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
+  ApiBadRequestResponse,
   ApiBearerAuth,
+  ApiBody,
+  ApiForbiddenResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOperation,
   ApiParam,
   ApiQuery,
-  ApiBody,
-  ApiBadRequestResponse,
+  ApiResponse,
+  ApiTags,
   ApiUnauthorizedResponse,
-  ApiForbiddenResponse,
-  ApiNotFoundResponse,
-  ApiInternalServerErrorResponse,
 } from '@nestjs/swagger';
-import { AdminService } from '../application/services/admin.service';
+import {AdminService} from '../application/services/admin.service';
 import {
+  AdminBulkActionDto,
+  AdminDashboardDto,
+  AdminStatsDto,
   CreateAdminDto,
   UpdateAdminDto,
-  AdminStatsDto,
-  AdminDashboardDto,
-  AdminBulkActionDto,
 } from '../application/dto/admin.dto';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
-import { PermissionGuard } from '../application/guards/permission.guard';
-import { RequirePermissions } from '../application/guards/permission.guard';
-import { Resource, Permission } from '@crypto-exchange/shared';
-import { AdminUser } from '@/features/auth/domain/entities/admin-user.entity';
+import {CreateUserDto, UpdateUserDto, UserResponseDto,} from '../application/dto/permission.dto';
+import {JwtAuthGuard} from './guards/jwt-auth.guard';
+import {PermissionGuard, RequirePermissions} from '../application/guards/permission.guard';
+import {Permission, Resource, UserRole} from '@crypto-exchange/shared';
+import {AdminUser, AdminRole} from '@/features/auth/domain/entities/admin-user.entity';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
@@ -46,6 +33,20 @@ import { AdminUser } from '@/features/auth/domain/entities/admin-user.entity';
 @UseGuards(JwtAuthGuard)
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
+
+  /**
+   * AdminRole을 UserRole로 매핑
+   */
+  private mapAdminRoleToUserRole(adminRole: AdminRole): UserRole {
+    switch (adminRole) {
+      case AdminRole.SUPER_ADMIN:
+        return UserRole.SUPER_ADMIN;
+      case AdminRole.ADMIN:
+        return UserRole.ADMIN;
+      default:
+        return UserRole.USER;
+    }
+  }
 
   @Get('dashboard')
   @UseGuards(PermissionGuard)
@@ -391,6 +392,7 @@ export class AdminController {
     description: '관리자 권한으로 새로운 사용자를 생성합니다.',
   })
   @ApiBody({
+    type: CreateUserDto,
     description: '생성할 사용자 정보',
     examples: {
       example1: {
@@ -409,17 +411,38 @@ export class AdminController {
   @ApiResponse({
     status: 201,
     description: '사용자 생성 성공',
-    type: AdminUser
+    type: UserResponseDto
   })
   @ApiBadRequestResponse({ description: '잘못된 요청 데이터' })
   @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
   @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async createUserAsAdmin(
-    @Body() userData: any,
+    @Body() userData: CreateUserDto,
     @Request() req,
-  ): Promise<AdminUser> {
-    return this.adminService.createAdmin(userData);
+  ): Promise<UserResponseDto> {
+    // CreateUserDto를 CreateAdminDto로 변환
+    const adminData: CreateAdminDto = {
+      email: userData.email,
+      password: userData.password,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      role: userData.role === UserRole.SUPER_ADMIN ? UserRole.SUPER_ADMIN : UserRole.ADMIN,
+      isActive: userData.isActive
+    };
+    
+    const createdUser = await this.adminService.createAdmin(adminData);
+    return {
+      id: createdUser.id,
+      email: createdUser.email,
+      firstName: createdUser.firstName,
+      lastName: createdUser.lastName,
+      role: this.mapAdminRoleToUserRole(createdUser.adminRole),
+      isActive: createdUser.isActive,
+      lastLoginAt: createdUser.lastLoginAt?.toISOString() || '',
+      createdAt: createdUser.createdAt.toISOString(),
+      updatedAt: createdUser.updatedAt.toISOString()
+    };
   }
 
   @Put('users/:id')
@@ -435,12 +458,13 @@ export class AdminController {
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
   @ApiBody({
+    type: UpdateUserDto,
     description: '수정할 사용자 정보'
   })
   @ApiResponse({
     status: 200,
     description: '사용자 수정 성공',
-    type: AdminUser
+    type: UserResponseDto
   })
   @ApiBadRequestResponse({ description: '잘못된 요청 데이터' })
   @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
@@ -449,10 +473,31 @@ export class AdminController {
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async updateUserAsAdmin(
     @Param('id') id: string,
-    @Body() userData: any,
+    @Body() userData: UpdateUserDto,
     @Request() req,
-  ): Promise<AdminUser> {
-    return this.adminService.updateAdmin(id, userData);
+  ): Promise<UserResponseDto> {
+    // UpdateUserDto를 UpdateAdminDto로 변환
+    const adminData: UpdateAdminDto = {
+      email: userData.email,
+      password: userData.password,
+      firstName: userData.firstName,
+      lastName: userData.lastName,
+      role: userData.role === UserRole.SUPER_ADMIN ? UserRole.SUPER_ADMIN : UserRole.ADMIN,
+      isActive: userData.isActive
+    };
+    
+    const updatedUser = await this.adminService.updateAdmin(id, adminData);
+    return {
+      id: updatedUser.id,
+      email: updatedUser.email,
+      firstName: updatedUser.firstName,
+      lastName: updatedUser.lastName,
+      role: this.mapAdminRoleToUserRole(updatedUser.adminRole),
+      isActive: updatedUser.isActive,
+      lastLoginAt: updatedUser.lastLoginAt?.toISOString() || '',
+      createdAt: updatedUser.createdAt.toISOString(),
+      updatedAt: updatedUser.updatedAt.toISOString()
+    };
   }
 
   @Delete('users/:id')

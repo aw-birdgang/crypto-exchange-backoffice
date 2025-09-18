@@ -16,8 +16,8 @@ export class Role {
   @Column({ default: false })
   isSystem: boolean;
 
-  @OneToMany(() => RolePermission, rolePermission => rolePermission.role)
-  permissions: RolePermission[];
+  // RolePermission과의 관계는 직접적인 관계가 없으므로 제거
+  // permissions: RolePermission[];
 
   @CreateDateColumn()
   createdAt: Date;
@@ -32,14 +32,7 @@ export class Role {
       name: this.name,
       description: this.description,
       isSystem: this.isSystem,
-      permissions: this.permissions?.map(p => ({
-        id: p.id,
-        role: p.role,
-        resource: p.resource,
-        permissions: p.permissions,
-        createdAt: p.createdAt.toISOString(),
-        updatedAt: p.updatedAt.toISOString(),
-      })) || [],
+      permissions: [], // RolePermission은 별도로 관리되므로 빈 배열로 설정
       createdAt: this.createdAt.toISOString(),
       updatedAt: this.updatedAt.toISOString(),
     };

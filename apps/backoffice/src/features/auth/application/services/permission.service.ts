@@ -1,7 +1,7 @@
-import { 
-  UserPermissions, 
-  Role, 
-  UserRoleAssignment, 
+import {
+  UserPermissions,
+  Role,
+  UserRoleAssignment,
   PermissionTemplate,
   PermissionCheckRequest,
   PermissionCheckResponse,
@@ -43,11 +43,12 @@ export class PermissionService {
    */
   static async getRoles(): Promise<Role[]> {
     try {
-      const response = await apiService.get<Role[]>('/permissions/roles');
-      return response;
+      const response = await apiService.get<{ roles: Role[]; total: number }>('/permissions/roles');
+      return Array.isArray(response.roles) ? response.roles : [];
     } catch (error) {
       console.error('Failed to fetch roles:', error);
-      throw error;
+      // 에러 발생 시 빈 배열 반환하여 앱이 크래시되지 않도록 함
+      return [];
     }
   }
 
@@ -93,8 +94,8 @@ export class PermissionService {
    * 사용자에게 역할을 할당합니다
    */
   static async assignRoleToUser(
-    userId: string, 
-    roleId: string, 
+    userId: string,
+    roleId: string,
     expiresAt?: string
   ): Promise<UserRoleAssignment> {
     try {
@@ -209,12 +210,16 @@ export class PermissionService {
   static getDefaultRolePermissions(role: UserRole): Partial<Record<Resource, Permission[]>> {
     const defaultPermissions: Record<string, Partial<Record<Resource, Permission[]>>> = {
       super_admin: {
-        [Resource.DASHBOARD]: [Permission.MANAGE],
-        [Resource.SETTINGS]: [Permission.MANAGE],
+        [Resource.DASHBOARD]: [Permission.CREATE, Permission.READ, Permission.UPDATE, Permission.DELETE, Permission.MANAGE],
+        [Resource.SETTINGS]: [Permission.CREATE, Permission.READ, Permission.UPDATE, Permission.DELETE, Permission.MANAGE],
+        [Resource.PERMISSIONS]: [Permission.CREATE, Permission.READ, Permission.UPDATE, Permission.DELETE, Permission.MANAGE],
+        [Resource.ROLES]: [Permission.CREATE, Permission.READ, Permission.UPDATE, Permission.DELETE, Permission.MANAGE],
       },
       admin: {
         [Resource.DASHBOARD]: [Permission.READ],
         [Resource.SETTINGS]: [Permission.READ],
+        [Resource.PERMISSIONS]: [Permission.READ],
+        [Resource.ROLES]: [Permission.READ],
       },
     };
 

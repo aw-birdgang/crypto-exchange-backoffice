@@ -12,23 +12,75 @@ export class RoleRepository implements RoleRepositoryInterface {
   ) {}
 
   async findAll(): Promise<Role[]> {
-    return this.roleRepository.find({
-      relations: ['permissions'],
-      order: { createdAt: 'ASC' },
-    });
+    try {
+      console.log('🔍 RoleRepository: Finding all roles...');
+      
+      // 먼저 테이블이 존재하는지 확인
+      const count = await this.roleRepository.count();
+      console.log('🔍 RoleRepository: Current role count:', count);
+      
+      // 역할이 없으면 기본 역할들을 생성
+      if (count === 0) {
+        console.log('🔍 RoleRepository: No roles found, creating default roles...');
+        await this.createDefaultRoles();
+      }
+      
+      const roles = await this.roleRepository.find({
+        order: { createdAt: 'ASC' },
+      });
+      console.log('✅ RoleRepository: Found roles:', roles.length);
+      return roles;
+    } catch (error) {
+      console.error('❌ RoleRepository: Error in findAll:', error);
+      throw error;
+    }
+  }
+
+  private async createDefaultRoles(): Promise<void> {
+    const defaultRoles = [
+      {
+        name: 'super_admin',
+        description: '최고 관리자 - 모든 권한을 가진 시스템 관리자',
+        isSystem: true,
+      },
+      {
+        name: 'admin',
+        description: '관리자 - 시스템 관리 권한을 가진 관리자',
+        isSystem: true,
+      },
+      {
+        name: 'moderator',
+        description: '모더레이터 - 콘텐츠 관리 권한을 가진 사용자',
+        isSystem: false,
+      },
+      {
+        name: 'support',
+        description: '고객 지원 - 고객 지원 업무를 담당하는 사용자',
+        isSystem: false,
+      },
+      {
+        name: 'auditor',
+        description: '감사자 - 시스템 감사 및 보안 검토를 담당하는 사용자',
+        isSystem: false,
+      },
+    ];
+
+    for (const roleData of defaultRoles) {
+      const role = this.roleRepository.create(roleData);
+      await this.roleRepository.save(role);
+      console.log(`✅ Created role: ${roleData.name}`);
+    }
   }
 
   async findById(id: string): Promise<Role | null> {
     return this.roleRepository.findOne({
       where: { id },
-      relations: ['permissions'],
     });
   }
 
   async findByName(name: string): Promise<Role | null> {
     return this.roleRepository.findOne({
       where: { name },
-      relations: ['permissions'],
     });
   }
 

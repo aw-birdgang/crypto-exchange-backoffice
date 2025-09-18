@@ -49,6 +49,9 @@ export enum Permission {
 export enum Resource {
   DASHBOARD = 'dashboard',
   SETTINGS = 'settings',
+  PERMISSIONS = 'permissions',
+  USERS = 'users',
+  ROLES = 'roles',
 }
 
 export interface RolePermission {
