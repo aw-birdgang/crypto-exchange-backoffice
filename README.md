@@ -164,7 +164,7 @@ VITE_API_BASE_URL=http://localhost:3001
 ## 📚 API 문서
 
 개발 서버 실행 후 다음 URL에서 API 문서를 확인할 수 있습니다:
-- http://localhost:3001/api/docs
+- http://localhost:3001/api-docs
 
 ## 🧪 테스트
 
