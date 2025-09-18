@@ -15,7 +15,13 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   accessToken: string;
+  refreshToken: string;
   user: User;
+}
+
+export interface RefreshResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export class AuthService {
@@ -27,8 +33,8 @@ export class AuthService {
     return apiService.post<AuthResponse>(API_ROUTES.AUTH.REGISTER, userData);
   }
 
-  async refreshToken(): Promise<AuthResponse> {
-    return apiService.post<AuthResponse>(API_ROUTES.AUTH.REFRESH);
+  async refreshToken(refreshToken: string): Promise<RefreshResponse> {
+    return apiService.post<RefreshResponse>(API_ROUTES.AUTH.REFRESH, { refreshToken });
   }
 }
 

@@ -7,6 +7,7 @@ import { usePermissionStore } from './permission.store';
 interface AuthState {
   user: User | null;
   accessToken: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
 }
@@ -14,8 +15,10 @@ interface AuthState {
 interface AuthActions {
   setUser: (user: User) => void;
   setToken: (token: string) => void;
+  setRefreshToken: (token: string) => void;
   setLoading: (loading: boolean) => void;
-  login: (user: User, token: string) => void;
+  login: (user: User, accessToken: string, refreshToken: string) => void;
+  refreshTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   clearAuth: () => void;
 }
@@ -28,6 +31,7 @@ export const useAuthStore = create<AuthStore>()(
       // State
       user: null,
       accessToken: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoading: true,
 
@@ -40,18 +44,24 @@ export const useAuthStore = create<AuthStore>()(
         set({ accessToken: token });
       },
 
+      setRefreshToken: (token: string) => {
+        set({ refreshToken: token });
+      },
+
       setLoading: (loading: boolean) => {
         set({ isLoading: loading });
       },
 
-      login: (user: User, token: string) => {
+      login: (user: User, accessToken: string, refreshToken: string) => {
         // localStorage에 토큰 저장
-        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         localStorage.setItem(STORAGE_KEYS.USER_INFO, JSON.stringify(user));
         
         set({
           user,
-          accessToken: token,
+          accessToken,
+          refreshToken,
           isAuthenticated: true,
           isLoading: false,
         });
@@ -61,14 +71,26 @@ export const useAuthStore = create<AuthStore>()(
         usePermissionStore.getState().fetchMyPermissions();
       },
 
+      refreshTokens: (accessToken: string, refreshToken: string) => {
+        localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
+        localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
+        
+        set({
+          accessToken,
+          refreshToken,
+        });
+      },
+
       logout: () => {
         set({
           user: null,
           accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
         });
         localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
         localStorage.removeItem(STORAGE_KEYS.USER_INFO);
         
         // 권한 store도 초기화
@@ -79,6 +101,7 @@ export const useAuthStore = create<AuthStore>()(
         set({
           user: null,
           accessToken: null,
+          refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
         });
@@ -92,6 +115,7 @@ export const useAuthStore = create<AuthStore>()(
       partialize: (state) => ({
         user: state.user,
         accessToken: state.accessToken,
+        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
       onRehydrateStorage: () => (state) => {

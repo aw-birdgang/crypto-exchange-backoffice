@@ -1,9 +1,12 @@
 export const APP_CONSTANTS = {
   JWT_SECRET: 'your-super-secret-jwt-key-change-in-production',
   JWT_EXPIRES_IN: '24h',
+  JWT_REFRESH_EXPIRES_IN: '7d',
   BCRYPT_ROUNDS: 12,
   DEFAULT_PAGE_SIZE: 20,
   MAX_PAGE_SIZE: 100,
+  API_RATE_LIMIT: 100,
+  API_RATE_WINDOW: 900000, // 15 minutes
 } as const;
 
 export const API_ROUTES = {
@@ -11,6 +14,8 @@ export const API_ROUTES = {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
     REFRESH: '/auth/refresh',
+    LOGOUT: '/auth/logout',
+    ME: '/auth/me',
   },
   PERMISSIONS: {
     USER_PERMISSIONS: '/permissions/user',

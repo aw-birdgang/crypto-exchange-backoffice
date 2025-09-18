@@ -10,7 +10,7 @@ import {
   ApiInternalServerErrorResponse
 } from '@nestjs/swagger';
 import { AuthService } from '../application/services/auth.service';
-import { LoginDto, RegisterDto, AuthResponseDto } from '../application/dto/auth.dto';
+import { LoginDto, RegisterDto, AuthResponseDto, RefreshTokenDto, RefreshResponseDto } from '../application/dto/auth.dto';
 import { Public } from '../application/decorators/public.decorator';
 
 @ApiTags('Authentication')
@@ -150,5 +150,37 @@ export class AuthController {
   })
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);
+  }
+
+  @Post('refresh')
+  @Public()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '토큰 갱신',
+    description: '리프레시 토큰을 사용하여 새로운 액세스 토큰과 리프레시 토큰을 발급받습니다.'
+  })
+  @ApiBody({
+    type: RefreshTokenDto,
+    description: '리프레시 토큰'
+  })
+  @ApiResponse({
+    status: 200,
+    description: '토큰 갱신 성공',
+    type: RefreshResponseDto,
+    example: {
+      accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      refreshToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+    }
+  })
+  @ApiUnauthorizedResponse({
+    description: '유효하지 않은 리프레시 토큰',
+    example: {
+      statusCode: 401,
+      message: 'Invalid refresh token',
+      error: 'Unauthorized'
+    }
+  })
+  async refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<RefreshResponseDto> {
+    return this.authService.refreshToken(refreshTokenDto);
   }
 }

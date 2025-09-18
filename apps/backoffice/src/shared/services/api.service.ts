@@ -41,45 +41,77 @@ class ApiService {
       (response: AxiosResponse) => {
         return response;
       },
-      (error) => {
-        if (error.response?.status === 401) {
-          // Token expired or invalid - use store instead of direct redirect
-          localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-          localStorage.removeItem(STORAGE_KEYS.USER_INFO);
+      async (error) => {
+        const originalRequest = error.config;
+        
+        if (error.response?.status === 401 && !originalRequest._retry) {
+          originalRequest._retry = true;
           
-          // Zustand store를 통해 로그아웃 처리
-          import('../../features/auth/application/stores/auth.store').then(({ useAuthStore }) => {
+          try {
+            // 리프레시 토큰으로 새로운 액세스 토큰 요청
+            const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+            if (refreshToken) {
+              const { authService } = await import('../../features/auth/application/services/auth.service');
+              const response = await authService.refreshToken(refreshToken);
+              
+              // 새로운 토큰 저장
+              localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, response.accessToken);
+              localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, response.refreshToken);
+              
+              // Zustand store 업데이트
+              const { useAuthStore } = await import('../../features/auth/application/stores/auth.store');
+              useAuthStore.getState().refreshTokens(response.accessToken, response.refreshToken);
+              
+              // 원래 요청 재시도
+              originalRequest.headers.Authorization = `Bearer ${response.accessToken}`;
+              return this.api(originalRequest);
+            }
+          } catch (refreshError) {
+            // 리프레시 실패 시 로그아웃
+            localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+            localStorage.removeItem(STORAGE_KEYS.USER_INFO);
+            
+            const { useAuthStore } = await import('../../features/auth/application/stores/auth.store');
             useAuthStore.getState().clearAuth();
-          });
+          }
         }
+        
         return Promise.reject(error);
       },
     );
   }
 
-  async get<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async get<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.api.get<ApiResponse<T>>(url, config);
-    return (response.data as any).data || response.data;
+    return this.extractData<T>(response.data);
   }
 
-  async post<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async post<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.api.post<ApiResponse<T>>(url, data, config);
-    return (response.data as any).data || response.data;
+    return this.extractData<T>(response.data);
   }
 
-  async put<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.api.put<ApiResponse<T>>(url, data, config);
-    return (response.data as any).data || response.data;
+    return this.extractData<T>(response.data);
   }
 
-  async patch<T = any>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
+  async patch<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.api.patch<ApiResponse<T>>(url, data, config);
-    return (response.data as any).data || response.data;
+    return this.extractData<T>(response.data);
   }
 
-  async delete<T = any>(url: string, config?: AxiosRequestConfig): Promise<T> {
+  async delete<T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.api.delete<ApiResponse<T>>(url, config);
-    return (response.data as any).data || response.data;
+    return this.extractData<T>(response.data);
+  }
+
+  private extractData<T>(responseData: ApiResponse<T>): T {
+    if (responseData.data !== undefined) {
+      return responseData.data;
+    }
+    return responseData as unknown as T;
   }
 }
 

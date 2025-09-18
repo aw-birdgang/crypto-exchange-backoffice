@@ -5,7 +5,9 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './features/auth/presentation/auth.module';
 import { JwtAuthGuard } from './features/auth/presentation/guards/jwt-auth.guard';
-import { APP_CONSTANTS } from '@crypto-exchange/shared';
+// 환경 변수 직접 사용
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 @Module({
   imports: [
@@ -25,8 +27,8 @@ import { APP_CONSTANTS } from '@crypto-exchange/shared';
       logging: process.env.NODE_ENV === 'development',
     }),
     JwtModule.register({
-      secret: APP_CONSTANTS.JWT_SECRET,
-      signOptions: { expiresIn: APP_CONSTANTS.JWT_EXPIRES_IN },
+      secret: JWT_SECRET,
+      signOptions: { expiresIn: JWT_EXPIRES_IN },
     }),
     AuthModule,
   ],

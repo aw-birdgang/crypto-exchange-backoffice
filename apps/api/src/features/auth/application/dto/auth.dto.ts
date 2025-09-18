@@ -55,12 +55,27 @@ export class RegisterDto {
   lastName: string;
 }
 
+export class RefreshTokenDto {
+  @ApiProperty({
+    description: '리프레시 토큰',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  })
+  @IsString()
+  refreshToken: string;
+}
+
 export class AuthResponseDto {
   @ApiProperty({
     description: 'JWT 액세스 토큰',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
   })
   accessToken: string;
+
+  @ApiProperty({
+    description: 'JWT 리프레시 토큰',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  })
+  refreshToken: string;
 
   @ApiProperty({
     description: '사용자 정보',
@@ -79,4 +94,18 @@ export class AuthResponseDto {
     lastName: string;
     role: string;
   };
+}
+
+export class RefreshResponseDto {
+  @ApiProperty({
+    description: '새로운 JWT 액세스 토큰',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  })
+  accessToken: string;
+
+  @ApiProperty({
+    description: '새로운 JWT 리프레시 토큰',
+    example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+  })
+  refreshToken: string;
 }

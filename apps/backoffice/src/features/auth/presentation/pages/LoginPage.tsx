@@ -2,7 +2,7 @@ import React from 'react';
 import { Form, Input, Button, Card, Typography, message } from 'antd';
 import { UserOutlined, LockOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useMutation } from 'react-query';
+import { useMutation } from '@tanstack/react-query';
 import { useAuthStore } from '../../application/stores/auth.store';
 import { authService } from '../../application/services/auth.service';
 import { LoginRequest } from '../../application/services/auth.service';
@@ -16,7 +16,7 @@ export const LoginPage: React.FC = () => {
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginRequest) => authService.login(credentials),
     onSuccess: (data) => {
-      login(data.user, data.accessToken);
+      login(data.user, data.accessToken, data.refreshToken);
       message.success('로그인에 성공했습니다.');
       navigate('/dashboard');
     },
@@ -72,7 +72,7 @@ export const LoginPage: React.FC = () => {
             <Input
               prefix={<UserOutlined />}
               placeholder="이메일"
-              disabled={loginMutation.isLoading}
+              disabled={loginMutation.isPending}
             />
           </Form.Item>
 
@@ -86,7 +86,7 @@ export const LoginPage: React.FC = () => {
             <Input.Password
               prefix={<LockOutlined />}
               placeholder="비밀번호"
-              disabled={loginMutation.isLoading}
+              disabled={loginMutation.isPending}
             />
           </Form.Item>
 
@@ -94,7 +94,7 @@ export const LoginPage: React.FC = () => {
             <Button
               type="primary"
               htmlType="submit"
-              loading={loginMutation.isLoading}
+              loading={loginMutation.isPending}
               style={{ width: '100%', height: 48 }}
             >
               로그인

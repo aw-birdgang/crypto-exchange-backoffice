@@ -190,8 +190,8 @@ export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({
       align: 'center' as const,
       render: (_: any, record: { resource: Resource }) => (
         <Checkbox
-          checked={isResourceSelected(record.resource)}
-          indeterminate={isResourceIndeterminate(record.resource)}
+          checked={isResourceSelected(record.resource) || false}
+          indeterminate={isResourceIndeterminate(record.resource) || false}
           onChange={(e) => handleResourceSelectAll(record.resource, e.target.checked)}
           disabled={readOnly}
         />

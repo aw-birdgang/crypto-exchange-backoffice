@@ -28,6 +28,15 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  type: 'access' | 'refresh';
+  iat?: number;
+  exp?: number;
+}
+
+export interface RefreshTokenPayload {
+  sub: string;
+  email: string;
+  type: 'refresh';
   iat?: number;
   exp?: number;
 }
