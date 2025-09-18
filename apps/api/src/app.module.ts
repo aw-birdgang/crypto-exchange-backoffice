@@ -4,7 +4,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthModule } from './features/auth/presentation/auth.module';
-import { UserModule } from './features/user/presentation/user.module';
 import { JwtAuthGuard } from './features/auth/presentation/guards/jwt-auth.guard';
 import { APP_CONSTANTS } from '@crypto-exchange/shared';
 
@@ -30,7 +29,6 @@ import { APP_CONSTANTS } from '@crypto-exchange/shared';
       signOptions: { expiresIn: APP_CONSTANTS.JWT_EXPIRES_IN },
     }),
     AuthModule,
-    UserModule,
   ],
   providers: [
     {

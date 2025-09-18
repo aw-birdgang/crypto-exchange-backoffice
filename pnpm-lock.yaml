@@ -181,7 +181,7 @@ importers:
         specifier: ^1.5.0
         version: 1.12.2
       dayjs:
-        specifier: ^1.11.9
+        specifier: ^1.11.18
         version: 1.11.18
       react:
         specifier: ^18.2.0

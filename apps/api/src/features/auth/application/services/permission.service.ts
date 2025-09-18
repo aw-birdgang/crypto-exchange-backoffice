@@ -1,6 +1,7 @@
 import { Injectable, ForbiddenException, Inject } from '@nestjs/common';
-import { UserRole, Resource, Permission, UserPermissions } from '@crypto-exchange/shared';
+import { UserRole, Resource, Permission, UserPermissions, Role } from '@crypto-exchange/shared';
 import { PermissionRepositoryInterface } from '../../domain/repositories/permission.repository.interface';
+import { RoleRepositoryInterface } from '../../domain/repositories/role.repository.interface';
 import { RolePermission } from '../../domain/entities/role-permission.entity';
 
 @Injectable()
@@ -8,6 +9,8 @@ export class PermissionService {
   constructor(
     @Inject('PermissionRepositoryInterface')
     private permissionRepository: PermissionRepositoryInterface,
+    @Inject('RoleRepositoryInterface')
+    private roleRepository: RoleRepositoryInterface,
   ) {}
 
   async getUserPermissions(userId: string): Promise<UserPermissions> {
@@ -74,5 +77,34 @@ export class PermissionService {
 
   async initializeDefaultPermissions(): Promise<void> {
     return this.permissionRepository.initializeDefaultPermissions();
+  }
+
+  // Role 관리 메서드들
+  async getAllRoles(): Promise<Role[]> {
+    const roles = await this.roleRepository.findAll();
+    return roles.map(role => role.toRoleType());
+  }
+
+  async getRoleById(id: string): Promise<Role | null> {
+    const role = await this.roleRepository.findById(id);
+    return role ? role.toRoleType() : null;
+  }
+
+  async createRole(roleData: Partial<Role>): Promise<Role> {
+    // permissions 필드를 제외하고 엔티티 생성
+    const { permissions, ...entityData } = roleData as any;
+    const role = await this.roleRepository.create(entityData);
+    return role.toRoleType();
+  }
+
+  async updateRole(id: string, roleData: Partial<Role>): Promise<Role> {
+    // permissions 필드를 제외하고 엔티티 업데이트
+    const { permissions, ...entityData } = roleData as any;
+    const role = await this.roleRepository.update(id, entityData);
+    return role.toRoleType();
+  }
+
+  async deleteRole(id: string): Promise<void> {
+    return this.roleRepository.delete(id);
   }
 }

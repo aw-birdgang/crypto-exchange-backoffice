@@ -4,19 +4,19 @@ import { Repository } from 'typeorm';
 import { UserRole, Resource, Permission, UserPermissions, ROLE_PERMISSIONS, MENU_PERMISSIONS } from '@crypto-exchange/shared';
 import { RolePermission } from '../../domain/entities/role-permission.entity';
 import { PermissionRepositoryInterface } from '../../domain/repositories/permission.repository.interface';
-import { User } from '../../domain/entities/user.entity';
+import { AdminUser } from '../../domain/entities/admin-user.entity';
 
 @Injectable()
 export class PermissionRepository implements PermissionRepositoryInterface {
   constructor(
     @InjectRepository(RolePermission)
     private rolePermissionRepository: Repository<RolePermission>,
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(AdminUser)
+    private adminUserRepository: Repository<AdminUser>,
   ) {}
 
   async getUserPermissions(userId: string): Promise<UserPermissions> {
-    const user = await this.userRepository.findOne({
+    const user = await this.adminUserRepository.findOne({
       where: { id: userId },
     });
 
@@ -24,8 +24,11 @@ export class PermissionRepository implements PermissionRepositoryInterface {
       throw new Error('User not found');
     }
 
+    // AdminRole을 UserRole로 매핑
+    const userRole = this.mapAdminRoleToUserRole(user.adminRole);
+    
     const rolePermissions = await this.rolePermissionRepository.find({
-      where: { role: user.role },
+      where: { role: userRole },
     });
 
     const permissions = rolePermissions.map(rp => ({
@@ -35,13 +38,13 @@ export class PermissionRepository implements PermissionRepositoryInterface {
 
     return {
       userId,
-      role: user.role,
+      role: userRole,
       permissions,
     };
   }
 
   async hasPermission(userId: string, resource: Resource, permission: Permission): Promise<boolean> {
-    const user = await this.userRepository.findOne({
+    const user = await this.adminUserRepository.findOne({
       where: { id: userId },
     });
 
@@ -50,12 +53,14 @@ export class PermissionRepository implements PermissionRepositoryInterface {
     }
 
     // SUPER_ADMIN은 모든 권한을 가짐
-    if (user.role === UserRole.SUPER_ADMIN) {
+    if (user.adminRole === 'SUPER_ADMIN') {
       return true;
     }
 
+    const userRole = this.mapAdminRoleToUserRole(user.adminRole);
+    
     const rolePermission = await this.rolePermissionRepository.findOne({
-      where: { role: user.role, resource },
+      where: { role: userRole, resource },
     });
 
     if (!rolePermission) {
@@ -76,7 +81,7 @@ export class PermissionRepository implements PermissionRepositoryInterface {
   }
 
   async hasMenuAccess(userId: string, menuKey: string): Promise<boolean> {
-    const user = await this.userRepository.findOne({
+    const user = await this.adminUserRepository.findOne({
       where: { id: userId },
     });
 
@@ -84,8 +89,9 @@ export class PermissionRepository implements PermissionRepositoryInterface {
       return false;
     }
 
+    const userRole = this.mapAdminRoleToUserRole(user.adminRole);
     const allowedRoles = MENU_PERMISSIONS[menuKey as keyof typeof MENU_PERMISSIONS];
-    return allowedRoles ? allowedRoles.includes(user.role as any) : false;
+    return allowedRoles ? allowedRoles.includes(userRole as any) : false;
   }
 
   async createRolePermission(rolePermission: Partial<RolePermission>): Promise<RolePermission> {
@@ -133,5 +139,19 @@ export class PermissionRepository implements PermissionRepositoryInterface {
     });
 
     await this.rolePermissionRepository.save(defaultPermissions);
+  }
+
+  /**
+   * AdminRole을 UserRole로 매핑
+   */
+  private mapAdminRoleToUserRole(adminRole: string): UserRole {
+    switch (adminRole) {
+      case 'SUPER_ADMIN':
+        return UserRole.SUPER_ADMIN;
+      case 'ADMIN':
+        return UserRole.ADMIN;
+      default:
+        return UserRole.USER;
+    }
   }
 }

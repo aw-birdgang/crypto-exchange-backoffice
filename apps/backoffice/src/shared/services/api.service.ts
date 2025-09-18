@@ -25,6 +25,9 @@ class ApiService {
         const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
+          console.log('🔑 API Request with token:', config.url);
+        } else {
+          console.warn('⚠️ API Request without token:', config.url);
         }
         return config;
       },
@@ -40,10 +43,14 @@ class ApiService {
       },
       (error) => {
         if (error.response?.status === 401) {
-          // Token expired or invalid
+          // Token expired or invalid - use store instead of direct redirect
           localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
           localStorage.removeItem(STORAGE_KEYS.USER_INFO);
-          window.location.href = '/login';
+          
+          // Zustand store를 통해 로그아웃 처리
+          import('../../features/auth/application/stores/auth.store').then(({ useAuthStore }) => {
+            useAuthStore.getState().clearAuth();
+          });
         }
         return Promise.reject(error);
       },

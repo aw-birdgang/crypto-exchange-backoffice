@@ -13,19 +13,19 @@
     "clean": "rm -rf dist node_modules"
   },
   "dependencies": {
+    "@ant-design/icons": "^5.2.6",
+    "@hookform/resolvers": "^3.3.1",
+    "antd": "^5.9.0",
+    "axios": "^1.5.0",
+    "dayjs": "^1.11.18",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-router-dom": "^6.15.0",
-    "zustand": "^4.4.1",
-    "antd": "^5.9.0",
-    "@ant-design/icons": "^5.2.6",
-    "axios": "^1.5.0",
-    "dayjs": "^1.11.9",
-    "recharts": "^2.8.0",
-    "react-query": "^3.39.3",
     "react-hook-form": "^7.45.4",
-    "@hookform/resolvers": "^3.3.1",
-    "zod": "^3.22.2"
+    "react-query": "^3.39.3",
+    "react-router-dom": "^6.15.0",
+    "recharts": "^2.8.0",
+    "zod": "^3.22.2",
+    "zustand": "^4.4.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.15",
@@ -34,10 +34,10 @@
     "@typescript-eslint/parser": "^6.0.0",
     "@vitejs/plugin-react": "^4.0.3",
     "eslint": "^8.45.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.3",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.3",
     "prettier": "^3.0.0",
     "typescript": "^5.0.2",
     "vite": "^4.4.5"

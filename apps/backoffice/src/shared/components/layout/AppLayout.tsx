@@ -5,18 +5,14 @@ import {
   MenuUnfoldOutlined,
   DashboardOutlined,
   UserOutlined,
-  ShoppingCartOutlined,
-  LineChartOutlined,
-  WalletOutlined,
   LogoutOutlined,
   SettingOutlined,
-  BarChartOutlined,
-  FileTextOutlined,
+  TeamOutlined,
 } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../../features/auth/application/stores/auth.store';
-import { MenuAccessGate } from '../common/PermissionGate';
-import { ROUTES } from '@crypto-exchange/shared';
+import { usePermissions } from '../../../features/auth/application/hooks/usePermissions';
+import { ROUTES, Resource, Permission } from '@crypto-exchange/shared';
 
 const { Header, Sider, Content } = Layout;
 
@@ -29,6 +25,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { hasPermission, loading: permissionsLoading, permissions } = usePermissions();
   const { token } = theme.useToken();
 
   const allMenuItems = [
@@ -37,62 +34,49 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       icon: <DashboardOutlined />,
       label: '대시보드',
       menuKey: 'dashboard',
+      requiredPermission: { resource: Resource.DASHBOARD, permission: Permission.READ },
     },
     {
-      key: ROUTES.USERS,
-      icon: <UserOutlined />,
-      label: '사용자 관리',
-      menuKey: 'users',
-    },
-    {
-      key: ROUTES.ORDERS,
-      icon: <ShoppingCartOutlined />,
-      label: '주문 관리',
-      menuKey: 'orders',
-    },
-    {
-      key: ROUTES.MARKETS,
-      icon: <LineChartOutlined />,
-      label: '시장 관리',
-      menuKey: 'markets',
-    },
-    {
-      key: ROUTES.WALLETS,
-      icon: <WalletOutlined />,
-      label: '지갑 관리',
-      menuKey: 'wallets',
-    },
-    {
-      key: '/reports',
-      icon: <BarChartOutlined />,
-      label: '리포트',
-      menuKey: 'reports',
-    },
-    {
-      key: '/settings',
-      icon: <SettingOutlined />,
-      label: '설정',
-      menuKey: 'settings',
-    },
-    {
-      key: '/audit-logs',
-      icon: <FileTextOutlined />,
-      label: '감사 로그',
-      menuKey: 'audit_logs',
+      key: ROUTES.PERMISSIONS,
+      icon: <TeamOutlined />,
+      label: '권한 관리',
+      menuKey: 'permissions',
+      requiredPermission: { resource: Resource.SETTINGS, permission: Permission.READ },
     },
   ];
 
   const menuItems = useMemo(() => {
-    return allMenuItems.map(item => ({
-      key: item.key,
-      icon: item.icon,
-      label: (
-        <MenuAccessGate menuKey={item.menuKey}>
-          {item.label}
-        </MenuAccessGate>
-      ),
-    })).filter(item => item.label !== null);
-  }, []);
+    // 권한이 로딩 중이거나 아직 로드되지 않은 경우, 기본 메뉴를 표시
+    if (permissionsLoading || !permissions) {
+      console.log('🔄 Permissions loading, showing default menu items');
+      return allMenuItems.map(item => ({
+        key: item.key,
+        icon: item.icon,
+        label: item.label,
+      }));
+    }
+
+    return allMenuItems
+      .filter(item => {
+        // 권한 확인
+        if (item.requiredPermission) {
+          try {
+            const hasAccess = hasPermission(item.requiredPermission.resource, item.requiredPermission.permission);
+            console.log(`🔍 Permission check for ${item.label}:`, hasAccess);
+            return hasAccess;
+          } catch (error) {
+            console.warn('Permission check failed, allowing access:', error);
+            return true; // 에러 시 기본적으로 허용
+          }
+        }
+        return true;
+      })
+      .map(item => ({
+        key: item.key,
+        icon: item.icon,
+        label: item.label,
+      }));
+  }, [hasPermission, permissionsLoading, permissions]);
 
   const userMenuItems = [
     {

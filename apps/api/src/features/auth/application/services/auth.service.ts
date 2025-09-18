@@ -3,7 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { User } from '../../domain/entities/user.entity';
+import { AdminUser } from '../../domain/entities/admin-user.entity';
 import { LoginDto, RegisterDto, AuthResponseDto } from '../dto/auth.dto';
 import { JwtPayload } from '@crypto-exchange/shared';
 import { APP_CONSTANTS } from '@crypto-exchange/shared';
@@ -11,13 +11,13 @@ import { APP_CONSTANTS } from '@crypto-exchange/shared';
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private userRepository: Repository<User>,
+    @InjectRepository(AdminUser)
+    private adminUserRepository: Repository<AdminUser>,
     private jwtService: JwtService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const existingUser = await this.userRepository.findOne({
+    const existingUser = await this.adminUserRepository.findOne({
       where: { email: registerDto.email },
     });
 
@@ -27,12 +27,12 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(registerDto.password, APP_CONSTANTS.BCRYPT_ROUNDS);
 
-    const user = this.userRepository.create({
+    const user = this.adminUserRepository.create({
       ...registerDto,
       password: hashedPassword,
     });
 
-    const savedUser = await this.userRepository.save(user);
+    const savedUser = await this.adminUserRepository.save(user);
     const accessToken = this.generateAccessToken(savedUser);
 
     return {
@@ -42,13 +42,13 @@ export class AuthService {
         email: savedUser.email,
         firstName: savedUser.firstName,
         lastName: savedUser.lastName,
-        role: savedUser.role,
+        role: savedUser.adminRole,
       },
     };
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
-    const user = await this.userRepository.findOne({
+    const user = await this.adminUserRepository.findOne({
       where: { email: loginDto.email },
     });
 
@@ -69,13 +69,13 @@ export class AuthService {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        role: user.role,
+        role: user.adminRole,
       },
     };
   }
 
-  async validateUser(payload: JwtPayload): Promise<User> {
-    const user = await this.userRepository.findOne({
+  async validateUser(payload: JwtPayload): Promise<AdminUser> {
+    const user = await this.adminUserRepository.findOne({
       where: { id: payload.sub },
     });
 
@@ -86,11 +86,11 @@ export class AuthService {
     return user;
   }
 
-  private generateAccessToken(user: User): string {
+  private generateAccessToken(user: AdminUser): string {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      role: user.role,
+      role: user.adminRole,
     };
 
     return this.jwtService.sign(payload, {
