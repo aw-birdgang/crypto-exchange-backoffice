@@ -41,8 +41,8 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install production dependencies only
-RUN pnpm install --prod
+# Install all dependencies (including typeorm which is needed at runtime)
+RUN pnpm install
 
 # Copy built application
 COPY --from=base /app/packages/shared/dist ./packages/shared/dist

@@ -30,7 +30,11 @@ export class AdminUserRepository implements AdminUserRepositoryInterface {
 
   async update(id: string, adminUser: Partial<AdminUser>): Promise<AdminUser> {
     await this.adminUserRepository.update(id, adminUser);
-    return this.findById(id);
+    const updated = await this.findById(id);
+    if (!updated) {
+      throw new Error(`AdminUser with id ${id} not found`);
+    }
+    return updated;
   }
 
   async delete(id: string): Promise<void> {

@@ -372,7 +372,7 @@ export class AdminController {
   @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async checkPermission(
-    @Request() req,
+    @Request() req: any,
     @Query('resource') resource: Resource,
     @Query('permission') permission: Permission,
   ): Promise<{ hasPermission: boolean }> {
@@ -419,7 +419,7 @@ export class AdminController {
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async createUserAsAdmin(
     @Body() userData: CreateUserDto,
-    @Request() req,
+    @Request() req: any,
   ): Promise<UserResponseDto> {
     // CreateUserDto를 CreateAdminDto로 변환
     const adminData: CreateAdminDto = {
@@ -474,7 +474,7 @@ export class AdminController {
   async updateUserAsAdmin(
     @Param('id') id: string,
     @Body() userData: UpdateUserDto,
-    @Request() req,
+    @Request() req: any,
   ): Promise<UserResponseDto> {
     // UpdateUserDto를 UpdateAdminDto로 변환
     const adminData: UpdateAdminDto = {
@@ -526,7 +526,7 @@ export class AdminController {
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async deleteUserAsAdmin(
     @Param('id') id: string,
-    @Request() req,
+    @Request() req: any,
   ): Promise<{ message: string }> {
     await this.adminService.deleteAdmin(id);
     return { message: '사용자가 삭제되었습니다.' };

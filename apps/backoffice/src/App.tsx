@@ -28,6 +28,7 @@ function App() {
 
   // 인증되지 않았으면 로그인 페이지 표시
   if (!isAuthenticated || !user || !accessToken) {
+    console.log('🔒 User not authenticated, showing login page');
     return <LoginPage />;
   }
 

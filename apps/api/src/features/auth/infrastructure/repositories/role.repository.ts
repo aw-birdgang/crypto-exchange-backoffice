@@ -91,7 +91,11 @@ export class RoleRepository implements RoleRepositoryInterface {
 
   async update(id: string, role: Partial<Role>): Promise<Role> {
     await this.roleRepository.update(id, role);
-    return this.findById(id);
+    const updated = await this.findById(id);
+    if (!updated) {
+      throw new Error(`Role with id ${id} not found`);
+    }
+    return updated;
   }
 
   async delete(id: string): Promise<void> {

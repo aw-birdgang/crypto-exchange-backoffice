@@ -100,8 +100,24 @@ export class PermissionController {
   })
   @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
-  async getMyPermissions(@Request() req): Promise<UserPermissions> {
-    return this.permissionService.getUserPermissions(req.user.id);
+  async getMyPermissions(@Request() req: any): Promise<UserPermissions> {
+    try {
+      console.log('🔍 PermissionController: Getting my permissions for user:', {
+        id: req.user.id,
+        email: req.user.email,
+        adminRole: req.user.adminRole
+      });
+      const permissions = await this.permissionService.getUserPermissions(req.user.id);
+      console.log('✅ PermissionController: Successfully retrieved permissions:', {
+        userId: permissions.userId,
+        role: permissions.role,
+        permissionsCount: permissions.permissions?.length || 0
+      });
+      return permissions;
+    } catch (error) {
+      console.error('❌ PermissionController: Error getting my permissions:', error);
+      throw error;
+    }
   }
 
   @Get('check')
@@ -124,7 +140,7 @@ export class PermissionController {
   @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async checkPermission(
-    @Request() req,
+    @Request() req: any,
     @Body() body: PermissionCheckDto
   ): Promise<PermissionCheckResponseDto> {
     const hasPermission = await this.permissionService.hasPermission(
@@ -156,7 +172,7 @@ export class PermissionController {
   @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async checkMenuAccess(
-    @Request() req,
+    @Request() req: any,
     @Param('menuKey') menuKey: string
   ): Promise<MenuAccessResponseDto> {
     const hasAccess = await this.permissionService.hasMenuAccess(

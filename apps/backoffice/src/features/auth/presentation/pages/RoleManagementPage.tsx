@@ -25,6 +25,7 @@ import {
 import { Role } from '@crypto-exchange/shared';
 import { usePermissionStore } from '../../application/stores/permission.store';
 import { PermissionMatrix } from '../../../../shared/components/common/PermissionMatrix';
+import { AuthDebugger } from '../../../../shared/components/common/AuthDebugger';
 
 const { Title, Text } = Typography;
 const { TextArea } = Input;
@@ -238,6 +239,9 @@ export const RoleManagementPage: React.FC = () => {
           시스템의 역할과 권한을 관리합니다. 역할을 통해 사용자에게 권한을 일괄적으로 부여할 수 있습니다.
         </Text>
       </div>
+
+      {/* 개발 환경에서만 표시 */}
+      {typeof window !== 'undefined' && window.location.hostname === 'localhost' && <AuthDebugger />}
 
       <Card
         title={

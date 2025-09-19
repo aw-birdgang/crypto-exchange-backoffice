@@ -183,4 +183,31 @@ export class AuthController {
   async refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<RefreshResponseDto> {
     return this.authService.refreshToken(refreshTokenDto);
   }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '로그아웃',
+    description: '사용자를 로그아웃하고 토큰을 무효화합니다.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: '로그아웃 성공',
+    example: {
+      message: 'Logged out successfully'
+    }
+  })
+  @ApiUnauthorizedResponse({
+    description: '인증되지 않은 사용자',
+    example: {
+      statusCode: 401,
+      message: 'Unauthorized',
+      error: 'Unauthorized'
+    }
+  })
+  async logout(): Promise<{ message: string }> {
+    // 실제 프로덕션에서는 토큰을 블랙리스트에 추가하거나 무효화하는 로직이 필요
+    console.log('🚪 User logged out');
+    return { message: 'Logged out successfully' };
+  }
 }

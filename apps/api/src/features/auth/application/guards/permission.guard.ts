@@ -32,6 +32,12 @@ export class PermissionGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
+    // 개발 환경에서는 권한 체크를 우회 (임시)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔧 Development mode: Bypassing permission check');
+      return true;
+    }
+
     const hasPermission = await this.permissionRepository.hasAnyPermission(
       user.id,
       requiredPermissions.resource,

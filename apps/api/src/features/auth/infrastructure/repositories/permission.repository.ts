@@ -16,25 +16,46 @@ export class PermissionRepository implements PermissionRepositoryInterface {
   ) {}
 
   async getUserPermissions(userId: string): Promise<UserPermissions> {
+    console.log('🚀 PermissionRepository: getUserPermissions called with userId:', userId);
+    console.log('🔍 PermissionRepository: User ID type:', typeof userId);
+    console.log('🔍 PermissionRepository: User ID length:', userId.length);
+    
     const user = await this.adminUserRepository.findOne({
       where: { id: userId },
     });
 
     if (!user) {
+      console.error('❌ PermissionRepository: User not found for userId:', userId);
+      console.error('❌ PermissionRepository: Searching for user with exact ID:', userId);
       throw new Error('User not found');
     }
 
+    console.log('✅ PermissionRepository: User found:', {
+      id: user.id,
+      email: user.email,
+      adminRole: user.adminRole
+    });
+
     // AdminRole을 UserRole로 매핑
     const userRole = this.mapAdminRoleToUserRole(user.adminRole);
+    console.log('🔍 PermissionRepository: Mapped userRole:', userRole);
     
     const rolePermissions = await this.rolePermissionRepository.find({
       where: { role: userRole },
     });
 
+    console.log('🔍 PermissionRepository: Found rolePermissions:', rolePermissions.length);
+
     const permissions = rolePermissions.map(rp => ({
       resource: rp.resource,
       permissions: rp.permissions,
     }));
+
+    console.log('✅ PermissionRepository: Returning permissions:', {
+      userId,
+      role: userRole,
+      permissionsCount: permissions.length
+    });
 
     return {
       userId,
@@ -101,7 +122,11 @@ export class PermissionRepository implements PermissionRepositoryInterface {
 
   async updateRolePermission(id: string, rolePermission: Partial<RolePermission>): Promise<RolePermission> {
     await this.rolePermissionRepository.update(id, rolePermission);
-    return this.rolePermissionRepository.findOne({ where: { id } });
+    const updated = await this.rolePermissionRepository.findOne({ where: { id } });
+    if (!updated) {
+      throw new Error(`RolePermission with id ${id} not found`);
+    }
+    return updated;
   }
 
   async deleteRolePermission(id: string): Promise<void> {

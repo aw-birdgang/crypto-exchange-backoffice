@@ -1,16 +1,15 @@
-import { Injectable, UnauthorizedException, ConflictException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ConflictException, UnauthorizedException } from '../../../../common/exceptions/business.exception';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { AdminUser } from '../../domain/entities/admin-user.entity';
+import { AdminUser, AdminRole } from '../../domain/entities/admin-user.entity';
 import { LoginDto, RegisterDto, AuthResponseDto, RefreshTokenDto, RefreshResponseDto } from '../dto/auth.dto';
 import { JwtPayload, RefreshTokenPayload } from '@crypto-exchange/shared';
-// 환경 변수 직접 사용
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
-const JWT_REFRESH_EXPIRES_IN = process.env.JWT_REFRESH_EXPIRES_IN || '7d';
-const BCRYPT_ROUNDS = parseInt(process.env.BCRYPT_ROUNDS || '12');
+import { ValidationUtil } from '../../../../common/utils/validation.util';
+import { ResponseUtil } from '../../../../common/utils/response.util';
 
 @Injectable()
 export class AuthService {
@@ -18,47 +17,92 @@ export class AuthService {
     @InjectRepository(AdminUser)
     private adminUserRepository: Repository<AdminUser>,
     private jwtService: JwtService,
+    private configService: ConfigService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+    // 입력 검증
+    ValidationUtil.validateEmail(registerDto.email);
+    ValidationUtil.validatePassword(registerDto.password);
+
+    // 중복 사용자 확인
+    await this.checkUserExists(registerDto.email);
+
+    // 사용자 생성
+    const user = await this.createUser(registerDto);
+    const savedUser = await this.adminUserRepository.save(user);
+
+    // 토큰 생성
+    const tokens = this.generateTokens(savedUser);
+
+    return {
+      ...tokens,
+      user: this.mapUserToResponse(savedUser),
+    };
+  }
+
+  private async checkUserExists(email: string): Promise<void> {
     const existingUser = await this.adminUserRepository.findOne({
-      where: { email: registerDto.email },
+      where: { email },
     });
 
     if (existingUser) {
       throw new ConflictException('User with this email already exists');
     }
+  }
 
-    const hashedPassword = await bcrypt.hash(registerDto.password, BCRYPT_ROUNDS);
+  private async createUser(registerDto: RegisterDto): Promise<AdminUser> {
+    const bcryptRounds = this.configService.get<number>('app.security.bcryptRounds') || 12;
+    const hashedPassword = await bcrypt.hash(registerDto.password, bcryptRounds);
 
-    const user = this.adminUserRepository.create({
+    return this.adminUserRepository.create({
       ...registerDto,
       password: hashedPassword,
+      username: registerDto.email.split('@')[0],
+      adminRole: AdminRole.ADMIN,
+      permissions: [],
     });
+  }
 
-    const savedUser = await this.adminUserRepository.save(user);
-    const accessToken = this.generateAccessToken(savedUser);
-    const refreshToken = this.generateRefreshToken(savedUser);
-
+  private generateTokens(user: AdminUser): { accessToken: string; refreshToken: string } {
     return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: savedUser.id,
-        email: savedUser.email,
-        firstName: savedUser.firstName,
-        lastName: savedUser.lastName,
-        role: savedUser.adminRole,
-      },
+      accessToken: this.generateAccessToken(user),
+      refreshToken: this.generateRefreshToken(user),
+    };
+  }
+
+  private mapUserToResponse(user: AdminUser) {
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      role: user.adminRole,
     };
   }
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    // 입력 검증
+    ValidationUtil.validateEmail(loginDto.email);
+
+    // 사용자 인증
+    const user = await this.authenticateUser(loginDto.email, loginDto.password);
+
+    // 토큰 생성
+    const tokens = this.generateTokens(user);
+
+    return {
+      ...tokens,
+      user: this.mapUserToResponse(user),
+    };
+  }
+
+  private async authenticateUser(email: string, password: string): Promise<AdminUser> {
     const user = await this.adminUserRepository.findOne({
-      where: { email: loginDto.email },
+      where: { email },
     });
 
-    if (!user || !(await bcrypt.compare(loginDto.password, user.password))) {
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
@@ -66,20 +110,12 @@ export class AuthService {
       throw new UnauthorizedException('Account is deactivated');
     }
 
-    const accessToken = this.generateAccessToken(user);
-    const refreshToken = this.generateRefreshToken(user);
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
 
-    return {
-      accessToken,
-      refreshToken,
-      user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.adminRole,
-      },
-    };
+    return user;
   }
 
   async validateUser(payload: JwtPayload): Promise<AdminUser> {
@@ -94,10 +130,17 @@ export class AuthService {
     return user;
   }
 
+  async findUserByEmail(email: string): Promise<AdminUser | null> {
+    return this.adminUserRepository.findOne({
+      where: { email },
+    });
+  }
+
   async refreshToken(refreshTokenDto: RefreshTokenDto): Promise<RefreshResponseDto> {
     try {
+      const jwtSecret = this.configService.get<string>('app.jwt.secret');
       const payload = this.jwtService.verify(refreshTokenDto.refreshToken, {
-        secret: JWT_SECRET,
+        secret: jwtSecret,
       }) as RefreshTokenPayload;
 
       if (payload.type !== 'refresh') {
@@ -132,9 +175,12 @@ export class AuthService {
       type: 'access',
     };
 
+    const jwtSecret = this.configService.get<string>('app.jwt.secret');
+    const jwtExpiresIn = this.configService.get<string>('app.jwt.expiresIn');
+
     return this.jwtService.sign(payload, {
-      secret: JWT_SECRET,
-      expiresIn: JWT_EXPIRES_IN,
+      secret: jwtSecret,
+      expiresIn: jwtExpiresIn,
     });
   }
 
@@ -145,9 +191,12 @@ export class AuthService {
       type: 'refresh',
     };
 
+    const jwtSecret = this.configService.get<string>('app.jwt.secret');
+    const jwtRefreshExpiresIn = this.configService.get<string>('app.jwt.refreshExpiresIn');
+
     return this.jwtService.sign(payload, {
-      secret: JWT_SECRET,
-      expiresIn: JWT_REFRESH_EXPIRES_IN,
+      secret: jwtSecret,
+      expiresIn: jwtRefreshExpiresIn,
     });
   }
 }

@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '@crypto-exchange/shared';
-import { STORAGE_KEYS } from '@crypto-exchange/shared';
+import { User, STORAGE_KEYS } from '@crypto-exchange/shared';
 import { usePermissionStore } from './permission.store';
+import { authService } from '../services/auth.service';
 
 interface AuthState {
   user: User | null;
@@ -53,6 +53,9 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       login: (user: User, accessToken: string, refreshToken: string) => {
+        // 로그아웃 플래그 제거
+        localStorage.removeItem(STORAGE_KEYS.AUTH_LOGGED_OUT);
+        
         // localStorage에 토큰 저장
         localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, accessToken);
         localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
@@ -81,7 +84,29 @@ export const useAuthStore = create<AuthStore>()(
         });
       },
 
-      logout: () => {
+      logout: async () => {
+        console.log('🚪 Logging out user...');
+        
+        try {
+          // 서버에 로그아웃 요청
+          await authService.logout();
+        } catch (error) {
+          console.warn('⚠️ Server logout failed, continuing with client logout:', error);
+        }
+        
+        // 로그아웃 플래그 설정 (개발 환경에서 자동 로그인 방지)
+        localStorage.setItem(STORAGE_KEYS.AUTH_LOGGED_OUT, 'true');
+        
+        // localStorage 완전 정리
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.USER_INFO);
+        
+        // Zustand persist 스토어도 정리
+        localStorage.removeItem(STORAGE_KEYS.AUTH_STORAGE);
+        localStorage.removeItem(STORAGE_KEYS.PERMISSION_STORAGE);
+        
+        // 상태 초기화
         set({
           user: null,
           accessToken: null,
@@ -89,12 +114,14 @@ export const useAuthStore = create<AuthStore>()(
           isAuthenticated: false,
           isLoading: false,
         });
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.USER_INFO);
         
         // 권한 store도 초기화
         usePermissionStore.getState().reset();
+        
+        console.log('✅ Logout completed, all data cleared');
+        
+        // 페이지 새로고침으로 완전한 상태 초기화
+        window.location.href = '/login';
       },
 
       clearAuth: () => {
@@ -125,6 +152,16 @@ export const useAuthStore = create<AuthStore>()(
           // 토큰이 있으면 인증 상태로 설정
           if (state.accessToken && state.user) {
             state.isAuthenticated = true;
+            console.log('✅ Auth state restored from storage:', {
+              user: state.user?.email,
+              hasToken: !!state.accessToken,
+              isAuthenticated: state.isAuthenticated
+            });
+          } else {
+            console.log('⚠️ No auth data found in storage');
+            // 운영 환경에서는 인증되지 않은 상태로 유지
+            state.isAuthenticated = false;
+            state.isLoading = false;
           }
         }
       },

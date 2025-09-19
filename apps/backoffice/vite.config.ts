@@ -4,6 +4,9 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    'import.meta.env': 'import.meta.env',
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),

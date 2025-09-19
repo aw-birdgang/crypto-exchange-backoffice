@@ -1,35 +1,42 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AuthModule } from './features/auth/presentation/auth.module';
 import { JwtAuthGuard } from './features/auth/presentation/guards/jwt-auth.guard';
-// 환경 변수 직접 사용
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
+import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
+import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { CacheModule } from './common/cache/cache.module';
+import { LoggerModule } from './common/logger/logger.module';
+import { HealthModule } from './common/health/health.module';
+import { SecurityMiddleware, CorsMiddleware, RequestLoggingMiddleware } from './common/middleware/security.middleware';
+import { RateLimitGuard } from './common/guards/rate-limit.guard';
+import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
+import appConfig from './config/app.config';
+import databaseConfig from './config/database.config';
+import jwtConfig from './config/jwt.config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
+      load: [appConfig, databaseConfig, jwtConfig],
     }),
-    TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      username: process.env.DB_USERNAME || 'postgres',
-      password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_DATABASE || 'crypto_exchange',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
-      synchronize: process.env.NODE_ENV !== 'production',
-      logging: process.env.NODE_ENV === 'development',
+          TypeOrmModule.forRootAsync({
+            imports: [ConfigModule],
+            useFactory: (configService: ConfigService) => configService.get('database')!,
+            inject: [ConfigService],
+          }),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => configService.get('jwt')!,
+      inject: [ConfigService],
     }),
-    JwtModule.register({
-      secret: JWT_SECRET,
-      signOptions: { expiresIn: JWT_EXPIRES_IN },
-    }),
+    CacheModule,
+    LoggerModule,
+    HealthModule,
     AuthModule,
   ],
   providers: [
@@ -37,7 +44,29 @@ const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
+    {
+      provide: APP_GUARD,
+      useClass: RateLimitGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ResponseInterceptor,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: PerformanceInterceptor,
+    },
   ],
   exports: [JwtModule],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(SecurityMiddleware, CorsMiddleware, RequestLoggingMiddleware)
+      .forRoutes('*');
+  }
+}

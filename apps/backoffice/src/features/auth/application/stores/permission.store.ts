@@ -7,7 +7,8 @@ import {
   PermissionTemplate,
   Resource,
   Permission,
-  UserRole
+  UserRole,
+  STORAGE_KEYS
 } from '@crypto-exchange/shared';
 import { PermissionService } from '../services/permission.service';
 import { useAuthStore } from './auth.store';
@@ -348,6 +349,11 @@ export const usePermissionStore = create<PermissionStore>()(
       },
 
       reset: () => {
+        console.log('🔄 Resetting permission store...');
+        
+        // localStorage에서 권한 관련 데이터 정리
+        localStorage.removeItem(STORAGE_KEYS.PERMISSION_STORAGE);
+        
         set({
           userPermissions: null,
           permissionsLoading: false,
@@ -359,6 +365,8 @@ export const usePermissionStore = create<PermissionStore>()(
           templatesLoading: false,
           error: null,
         });
+        
+        console.log('✅ Permission store reset completed');
       },
     }),
     {

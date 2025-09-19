@@ -3,6 +3,7 @@ import { UserRole, Resource, Permission, UserPermissions, Role } from '@crypto-e
 import { PermissionRepositoryInterface } from '../../domain/repositories/permission.repository.interface';
 import { RoleRepositoryInterface } from '../../domain/repositories/role.repository.interface';
 import { RolePermission } from '../../domain/entities/role-permission.entity';
+import { CacheService } from '../../../../common/cache/cache.service';
 
 @Injectable()
 export class PermissionService {
@@ -11,10 +12,37 @@ export class PermissionService {
     private permissionRepository: PermissionRepositoryInterface,
     @Inject('RoleRepositoryInterface')
     private roleRepository: RoleRepositoryInterface,
+    private cacheService: CacheService,
   ) {}
 
   async getUserPermissions(userId: string): Promise<UserPermissions> {
-    return this.permissionRepository.getUserPermissions(userId);
+    try {
+      const cacheKey = CacheService.generateKey('user_permissions', userId);
+      
+      // 캐시에서 먼저 확인
+      const cachedPermissions = await this.cacheService.get<UserPermissions>(cacheKey);
+      if (cachedPermissions) {
+        console.log('✅ PermissionService: Retrieved permissions from cache for user:', userId);
+        return cachedPermissions;
+      }
+
+      console.log('🚀 PermissionService: getUserPermissions called with userId:', userId);
+      console.log('🔍 PermissionService: Calling permissionRepository.getUserPermissions...');
+      const permissions = await this.permissionRepository.getUserPermissions(userId);
+      
+      // 캐시에 저장 (30분 TTL)
+      await this.cacheService.set(cacheKey, permissions, CacheService.TTL.MEDIUM);
+      
+      console.log('✅ PermissionService: Successfully retrieved permissions:', {
+        userId: permissions.userId,
+        role: permissions.role,
+        permissionsCount: permissions.permissions?.length || 0
+      });
+      return permissions;
+    } catch (error) {
+      console.error('❌ PermissionService: Error getting user permissions:', error);
+      throw error;
+    }
   }
 
   async hasPermission(userId: string, resource: Resource, permission: Permission): Promise<boolean> {
@@ -82,6 +110,15 @@ export class PermissionService {
   // Role 관리 메서드들
   async getAllRoles(): Promise<Role[]> {
     try {
+      const cacheKey = 'all_roles';
+      
+      // 캐시에서 먼저 확인
+      const cachedRoles = await this.cacheService.get<Role[]>(cacheKey);
+      if (cachedRoles) {
+        console.log('✅ PermissionService: Retrieved roles from cache');
+        return cachedRoles;
+      }
+
       console.log('🔍 PermissionService: Getting all roles from repository...');
       const roles = await this.roleRepository.findAll();
       console.log('✅ PermissionService: Found roles:', roles.length);
@@ -90,6 +127,9 @@ export class PermissionService {
         console.log('🔍 PermissionService: Mapping role:', role.name);
         return role.toRoleType();
       });
+      
+      // 캐시에 저장 (1시간 TTL)
+      await this.cacheService.set(cacheKey, mappedRoles, CacheService.TTL.LONG);
       
       console.log('✅ PermissionService: Mapped roles successfully:', mappedRoles.length);
       return mappedRoles;

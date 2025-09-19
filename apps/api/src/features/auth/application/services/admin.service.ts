@@ -204,7 +204,7 @@ export class AdminService {
         }
         success++;
       } catch (error) {
-        errors.push(`관리자 ID ${adminId} 처리 중 오류: ${error.message}`);
+        errors.push(`관리자 ID ${adminId} 처리 중 오류: ${(error as Error).message}`);
         failed++;
       }
     }

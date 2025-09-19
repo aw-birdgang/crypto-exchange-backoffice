@@ -37,6 +37,9 @@ export const STORAGE_KEYS = {
   ACCESS_TOKEN: 'access_token',
   REFRESH_TOKEN: 'refresh_token',
   USER_INFO: 'user_info',
+  AUTH_STORAGE: 'auth-storage',
+  PERMISSION_STORAGE: 'permission-storage',
+  AUTH_LOGGED_OUT: 'auth-logged-out',
 } as const;
 
 export const DATE_FORMATS = {

@@ -1,7 +1,9 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { STORAGE_KEYS, ApiResponse } from '@crypto-exchange/shared';
+import { appConfig } from '../../config/app.config';
+import { ErrorHandler } from '../utils/error-handler';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:3001';
+const API_BASE_URL = appConfig.apiBaseUrl;
 
 class ApiService {
   private api: AxiosInstance;
@@ -22,16 +24,27 @@ class ApiService {
     // Request interceptor
     this.api.interceptors.request.use(
       (config) => {
-        const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        let token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+        console.log('🔍 Checking token for request:', config.url);
+        console.log('🔍 Token from localStorage:', token ? `${token.substring(0, 20)}...` : 'null');
+        
+        // 운영 환경에서는 토큰이 없으면 인증되지 않은 상태로 처리
+        if (!token) {
+          console.warn('⚠️ No authentication token found');
+        }
+        
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
-          console.log('🔑 API Request with token:', config.url);
+          console.log('✅ API Request with token:', config.url);
+          console.log('🔑 Authorization header set:', `Bearer ${token.substring(0, 20)}...`);
         } else {
           console.warn('⚠️ API Request without token:', config.url);
+          console.warn('⚠️ This will likely result in 401 Unauthorized');
         }
         return config;
       },
       (error) => {
+        console.error('❌ Request interceptor error:', error);
         return Promise.reject(error);
       },
     );
@@ -77,7 +90,9 @@ class ApiService {
           }
         }
         
-        return Promise.reject(error);
+        // 에러를 구조화된 형태로 변환
+        const appError = ErrorHandler.handleApiError(error);
+        return Promise.reject(appError);
       },
     );
   }

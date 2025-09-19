@@ -36,6 +36,15 @@ export class AuthService {
   async refreshToken(refreshToken: string): Promise<RefreshResponse> {
     return apiService.post<RefreshResponse>(API_ROUTES.AUTH.REFRESH, { refreshToken });
   }
+
+  async logout(): Promise<void> {
+    try {
+      await apiService.post(API_ROUTES.AUTH.LOGOUT);
+      console.log('✅ Server logout successful');
+    } catch (error) {
+      console.warn('⚠️ Server logout failed, continuing with client logout:', error);
+    }
+  }
 }
 
 export const authService = new AuthService();

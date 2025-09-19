@@ -43,10 +43,18 @@ export class PermissionService {
    */
   static async getRoles(): Promise<Role[]> {
     try {
+      console.log('🔄 Fetching roles from API...');
       const response = await apiService.get<{ roles: Role[]; total: number }>('/permissions/roles');
+      console.log('✅ Roles response received:', response);
       return Array.isArray(response.roles) ? response.roles : [];
     } catch (error) {
-      console.error('Failed to fetch roles:', error);
+      console.error('❌ Failed to fetch roles:', error);
+      console.error('❌ Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        status: (error as any)?.response?.status,
+        statusText: (error as any)?.response?.statusText,
+        data: (error as any)?.response?.data,
+      });
       // 에러 발생 시 빈 배열 반환하여 앱이 크래시되지 않도록 함
       return [];
     }
