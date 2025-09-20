@@ -34,7 +34,11 @@
     "docker:prod:down": "docker compose down",
     "docker:prod:logs": "docker compose logs -f",
     "docker:build": "docker compose build",
-    "docker:clean": "docker compose down -v --rmi all --remove-orphans"
+    "docker:clean": "docker compose down -v --rmi all --remove-orphans",
+    "clean:db": "pnpm --filter @crypto-exchange/api clean:db",
+    "init:db": "pnpm --filter @crypto-exchange/api init:db",
+    "init:db:script": "./scripts/init-database.sh",
+    "docker:clean:db": "./scripts/docker-clean.sh"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^6.0.0",

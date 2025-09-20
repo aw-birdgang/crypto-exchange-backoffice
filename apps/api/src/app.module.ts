@@ -1,18 +1,17 @@
-import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { JwtModule } from '@nestjs/jwt';
-import { APP_GUARD, APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
-import { AuthModule } from './features/auth/presentation/auth.module';
-import { JwtAuthGuard } from './features/auth/presentation/guards/jwt-auth.guard';
-import { HttpExceptionFilter } from './common/exceptions/http-exception.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { CacheModule } from './common/cache/cache.module';
-import { LoggerModule } from './common/logger/logger.module';
-import { HealthModule } from './common/health/health.module';
-import { SecurityMiddleware, CorsMiddleware, RequestLoggingMiddleware } from './common/middleware/security.middleware';
-import { RateLimitGuard } from './common/guards/rate-limit.guard';
-import { PerformanceInterceptor } from './common/interceptors/performance.interceptor';
+import {MiddlewareConsumer, Module, NestModule} from '@nestjs/common';
+import {ConfigModule, ConfigService} from '@nestjs/config';
+import {TypeOrmModule} from '@nestjs/typeorm';
+import {JwtModule} from '@nestjs/jwt';
+import {APP_FILTER, APP_GUARD, APP_INTERCEPTOR} from '@nestjs/core';
+import {AuthModule} from './features/auth/presentation/auth.module';
+import {HttpExceptionFilter} from './common/exceptions/http-exception.filter';
+import {ResponseInterceptor} from './common/interceptors/response.interceptor';
+import {CacheModule} from './common/cache/cache.module';
+import {LoggerModule} from './common/logger/logger.module';
+import {HealthModule} from './common/health/health.module';
+import {CorsMiddleware, RequestLoggingMiddleware, SecurityMiddleware} from './common/middleware/security.middleware';
+import {RateLimitGuard} from './common/guards/rate-limit.guard';
+import {PerformanceInterceptor} from './common/interceptors/performance.interceptor';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
@@ -40,10 +39,11 @@ import jwtConfig from './config/jwt.config';
     AuthModule,
   ],
   providers: [
-    {
-      provide: APP_GUARD,
-      useClass: JwtAuthGuard,
-    },
+    // JWT 가드를 전역에서 제거하고 각 컨트롤러에서 개별적으로 적용
+    // {
+    //   provide: APP_GUARD,
+    //   useClass: JwtAuthGuard,
+    // },
     {
       provide: APP_GUARD,
       useClass: RateLimitGuard,

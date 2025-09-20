@@ -1,4 +1,4 @@
-import { UserRole, Resource, Permission, UserPermissions } from '@crypto-exchange/shared';
+import { AdminUserRole, Resource, Permission, UserPermissions } from '@crypto-exchange/shared';
 import { RolePermission } from '../entities/role-permission.entity';
 
 export interface PermissionRepositoryInterface {
@@ -9,7 +9,7 @@ export interface PermissionRepositoryInterface {
   createRolePermission(rolePermission: Partial<RolePermission>): Promise<RolePermission>;
   updateRolePermission(id: string, rolePermission: Partial<RolePermission>): Promise<RolePermission>;
   deleteRolePermission(id: string): Promise<void>;
-  getRolePermissions(role: UserRole): Promise<RolePermission[]>;
+  getRolePermissions(role: AdminUserRole): Promise<RolePermission[]>;
   getAllRolePermissions(): Promise<RolePermission[]>;
   initializeDefaultPermissions(): Promise<void>;
 }

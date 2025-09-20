@@ -1,0 +1,92 @@
+@startuml Permission Flow Diagram
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activityBackgroundColor #E3F2FD
+skinparam activityBorderColor #1976D2
+skinparam activityDiamondBackgroundColor #FFF3E0
+skinparam activityDiamondBorderColor #F57C00
+skinparam noteBackgroundColor #F3E5F5
+skinparam noteBorderColor #7B1FA2
+
+title Permission Flow - User Authentication & Authorization
+
+start
+
+:User Login Request;
+note right: POST /auth/login\n{email, password}
+
+:Validate Credentials;
+note right: Check email/password\nagainst admin_users table
+
+if (Valid Credentials?) then (yes)
+  :Get User from Database;
+  note right: AdminUser entity\nwith adminRole field
+  
+  :Map AdminRole to AdminUserRole;
+  note right: SUPER_ADMIN → super_admin\nADMIN → admin\netc.
+  
+  :Generate JWT Tokens;
+  note right: Access Token + Refresh Token\nwith user info in payload
+  
+  :Store Tokens in Frontend;
+  note right: localStorage + Zustand store
+  
+  :Initialize Permission Store;
+  note right: Fetch user permissions\nfrom server
+  
+  :Redirect to Dashboard;
+  
+else (no)
+  :Return Error;
+  note right: 401 Unauthorized
+  stop
+endif
+
+:User Access Protected Resource;
+note right: Any protected route\nor API endpoint
+
+:Check JWT Token;
+note right: JwtAuthGuard validates\ntoken signature & expiry
+
+if (Valid Token?) then (yes)
+  :Extract User Info;
+  note right: sub, email, role, type
+  
+  :Check Permission Requirements;
+  note right: @RequirePermissions decorator\nor PermissionGuard
+  
+  if (Has Required Permission?) then (yes)
+    :Allow Access;
+    note right: Execute requested action
+    
+    :Return Response;
+    stop
+    
+  else (no)
+    :Check Role-Permission System;
+    note right: Query role_permissions table\nbased on user's role
+    
+    if (Role Has Permission?) then (yes)
+      :Allow Access;
+      note right: Execute requested action
+      
+      :Return Response;
+      stop
+      
+    else (no)
+      :Deny Access;
+      note right: 403 Forbidden
+      stop
+    endif
+  endif
+  
+else (no)
+  :Return Unauthorized;
+  note right: 401 Unauthorized
+  stop
+endif
+
+floating note left : Permission Check Logic\n\n1. Check AdminUser.permissions (legacy)\n2. If not found, check Role-Permission system\n3. SUPER_ADMIN has all permissions\n4. Other roles check specific permissions\n\nResources & Permissions:\n- DASHBOARD: READ, MANAGE\n- SETTINGS: READ, MANAGE\n- PERMISSIONS: READ, MANAGE\n- USERS: READ, MANAGE\n- ROLES: READ, MANAGE
+
+@enduml

@@ -1,13 +1,13 @@
 import {
   UserPermissions,
   Role,
-  UserRoleAssignment,
+  AdminUserRoleAssignment,
   PermissionTemplate,
   PermissionCheckRequest,
   PermissionCheckResponse,
   Resource,
   Permission,
-  UserRole
+  AdminUserRole
 } from '@crypto-exchange/shared';
 import { apiService } from '../../../../shared/services/api.service';
 
@@ -105,9 +105,9 @@ export class PermissionService {
     userId: string,
     roleId: string,
     expiresAt?: string
-  ): Promise<UserRoleAssignment> {
+  ): Promise<AdminUserRoleAssignment> {
     try {
-      const response = await apiService.post<UserRoleAssignment>('/permissions/user-roles', {
+      const response = await apiService.post<AdminUserRoleAssignment>('/permissions/user-roles', {
         userId,
         roleId,
         expiresAt,
@@ -134,9 +134,9 @@ export class PermissionService {
   /**
    * 사용자의 모든 역할을 가져옵니다
    */
-  static async getUserRoles(userId: string): Promise<UserRoleAssignment[]> {
+  static async getUserRoles(userId: string): Promise<AdminUserRoleAssignment[]> {
     try {
-      const response = await apiService.get<UserRoleAssignment[]>(`/permissions/user-roles/${userId}`);
+      const response = await apiService.get<AdminUserRoleAssignment[]>(`/permissions/user-roles/${userId}`);
       return response;
     } catch (error) {
       console.error('Failed to fetch user roles:', error);
@@ -215,7 +215,7 @@ export class PermissionService {
   /**
    * 역할별 기본 권한을 가져옵니다
    */
-  static getDefaultRolePermissions(role: UserRole): Partial<Record<Resource, Permission[]>> {
+  static getDefaultRolePermissions(role: AdminUserRole): Partial<Record<Resource, Permission[]>> {
     const defaultPermissions: Record<string, Partial<Record<Resource, Permission[]>>> = {
       super_admin: {
         [Resource.DASHBOARD]: [Permission.CREATE, Permission.READ, Permission.UPDATE, Permission.DELETE, Permission.MANAGE],

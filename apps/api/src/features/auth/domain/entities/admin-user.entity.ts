@@ -1,13 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-
-export enum AdminRole {
-  SUPER_ADMIN = 'SUPER_ADMIN',
-  ADMIN = 'ADMIN',
-  MODERATOR = 'MODERATOR',
-  SUPPORT = 'SUPPORT',
-  AUDITOR = 'AUDITOR',
-}
+import { AdminUserRole } from '@crypto-exchange/shared';
 
 @Entity('admin_users')
 export class AdminUser {
@@ -58,18 +51,18 @@ export class AdminUser {
 
   @ApiProperty({
     description: '관리자 역할',
-    enum: AdminRole,
-    example: AdminRole.SUPER_ADMIN
+    enum: AdminUserRole,
+    example: AdminUserRole.SUPER_ADMIN
   })
-  @Column({ type: 'enum', enum: AdminRole })
-  adminRole: AdminRole;
+  @Column({ type: 'enum', enum: AdminUserRole })
+  adminRole: AdminUserRole;
 
   @ApiProperty({
     description: '권한 목록',
     example: ['users:read', 'users:create', 'users:update', 'users:delete'],
     isArray: true
   })
-  @Column('text', { array: true })
+  @Column('json')
   permissions: string[];
 
   @ApiProperty({
@@ -79,6 +72,36 @@ export class AdminUser {
   })
   @Column({ default: true })
   isActive: boolean;
+
+  @ApiProperty({
+    description: '계정 상태',
+    enum: ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'],
+    example: 'PENDING',
+    default: 'PENDING'
+  })
+  @Column({ 
+    type: 'enum', 
+    enum: ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'],
+    default: 'PENDING'
+  })
+  status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED';
+
+  @ApiProperty({
+    description: '승인자 ID',
+    example: 'cmfkr31v7000wcm9urdbekf4u',
+    nullable: true
+  })
+  @Column({ nullable: true })
+  approvedBy: string;
+
+  @ApiProperty({
+    description: '승인일시',
+    example: '2025-09-15T09:14:56.270Z',
+    format: 'date-time',
+    nullable: true
+  })
+  @Column({ nullable: true })
+  approvedAt: Date;
 
   @ApiProperty({
     description: '마지막 로그인 시간',

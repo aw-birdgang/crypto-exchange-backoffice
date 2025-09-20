@@ -5,10 +5,11 @@ import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
-import { AdminUser, AdminRole } from '../src/features/auth/domain/entities/admin-user.entity';
+import { AdminUser } from '../src/features/auth/domain/entities/admin-user.entity';
+import { AdminUserRole } from '@crypto-exchange/shared';
 import { Role } from '../src/features/auth/domain/entities/role.entity';
 import { RolePermission } from '../src/features/auth/domain/entities/role-permission.entity';
-import { UserRole, Resource, Permission } from '@crypto-exchange/shared';
+import { Resource, Permission } from '@crypto-exchange/shared';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;

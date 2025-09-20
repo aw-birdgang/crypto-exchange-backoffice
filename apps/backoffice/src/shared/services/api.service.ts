@@ -5,7 +5,7 @@ import { ErrorHandler } from '../utils/error-handler';
 
 const API_BASE_URL = appConfig.apiBaseUrl;
 
-class ApiService {
+export class ApiService {
   private api: AxiosInstance;
 
   constructor() {

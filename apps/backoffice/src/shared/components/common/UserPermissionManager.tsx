@@ -21,7 +21,7 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { User, UserRoleAssignment } from '@crypto-exchange/shared';
+import { User, AdminUserRoleAssignment } from '@crypto-exchange/shared';
 import { usePermissionStore } from '../../../features/auth/application/stores/permission.store';
 import { RoleSelector } from './RoleSelector';
 import dayjs from 'dayjs';
@@ -37,7 +37,7 @@ export const UserPermissionManager: React.FC<UserPermissionManagerProps> = ({
   user,
 }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingAssignment, setEditingAssignment] = useState<UserRoleAssignment | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<AdminUserRoleAssignment | null>(null);
   const [form] = Form.useForm();
   
   const {
@@ -79,7 +79,7 @@ export const UserPermissionManager: React.FC<UserPermissionManagerProps> = ({
     }
   };
 
-  const handleEditAssignment = (assignment: UserRoleAssignment) => {
+  const handleEditAssignment = (assignment: AdminUserRoleAssignment) => {
     setEditingAssignment(assignment);
     form.setFieldsValue({
       roleId: assignment.roleId,
@@ -132,7 +132,7 @@ export const UserPermissionManager: React.FC<UserPermissionManagerProps> = ({
       title: '상태',
       dataIndex: 'isActive',
       key: 'isActive',
-      render: (isActive: boolean, record: UserRoleAssignment) => {
+      render: (isActive: boolean, record: AdminUserRoleAssignment) => {
         if (isExpired(record.expiresAt)) {
           return <Tag color="red" icon={<ClockCircleOutlined />}>만료됨</Tag>;
         }
@@ -170,7 +170,7 @@ export const UserPermissionManager: React.FC<UserPermissionManagerProps> = ({
     {
       title: '작업',
       key: 'actions',
-      render: (_: any, record: UserRoleAssignment) => (
+      render: (_: any, record: AdminUserRoleAssignment) => (
         <Space>
           <Button
             type="text"

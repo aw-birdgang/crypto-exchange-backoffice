@@ -3,11 +3,11 @@ import { persist } from 'zustand/middleware';
 import { 
   UserPermissions, 
   Role, 
-  UserRoleAssignment, 
+  AdminUserRoleAssignment, 
   PermissionTemplate,
   Resource,
   Permission,
-  UserRole,
+  AdminUserRole,
   STORAGE_KEYS
 } from '@crypto-exchange/shared';
 import { PermissionService } from '../services/permission.service';
@@ -23,7 +23,7 @@ interface PermissionState {
   rolesLoading: boolean;
   
   // 사용자 역할 할당
-  userRoleAssignments: UserRoleAssignment[];
+  userRoleAssignments: AdminUserRoleAssignment[];
   userRoleAssignmentsLoading: boolean;
   
   // 권한 템플릿
@@ -51,7 +51,7 @@ interface PermissionActions {
   fetchUserRoles: (userId: string) => Promise<void>;
   assignRoleToUser: (userId: string, roleId: string, expiresAt?: string) => Promise<void>;
   removeRoleFromUser: (userId: string, roleId: string) => Promise<void>;
-  setUserRoleAssignments: (assignments: UserRoleAssignment[]) => void;
+  setUserRoleAssignments: (assignments: AdminUserRoleAssignment[]) => void;
   
   // 권한 템플릿 관련
   fetchPermissionTemplates: () => Promise<void>;
@@ -165,8 +165,10 @@ export const usePermissionStore = create<PermissionStore>()(
         set({ error: null });
         try {
           const newRole = await PermissionService.createRole(roleData);
-          const currentRoles = get().roles;
-          set({ roles: [...currentRoles, newRole] });
+          
+          // 서버에서 최신 역할 목록을 다시 가져옴
+          await get().fetchRoles();
+          
           return newRole;
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Failed to create role' });
@@ -178,12 +180,10 @@ export const usePermissionStore = create<PermissionStore>()(
         set({ error: null });
         try {
           const updatedRole = await PermissionService.updateRole(roleId, roleData);
-          const currentRoles = get().roles;
-          set({ 
-            roles: currentRoles.map(role => 
-              role.id === roleId ? updatedRole : role
-            ) 
-          });
+          
+          // 서버에서 최신 역할 목록을 다시 가져옴
+          await get().fetchRoles();
+          
           return updatedRole;
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Failed to update role' });
@@ -195,8 +195,9 @@ export const usePermissionStore = create<PermissionStore>()(
         set({ error: null });
         try {
           await PermissionService.deleteRole(roleId);
-          const currentRoles = get().roles;
-          set({ roles: currentRoles.filter(role => role.id !== roleId) });
+          
+          // 서버에서 최신 역할 목록을 다시 가져옴
+          await get().fetchRoles();
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Failed to delete role' });
           throw error;
@@ -244,7 +245,7 @@ export const usePermissionStore = create<PermissionStore>()(
         }
       },
 
-      setUserRoleAssignments: (assignments: UserRoleAssignment[]) => {
+      setUserRoleAssignments: (assignments: AdminUserRoleAssignment[]) => {
         set({ userRoleAssignments: assignments });
       },
 
@@ -286,7 +287,7 @@ export const usePermissionStore = create<PermissionStore>()(
         }
         
         // SUPER_ADMIN은 모든 권한을 가짐
-        if (userPermissions.role === UserRole.SUPER_ADMIN) {
+        if (userPermissions.role === AdminUserRole.SUPER_ADMIN) {
           console.log('✅ SUPER_ADMIN has all permissions');
           return true;
         }
@@ -314,14 +315,14 @@ export const usePermissionStore = create<PermissionStore>()(
         if (!userPermissions) return false;
         
         // SUPER_ADMIN은 모든 메뉴에 접근 가능
-        if (userPermissions.role === UserRole.SUPER_ADMIN) return true;
+        if (userPermissions.role === AdminUserRole.SUPER_ADMIN) return true;
         
         // 메뉴별 기본 접근 권한 (실제로는 서버에서 확인해야 함)
-        const menuPermissions: Record<string, UserRole[]> = {
-          dashboard: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-          permissions: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-          users: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-          roles: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
+        const menuPermissions: Record<string, AdminUserRole[]> = {
+          dashboard: [AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN],
+          permissions: [AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN],
+          users: [AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN],
+          roles: [AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN],
         };
         
         const allowedRoles = menuPermissions[menuKey];

@@ -1,14 +1,12 @@
 import React, { useState } from 'react';
 import { Card, Typography, Tabs, Space, Table, Tag, Badge } from 'antd';
 import {
-  TeamOutlined,
   LockOutlined,
   BarChartOutlined,
 } from '@ant-design/icons';
 import { usePermissions } from '../../application/hooks/usePermissions';
-import { Resource, Permission, UserRole } from '@crypto-exchange/shared';
+import { Resource, Permission, AdminUserRole } from '@crypto-exchange/shared';
 import RoleManagementPage from './RoleManagementPage';
-import UserPermissionManagementPage from './UserPermissionManagementPage';
 
 const { Title, Text } = Typography;
 
@@ -28,6 +26,16 @@ export const PermissionManagementPage: React.FC = () => {
           [Resource.PERMISSIONS]: '권한 관리',
           [Resource.USERS]: '사용자 관리',
           [Resource.ROLES]: '역할 관리',
+          
+          // 지갑관리 리소스
+          [Resource.WALLET]: '지갑',
+          [Resource.WALLET_TRANSACTIONS]: '지갑 거래',
+          
+          // 고객관리 리소스
+          [Resource.CUSTOMER_SUPPORT]: '고객 지원',
+          
+          // 어드민 계정 관리 리소스
+          [Resource.ADMIN_USERS]: '관리자 계정',
         };
         return (
           <Tag color="blue">
@@ -84,16 +92,20 @@ export const PermissionManagementPage: React.FC = () => {
     };
   });
 
-  const roleLabels: Record<UserRole, string> = {
-    [UserRole.SUPER_ADMIN]: '최고 관리자',
-    [UserRole.ADMIN]: '관리자',
-    [UserRole.USER]: '사용자',
+  const roleLabels: Record<AdminUserRole, string> = {
+    [AdminUserRole.SUPER_ADMIN]: '최고 관리자',
+    [AdminUserRole.ADMIN]: '관리자',
+    [AdminUserRole.MODERATOR]: '모더레이터',
+    [AdminUserRole.SUPPORT]: '고객 지원',
+    [AdminUserRole.AUDITOR]: '감사자',
   };
 
-  const roleColors: Record<UserRole, string> = {
-    [UserRole.SUPER_ADMIN]: 'red',
-    [UserRole.ADMIN]: 'blue',
-    [UserRole.USER]: 'default',
+  const roleColors: Record<AdminUserRole, string> = {
+    [AdminUserRole.SUPER_ADMIN]: 'red',
+    [AdminUserRole.ADMIN]: 'blue',
+    [AdminUserRole.MODERATOR]: 'orange',
+    [AdminUserRole.SUPPORT]: 'green',
+    [AdminUserRole.AUDITOR]: 'purple',
   };
 
   const tabItems = [
@@ -115,8 +127,8 @@ export const PermissionManagementPage: React.FC = () => {
               <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
                 <div>
                   <Text strong>역할: </Text>
-                  <Tag color={roleColors[permissions?.role as UserRole] || 'default'}>
-                    {roleLabels[permissions?.role as UserRole] || permissions?.role}
+                  <Tag color={roleColors[permissions?.role as AdminUserRole] || 'default'}>
+                    {roleLabels[permissions?.role as AdminUserRole] || permissions?.role}
                   </Tag>
                 </div>
                 <div>
@@ -149,16 +161,6 @@ export const PermissionManagementPage: React.FC = () => {
         </span>
       ),
       children: <RoleManagementPage />,
-    },
-    {
-      key: 'users',
-      label: (
-        <span>
-          <TeamOutlined />
-          사용자 권한 관리
-        </span>
-      ),
-      children: <UserPermissionManagementPage />,
     },
   ];
 

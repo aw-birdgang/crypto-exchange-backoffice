@@ -1,13 +1,16 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import { useEffect } from 'react';
-import { useAuthStore } from './features/auth/application/stores/auth.store';
-import { usePermissionStore } from './features/auth/application/stores/permission.store';
-import { LoginPage } from './features/auth/presentation/pages/LoginPage';
-import { PermissionManagementPage } from './features/auth/presentation/pages/PermissionManagementPage';
-import { DashboardPage } from './features/dashboard/presentation/pages/DashboardPage';
-import { AppLayout } from './shared/components/layout/AppLayout';
-import { LoadingSpinner } from './shared/components/common/LoadingSpinner';
-import { ROUTES } from '@crypto-exchange/shared';
+import {Navigate, Route, Routes} from 'react-router-dom';
+import {useEffect} from 'react';
+import {useAuthStore} from './features/auth/application/stores/auth.store';
+import {usePermissionStore} from './features/auth/application/stores/permission.store';
+import {LoginPage} from './features/auth/presentation/pages/LoginPage';
+import {PermissionManagementPage} from './features/auth/presentation/pages/PermissionManagementPage';
+import {DashboardPage} from './features/dashboard/presentation/pages/DashboardPage';
+import {AdminUserManagementPage} from './features/users/presentation/pages/AdminUserManagementPage';
+import {WalletTransactionsPage} from './features/wallet/presentation/pages/WalletTransactionsPage';
+import {CustomerSupportPage} from './features/customer/presentation/pages/CustomerSupportPage';
+import {AppLayout} from './shared/components/layout/AppLayout';
+import {LoadingSpinner} from './shared/components/common/LoadingSpinner';
+import {ROUTES} from '@crypto-exchange/shared';
 
 function App() {
   const { isAuthenticated, isLoading, user, accessToken } = useAuthStore();
@@ -36,10 +39,24 @@ function App() {
   return (
     <AppLayout>
       <Routes>
-        <Route path="/" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+        <Route path="/" element={<Navigate to={ROUTES.WALLET.TRANSACTIONS} replace />} />
+
+        {/* 지갑관리 라우트 */}
+        <Route path={ROUTES.WALLET.TRANSACTIONS} element={<WalletTransactionsPage />} />
+
+        {/* 고객관리 라우트 (일반 사용자 관리) */}
+        <Route path={ROUTES.CUSTOMER.SUPPORT} element={<CustomerSupportPage />} />
+
+        {/* 어드민 계정 관리 라우트 (AdminUser 관리) */}
+        <Route path={ROUTES.ADMIN.USERS} element={<AdminUserManagementPage />} />
+        <Route path={ROUTES.ADMIN.PERMISSIONS} element={<PermissionManagementPage />} />
+
+        {/* 기존 라우트 (호환성을 위해 유지) */}
         <Route path={ROUTES.DASHBOARD} element={<DashboardPage />} />
         <Route path={ROUTES.PERMISSIONS} element={<PermissionManagementPage />} />
-        <Route path="*" element={<Navigate to={ROUTES.DASHBOARD} replace />} />
+        <Route path={ROUTES.USERS} element={<AdminUserManagementPage />} />
+
+        <Route path="*" element={<Navigate to={ROUTES.WALLET.TRANSACTIONS} replace />} />
       </Routes>
     </AppLayout>
   );

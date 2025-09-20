@@ -1,4 +1,4 @@
-import { Injectable, LoggerService as NestLoggerService } from '@nestjs/common';
+import { Injectable, LoggerService as NestLoggerService, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
 export interface LogContext {
@@ -22,7 +22,7 @@ export class LoggerService implements NestLoggerService {
   private readonly context: string;
 
   constructor(
-    context: string,
+    @Inject('LOGGER_CONTEXT') context: string,
     private configService: ConfigService,
   ) {
     this.context = context;

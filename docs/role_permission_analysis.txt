@@ -1,0 +1,265 @@
+# Crypto Exchange Backoffice - Role & Permission System Analysis
+
+## 프로젝트 개요
+이 프로젝트는 암호화폐 거래소 백오피스 시스템으로, NestJS 기반의 백엔드 API와 React 기반의 프론트엔드로 구성되어 있습니다. 
+사용자 인증, 권한 관리, 역할 기반 접근 제어(RBAC) 시스템을 구현하고 있습니다.
+
+## 1. 전체 Role 구조
+
+### 1.1 AdminRole (백엔드 엔티티)
+```typescript
+enum AdminRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',    // 최고 관리자
+  ADMIN = 'ADMIN',                // 일반 관리자
+  MODERATOR = 'MODERATOR',        // 모더레이터
+  SUPPORT = 'SUPPORT',            // 고객 지원
+  AUDITOR = 'AUDITOR',            // 감사자
+}
+```
+
+### 1.2 AdminUserRole (공유 타입)
+```typescript
+enum AdminUserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',    // 최고 관리자
+  ADMIN = 'ADMIN',                // 일반 관리자
+  MODERATOR = 'MODERATOR',        // 모더레이터
+  SUPPORT = 'SUPPORT',            // 고객 지원
+  AUDITOR = 'AUDITOR',            // 감사자
+}
+```
+
+### 1.3 Role 엔티티 (데이터베이스)
+- **super_admin**: 최고 관리자 - 모든 권한을 가진 시스템 관리자
+- **admin**: 관리자 - 시스템 관리 권한을 가진 관리자
+- **moderator**: 모더레이터 - 콘텐츠 관리 권한을 가진 사용자
+- **support**: 고객 지원 - 고객 지원 업무를 담당하는 사용자
+- **auditor**: 감사자 - 시스템 감사 및 보안 검토를 담당하는 사용자
+
+## 2. Permission 구조
+
+### 2.1 Permission 타입
+```typescript
+enum Permission {
+  CREATE = 'create',              // 생성 권한
+  READ = 'read',                  // 조회 권한
+  UPDATE = 'update',              // 수정 권한
+  DELETE = 'delete',              // 삭제 권한
+  MANAGE = 'manage',              // 모든 권한 포함
+}
+```
+
+### 2.2 Resource 타입
+```typescript
+enum Resource {
+  DASHBOARD = 'dashboard',        // 대시보드
+  SETTINGS = 'settings',          // 설정
+  PERMISSIONS = 'permissions',    // 권한 관리
+  USERS = 'users',                // 사용자 관리
+  ROLES = 'roles',                // 역할 관리
+}
+```
+
+## 3. 데이터베이스 구조
+
+### 3.1 테이블 관계
+```
+admin_users (1) ←→ (1) AdminRole (enum)
+     ↓
+admin_users.permissions (JSON 배열)
+     ↓
+roles (1) ←→ (N) role_permissions
+     ↓
+role_permissions.resource (enum)
+role_permissions.permissions (JSON 배열)
+```
+
+### 3.2 주요 테이블
+
+#### admin_users 테이블
+- **id**: UUID (Primary Key)
+- **email**: 이메일 (Unique)
+- **username**: 사용자명
+- **password**: 암호화된 비밀번호
+- **firstName**: 이름
+- **lastName**: 성
+- **adminRole**: AdminRole enum
+- **permissions**: JSON 배열 (레거시 권한)
+- **isActive**: 활성 상태
+- **lastLoginAt**: 마지막 로그인 시간
+- **createdAt/updatedAt**: 생성/수정 시간
+- **createdBy/updatedBy**: 생성자/수정자
+
+#### roles 테이블
+- **id**: UUID (Primary Key)
+- **name**: 역할 이름 (Unique)
+- **description**: 역할 설명
+- **isSystem**: 시스템 역할 여부
+- **createdAt/updatedAt**: 생성/수정 시간
+
+#### role_permissions 테이블
+- **id**: UUID (Primary Key)
+- **roleId**: 역할 ID (Foreign Key)
+- **resource**: Resource enum
+- **permissions**: Permission 배열 (JSON)
+- **createdAt/updatedAt**: 생성/수정 시간
+
+## 4. 현재 구현된 권한 매핑
+
+### 4.1 SUPER_ADMIN 권한
+- **Dashboard**: MANAGE
+- **Settings**: MANAGE
+- **Permissions**: MANAGE
+- **Users**: MANAGE
+- **Roles**: MANAGE
+
+### 4.2 ADMIN 권한
+- **Dashboard**: READ
+- **Settings**: READ
+- **Permissions**: READ
+- **Users**: READ
+- **Roles**: READ
+
+### 4.3 기타 역할
+- **moderator**: 현재 권한 없음 (0개)
+- **support**: 현재 권한 없음 (0개)
+- **auditor**: 현재 권한 없음 (0개)
+
+## 5. 사용자와 Role의 관계
+
+### 5.1 AdminUser와 Role 매핑
+```typescript
+// AdminRole을 AdminUserRole로 매핑하는 로직 (이제 동일한 타입 사용)
+switch (adminRole) {
+  case AdminUserRole.SUPER_ADMIN: return AdminUserRole.SUPER_ADMIN;
+  case AdminUserRole.ADMIN: return AdminUserRole.ADMIN;
+  case AdminUserRole.MODERATOR: return AdminUserRole.MODERATOR;
+  case AdminUserRole.SUPPORT: return AdminUserRole.SUPPORT;
+  case AdminUserRole.AUDITOR: return AdminUserRole.AUDITOR;
+  default: return AdminUserRole.SUPPORT;
+}
+```
+
+### 5.2 권한 조회 흐름
+1. **사용자 로그인** → AdminUser 엔티티에서 adminRole 확인
+2. **AdminRole 매핑** → AdminUserRole로 변환 (이제 동일한 타입 사용)
+3. **Role 조회** → roles 테이블에서 해당 역할 조회
+4. **권한 조회** → role_permissions 테이블에서 권한 조회
+5. **권한 반환** → UserPermissions 형태로 반환
+
+## 6. API 엔드포인트
+
+### 6.1 인증 관련 API
+- `POST /auth/login` - 로그인
+- `POST /auth/register` - 회원가입
+- `POST /auth/refresh` - 토큰 갱신
+- `GET /auth/profile` - 프로필 조회
+- `GET /auth/my-role` - 내 역할 조회
+- `GET /auth/my-role-id` - 내 역할 ID 조회
+
+### 6.2 권한 관련 API
+- `GET /permissions/my-permissions` - 내 권한 조회
+- `GET /permissions/user/:userId` - 특정 사용자 권한 조회
+- `GET /permissions/check` - 권한 확인
+- `GET /permissions/menu-access/:menuKey` - 메뉴 접근 권한 확인
+
+### 6.3 역할 관리 API
+- `GET /permissions/roles` - 모든 역할 조회
+- `GET /permissions/roles/:id` - 특정 역할 조회
+- `POST /permissions/roles` - 역할 생성
+- `PUT /permissions/roles/:id` - 역할 수정
+- `DELETE /permissions/roles/:id` - 역할 삭제
+
+### 6.4 역할 권한 관리 API
+- `GET /permissions/role-permissions` - 모든 역할 권한 조회
+- `GET /permissions/role-permissions/:role` - 특정 역할의 권한 조회
+- `POST /permissions/role-permissions` - 역할 권한 생성
+- `PUT /permissions/role-permissions/:id` - 역할 권한 수정
+- `DELETE /permissions/role-permissions/:id` - 역할 권한 삭제
+
+### 6.5 관리자 관리 API
+- `GET /admin/dashboard` - 관리자 대시보드
+- `GET /admin/stats` - 시스템 통계
+- `GET /admin/admins` - 관리자 목록 조회
+- `POST /admin/admins` - 관리자 생성
+- `PUT /admin/admins/:id` - 관리자 수정
+- `DELETE /admin/admins/:id` - 관리자 삭제
+
+## 7. 프론트엔드 상태 관리
+
+### 7.1 Auth Store (Zustand)
+- **사용자 정보**: User 객체
+- **토큰 관리**: accessToken, refreshToken
+- **인증 상태**: isAuthenticated, isLoading
+- **로그인/로그아웃**: login(), logout() 메서드
+
+### 7.2 Permission Store (Zustand)
+- **사용자 권한**: UserPermissions 객체
+- **역할 목록**: Role 배열
+- **권한 확인**: hasPermission(), hasAnyPermission() 메서드
+- **메뉴 접근**: hasMenuAccess() 메서드
+
+## 8. 보안 및 권한 검증
+
+### 8.1 JWT 인증
+- **Access Token**: API 접근용 (짧은 만료시간)
+- **Refresh Token**: 토큰 갱신용 (긴 만료시간)
+- **JWT Payload**: sub, email, role, type 포함
+
+### 8.2 권한 가드
+- **JwtAuthGuard**: JWT 토큰 검증
+- **PermissionGuard**: 권한 검증
+- **@RequirePermissions**: 특정 리소스/권한 요구
+
+### 8.3 메뉴 접근 제어
+- **PermissionGate**: 컴포넌트 레벨 권한 제어
+- **ProtectedRoute**: 라우트 레벨 권한 제어
+- **RoleSelector**: 역할 선택 컴포넌트
+
+## 9. 현재 시스템의 특징
+
+### 9.1 장점
+- **이중 권한 시스템**: AdminUser.permissions (레거시) + Role-Permission (신규)
+- **유연한 권한 관리**: 리소스별 세분화된 권한 제어
+- **확장 가능한 구조**: 새로운 역할과 권한 쉽게 추가 가능
+- **타입 안전성**: TypeScript로 타입 안전성 보장
+
+### 9.2 개선 필요 사항
+- **권한 일관성**: AdminUser.permissions와 Role-Permission 통합 필요
+- **권한 초기화**: 모든 역할에 대한 기본 권한 설정 필요
+- **권한 캐싱**: 성능 향상을 위한 권한 캐싱 구현
+- **감사 로그**: 권한 변경 이력 추적
+
+## 10. 데이터베이스 시드 데이터
+
+### 10.1 기본 관리자 계정
+- **superadmin@crypto-exchange.com**: SUPER_ADMIN 역할
+- **admin@crypto-exchange.com**: ADMIN 역할
+- **moderator@crypto-exchange.com**: MODERATOR 역할
+- **support@crypto-exchange.com**: SUPPORT 역할
+- **auditor@crypto-exchange.com**: AUDITOR 역할
+
+### 10.2 기본 역할 권한
+- **super_admin**: 모든 리소스에 대해 MANAGE 권한
+- **admin**: 모든 리소스에 대해 READ 권한
+- **기타 역할**: 현재 권한 없음 (추후 설정 필요)
+
+## 11. 권장 개선사항
+
+### 11.1 단기 개선사항
+1. **권한 통합**: AdminUser.permissions 제거하고 Role-Permission만 사용
+2. **기본 권한 설정**: 모든 역할에 대한 기본 권한 정의
+3. **권한 캐싱**: Redis를 활용한 권한 캐싱 구현
+
+### 11.2 장기 개선사항
+1. **동적 권한**: 런타임에 권한 변경 가능
+2. **권한 상속**: 역할 간 권한 상속 구조
+3. **조건부 권한**: 시간/조건에 따른 권한 제어
+4. **감사 시스템**: 모든 권한 변경 이력 추적
+
+## 12. 결론
+
+현재 시스템은 기본적인 RBAC 구조를 갖추고 있으나, 이중 권한 시스템으로 인한 복잡성과 일부 역할의 권한 부재 문제가 있습니다. 
+Role-Permission 시스템을 중심으로 통합하고, 모든 역할에 대한 기본 권한을 설정하는 것이 우선 과제입니다.
+
+시스템의 확장성과 유지보수성을 고려할 때, 현재의 구조는 좋은 기반이 되고 있으며, 
+점진적인 개선을 통해 더욱 견고한 권한 관리 시스템을 구축할 수 있을 것입니다.

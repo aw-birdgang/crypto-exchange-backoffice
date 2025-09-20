@@ -1,0 +1,110 @@
+@startuml Database ERD - Role Permission System
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam entityBackgroundColor #E8F5E8
+skinparam entityBorderColor #2E7D32
+skinparam arrowColor #1976D2
+skinparam noteBackgroundColor #FFF3E0
+skinparam noteBorderColor #F57C00
+
+title Database Entity Relationship Diagram - Role Permission System
+
+entity "admin_users" {
+  * id : UUID <<PK>>
+  --
+  * email : VARCHAR(255) <<UK>>
+  * username : VARCHAR(255)
+  * password : VARCHAR(255)
+  * firstName : VARCHAR(255)
+  * lastName : VARCHAR(255)
+  * adminRole : ENUM
+  * permissions : JSON
+  * isActive : BOOLEAN
+  lastLoginAt : DATETIME
+  * createdAt : DATETIME
+  * updatedAt : DATETIME
+  createdBy : VARCHAR(255)
+  updatedBy : VARCHAR(255)
+}
+
+entity "roles" {
+  * id : UUID <<PK>>
+  --
+  * name : VARCHAR(255) <<UK>>
+  description : VARCHAR(255)
+  * isSystem : BOOLEAN
+  * createdAt : DATETIME
+  * updatedAt : DATETIME
+}
+
+entity "role_permissions" {
+  * id : UUID <<PK>>
+  --
+  * roleId : UUID <<FK>>
+  * resource : ENUM
+  * permissions : JSON
+  * createdAt : DATETIME
+  * updatedAt : DATETIME
+}
+
+' Relationships
+roles ||--o{ role_permissions : "has many"
+role_permissions }o--|| roles : "belongs to"
+
+' Notes
+note right of admin_users
+  AdminRole Enum Values:
+  - SUPER_ADMIN
+  - ADMIN
+  - MODERATOR
+  - SUPPORT
+  - AUDITOR
+  
+  Legacy permissions field
+  (JSON array) will be
+  deprecated in favor of
+  Role-Permission system
+end note
+
+note right of roles
+  System Roles:
+  - super_admin (isSystem: true)
+  - admin (isSystem: true)
+  
+  Custom Roles:
+  - moderator (isSystem: false)
+  - support (isSystem: false)
+  - auditor (isSystem: false)
+end note
+
+note right of role_permissions
+  Resource Enum Values:
+  - DASHBOARD
+  - SETTINGS
+  - PERMISSIONS
+  - USERS
+  - ROLES
+  
+  Permission Enum Values:
+  - CREATE
+  - READ
+  - UPDATE
+  - DELETE
+  - MANAGE
+end note
+
+note bottom
+  Current Permission Mapping:
+  
+  SUPER_ADMIN:
+  - All resources: MANAGE
+  
+  ADMIN:
+  - All resources: READ
+  
+  Other roles:
+  - No permissions assigned yet
+end note
+
+@enduml

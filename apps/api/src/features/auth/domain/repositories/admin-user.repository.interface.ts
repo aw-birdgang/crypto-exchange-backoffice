@@ -10,5 +10,6 @@ export interface AdminUserRepositoryInterface {
   findAll(): Promise<AdminUser[]>;
   findAllWithPagination(page: number, limit: number): Promise<{ adminUsers: AdminUser[]; total: number }>;
   findByRole(role: string): Promise<AdminUser[]>;
+  findByStatus(status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'): Promise<AdminUser[]>;
   updateLastLogin(id: string): Promise<void>;
 }

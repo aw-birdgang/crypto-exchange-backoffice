@@ -42,10 +42,12 @@ export interface RefreshTokenPayload {
   exp?: number;
 }
 
-export enum UserRole {
-  SUPER_ADMIN = 'super_admin',
-  ADMIN = 'admin',
-  USER = 'user',
+export enum AdminUserRole {
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  ADMIN = 'ADMIN',
+  MODERATOR = 'MODERATOR',
+  SUPPORT = 'SUPPORT',
+  AUDITOR = 'AUDITOR',
 }
 
 export enum Permission {
@@ -62,11 +64,21 @@ export enum Resource {
   PERMISSIONS = 'permissions',
   USERS = 'users',
   ROLES = 'roles',
+  
+  // 지갑관리 리소스
+  WALLET = 'wallet',
+  WALLET_TRANSACTIONS = 'wallet_transactions',
+  
+  // 고객관리 리소스
+  CUSTOMER_SUPPORT = 'customer_support',
+  
+  // 어드민 계정 관리 리소스
+  ADMIN_USERS = 'admin_users',
 }
 
 export interface RolePermission {
   id: string;
-  role: UserRole;
+  role: AdminUserRole;
   resource: Resource;
   permissions: Permission[];
   createdAt: string;
@@ -75,7 +87,7 @@ export interface RolePermission {
 
 export interface UserPermissions {
   userId: string;
-  role: UserRole;
+  role: AdminUserRole;
   permissions: {
     resource: Resource;
     permissions: Permission[];
@@ -92,7 +104,7 @@ export interface Role {
   updatedAt: string;
 }
 
-export interface UserRoleAssignment {
+export interface AdminUserRoleAssignment {
   id: string;
   userId: string;
   roleId: string;
@@ -138,13 +150,71 @@ export interface PermissionCheckResponse {
   reason?: string;
 }
 
+export enum UserStatus {
+  PENDING = 'PENDING',
+  APPROVED = 'APPROVED',
+  REJECTED = 'REJECTED',
+  SUSPENDED = 'SUSPENDED',
+}
+
 export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
-  role: UserRole;
+  role: AdminUserRole;
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AdminUser extends BaseEntity {
+  email: string;
+  username: string;
+  firstName: string;
+  lastName: string;
+  adminRole: AdminUserRole;
+  permissions: string[];
+  isActive: boolean;
+  status: UserStatus;
+  approvedBy?: string;
+  approvedAt?: string;
+  lastLoginAt?: string;
+  createdBy?: string;
+  updatedBy?: string;
+}
+
+export interface UserApprovalRequest {
+  role: AdminUserRole;
+  isActive: boolean;
+}
+
+export interface UserBulkAction {
+  userIds: string[];
+  action: 'approve' | 'reject' | 'suspend' | 'activate' | 'deactivate';
+  role?: AdminUserRole;
+}
+
+export interface UserStats {
+  totalUsers?: number;
+  activeUsers?: number;
+  pendingUsers?: number;
+  approvedUsers?: number;
+  rejectedUsers?: number;
+  suspendedUsers?: number;
+  todayRegistrations?: number;
+  weeklyRegistrations?: number;
+  monthlyRegistrations?: number;
+  roleStats?: Record<string, number>;
+}
+
+export interface UserFilters {
+  status?: UserStatus;
+  role?: AdminUserRole;
+  isActive?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: 'createdAt' | 'updatedAt' | 'lastLoginAt' | 'email' | 'firstName' | 'lastName';
+  sortOrder?: 'asc' | 'desc';
 }

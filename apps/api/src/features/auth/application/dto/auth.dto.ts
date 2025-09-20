@@ -2,7 +2,7 @@ import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class LoginDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'admin@crypto-exchange.com',
     description: '사용자 이메일 주소',
     format: 'email'
@@ -10,7 +10,7 @@ export class LoginDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'admin123!',
     description: '사용자 비밀번호 (최소 6자 이상)',
     minLength: 6
@@ -21,7 +21,7 @@ export class LoginDto {
 }
 
 export class RegisterDto {
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'user@example.com',
     description: '사용자 이메일 주소 (고유해야 함)',
     format: 'email'
@@ -29,8 +29,8 @@ export class RegisterDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ 
-    example: 'password123',
+  @ApiProperty({
+    example: 'Password123!',
     description: '사용자 비밀번호 (최소 6자 이상)',
     minLength: 6
   })
@@ -38,7 +38,7 @@ export class RegisterDto {
   @MinLength(6)
   password: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'John',
     description: '사용자 이름',
     minLength: 1
@@ -46,7 +46,7 @@ export class RegisterDto {
   @IsString()
   firstName: string;
 
-  @ApiProperty({ 
+  @ApiProperty({
     example: 'Doe',
     description: '사용자 성',
     minLength: 1

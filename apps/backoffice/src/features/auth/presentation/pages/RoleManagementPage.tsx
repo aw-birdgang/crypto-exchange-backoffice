@@ -22,8 +22,9 @@ import {
   SettingOutlined,
   LockOutlined,
 } from '@ant-design/icons';
-import { Role } from '@crypto-exchange/shared';
+import { Role, AdminUserRole } from '@crypto-exchange/shared';
 import { usePermissionStore } from '../../application/stores/permission.store';
+import { useAuthStore } from '../../application/stores/auth.store';
 import { PermissionMatrix } from '../../../../shared/components/common/PermissionMatrix';
 import { AuthDebugger } from '../../../../shared/components/common/AuthDebugger';
 
@@ -47,6 +48,11 @@ export const RoleManagementPage: React.FC = () => {
     clearError,
   } = usePermissionStore();
 
+  const { user } = useAuthStore();
+
+  // SUPER_ADMIN인지 확인
+  const isSuperAdmin = user?.role === AdminUserRole.SUPER_ADMIN;
+
   useEffect(() => {
     fetchRoles();
   }, [fetchRoles]);
@@ -54,20 +60,52 @@ export const RoleManagementPage: React.FC = () => {
   const handleCreateRole = async () => {
     try {
       const values = await form.validateFields();
-      const { name, description, permissions } = values;
+      const { name, description } = values;
       
-      await createRole({
-        name,
-        description,
-        permissions: permissions || [],
+      // 입력값 정리 및 검증
+      const cleanName = typeof name === 'string' ? name.trim() : '';
+      const cleanDescription = typeof description === 'string' ? description.trim() : '';
+      
+      if (!cleanName) {
+        message.error('역할명을 입력해주세요.');
+        return;
+      }
+      
+      if (!cleanDescription) {
+        message.error('설명을 입력해주세요.');
+        return;
+      }
+      
+      const roleData = {
+        name: cleanName,
+        description: cleanDescription,
         isSystem: false,
-      });
+      };
+      
+      console.log('🔍 Frontend - Form values:', values);
+      console.log('🔍 Frontend - Cleaned name:', cleanName);
+      console.log('🔍 Frontend - Cleaned description:', cleanDescription);
+      console.log('🔍 Frontend - Role data to send:', JSON.stringify(roleData, null, 2));
+      
+      await createRole(roleData as any);
+      
+      // 역할 목록 새로고침
+      await fetchRoles();
       
       message.success('역할이 성공적으로 생성되었습니다.');
       form.resetFields();
       setIsModalVisible(false);
-    } catch (error) {
-      message.error('역할 생성에 실패했습니다.');
+    } catch (error: any) {
+      console.error('Role creation error:', error);
+      
+      // 중복 이름 에러 처리
+      if (error?.response?.data?.message?.includes('이미 존재합니다')) {
+        message.error('이미 존재하는 역할명입니다. 다른 이름을 사용해주세요.');
+      } else if (error?.response?.data?.message) {
+        message.error(`역할 생성 실패: ${error.response.data.message}`);
+      } else {
+        message.error('역할 생성에 실패했습니다.');
+      }
     }
   };
 
@@ -76,26 +114,55 @@ export const RoleManagementPage: React.FC = () => {
     
     try {
       const values = await form.validateFields();
-      const { name, description, permissions } = values;
+      const { name, description } = values;
+      
+      // 입력값 정리 및 검증
+      const cleanName = typeof name === 'string' ? name.trim() : '';
+      const cleanDescription = typeof description === 'string' ? description.trim() : '';
+      
+      if (!cleanName) {
+        message.error('역할명을 입력해주세요.');
+        return;
+      }
+      
+      if (!cleanDescription) {
+        message.error('설명을 입력해주세요.');
+        return;
+      }
       
       await updateRole(editingRole.id, {
-        name,
-        description,
-        permissions: permissions || [],
-      });
+        name: cleanName,
+        description: cleanDescription,
+      } as any);
+      
+      // 역할 목록 새로고침
+      await fetchRoles();
       
       message.success('역할이 성공적으로 수정되었습니다.');
       form.resetFields();
       setIsModalVisible(false);
       setEditingRole(null);
-    } catch (error) {
-      message.error('역할 수정에 실패했습니다.');
+    } catch (error: any) {
+      console.error('Role update error:', error);
+      
+      // 중복 이름 에러 처리
+      if (error?.response?.data?.message?.includes('이미 존재합니다')) {
+        message.error('이미 존재하는 역할명입니다. 다른 이름을 사용해주세요.');
+      } else if (error?.response?.data?.message) {
+        message.error(`역할 수정 실패: ${error.response.data.message}`);
+      } else {
+        message.error('역할 수정에 실패했습니다.');
+      }
     }
   };
 
   const handleDeleteRole = async (roleId: string) => {
     try {
       await deleteRole(roleId);
+      
+      // 역할 목록 새로고침
+      await fetchRoles();
+      
       message.success('역할이 성공적으로 삭제되었습니다.');
     } catch (error) {
       message.error('역할 삭제에 실패했습니다.');
@@ -103,11 +170,25 @@ export const RoleManagementPage: React.FC = () => {
   };
 
   const handleEditRole = (role: Role) => {
+    console.log('🔍 Editing role:', role);
+    console.log('🔍 Role permissions:', role.permissions);
+    
     setEditingRole(role);
+    
+    // 권한 데이터 변환: RolePermission[] -> { resource: Resource, permissions: Permission[] }[]
+    const convertedPermissions = Array.isArray(role.permissions) 
+      ? role.permissions.map(rp => ({
+          resource: rp.resource,
+          permissions: rp.permissions
+        }))
+      : [];
+    
+    console.log('🔍 Converted permissions:', convertedPermissions);
+    
     form.setFieldsValue({
       name: role.name,
       description: role.description,
-      permissions: Array.isArray(role.permissions) ? role.permissions : [], // RolePermission은 별도로 관리되므로 빈 배열
+      permissions: convertedPermissions,
     });
     setIsModalVisible(true);
   };
@@ -126,7 +207,7 @@ export const RoleManagementPage: React.FC = () => {
       render: (name: string, record: Role) => (
         <div>
           <div style={{ fontWeight: 500 }}>{name}</div>
-          {record.isSystem && (
+          {record.isSystem && !isSuperAdmin && (
             <Tag color="blue" icon={<LockOutlined />}>
               시스템 역할
             </Tag>
@@ -169,7 +250,7 @@ export const RoleManagementPage: React.FC = () => {
             size="small"
             icon={<EditOutlined />}
             onClick={() => handleEditRole(record)}
-            disabled={record.isSystem}
+            disabled={record.isSystem && !isSuperAdmin}
           >
             수정
           </Button>
@@ -179,14 +260,14 @@ export const RoleManagementPage: React.FC = () => {
             onConfirm={() => handleDeleteRole(record.id)}
             okText="삭제"
             cancelText="취소"
-            disabled={record.isSystem}
+            disabled={record.isSystem && !isSuperAdmin}
           >
             <Button
               type="text"
               size="small"
               danger
               icon={<DeleteOutlined />}
-              disabled={record.isSystem}
+              disabled={record.isSystem && !isSuperAdmin}
             >
               삭제
             </Button>
@@ -220,7 +301,12 @@ export const RoleManagementPage: React.FC = () => {
       label: '권한 매트릭스',
       children: (
         <PermissionMatrix
-          permissions={Array.isArray(editingRole?.permissions) ? editingRole.permissions : []}
+          permissions={Array.isArray(editingRole?.permissions) 
+            ? editingRole.permissions.map(rp => ({
+                resource: rp.resource,
+                permissions: rp.permissions
+              }))
+            : []}
           role={editingRole?.name as any}
           onChange={(permissions) => {
             form.setFieldsValue({ permissions });
@@ -326,7 +412,12 @@ export const RoleManagementPage: React.FC = () => {
             label="권한 설정"
           >
             <PermissionMatrix
-              permissions={Array.isArray(editingRole?.permissions) ? editingRole.permissions : []}
+              permissions={Array.isArray(editingRole?.permissions) 
+                ? editingRole.permissions.map(rp => ({
+                    resource: rp.resource,
+                    permissions: rp.permissions
+                  }))
+                : []}
               onChange={(permissions) => {
                 form.setFieldsValue({ permissions });
               }}

@@ -10,8 +10,7 @@ import {
   AdminDashboardDto,
   AdminBulkActionDto 
 } from '../dto/admin.dto';
-import { UserRole, Resource, Permission } from '@crypto-exchange/shared';
-import { AdminRole } from '../../domain/entities/admin-user.entity';
+import { AdminUserRole, Resource, Permission } from '@crypto-exchange/shared';
 
 @Injectable()
 export class AdminService {
@@ -37,7 +36,7 @@ export class AdminService {
       ...adminData, 
       password: hashedPassword,
       username: adminData.email.split('@')[0], // 이메일에서 사용자명 생성
-      adminRole: adminData.role === UserRole.SUPER_ADMIN ? AdminRole.SUPER_ADMIN : AdminRole.ADMIN,
+      adminRole: adminData.role === AdminUserRole.SUPER_ADMIN ? AdminUserRole.SUPER_ADMIN : AdminUserRole.ADMIN,
       permissions: this.getDefaultPermissions(adminData.role)
     };
     
@@ -105,7 +104,7 @@ export class AdminService {
 
     // 관리자 역할별 통계
     const roleStats: Record<string, number> = {};
-    Object.values(AdminRole).forEach(role => {
+    Object.values(AdminUserRole).forEach(role => {
       roleStats[role] = allAdmins.filter(admin => admin.adminRole === role).length;
     });
 
@@ -199,7 +198,7 @@ export class AdminService {
               failed++;
               continue;
             }
-            await this.adminUserRepository.update(adminId, { adminRole: newRole as unknown as AdminRole });
+            await this.adminUserRepository.update(adminId, { adminRole: newRole as AdminUserRole });
             break;
         }
         success++;
@@ -215,16 +214,81 @@ export class AdminService {
   /**
    * 관리자 역할 확인
    */
-  private isAdminRole(role: UserRole): boolean {
-    return role === UserRole.SUPER_ADMIN || role === UserRole.ADMIN;
+  private isAdminRole(role: AdminUserRole): boolean {
+    return role === AdminUserRole.SUPER_ADMIN || role === AdminUserRole.ADMIN;
+  }
+
+  /**
+   * 대기 중인 사용자 목록 조회
+   */
+  async getPendingUsers(): Promise<AdminUser[]> {
+    return this.adminUserRepository.findByStatus('PENDING');
+  }
+
+  /**
+   * 사용자 승인
+   */
+  async approveUser(
+    userId: string, 
+    approvalData: { role: AdminUserRole; isActive: boolean }, 
+    approvedBy: string
+  ): Promise<AdminUser> {
+    const user = await this.adminUserRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (user.status !== 'PENDING') {
+      throw new BadRequestException('이미 처리된 사용자입니다.');
+    }
+
+    const updateData = {
+      status: 'APPROVED' as const,
+      adminRole: approvalData.role,
+      isActive: approvalData.isActive,
+      approvedBy,
+      approvedAt: new Date(),
+      permissions: this.getDefaultPermissions(approvalData.role)
+    };
+
+    return this.adminUserRepository.update(userId, updateData);
+  }
+
+  /**
+   * 사용자 거부
+   */
+  async rejectUser(userId: string, rejectedBy: string): Promise<AdminUser> {
+    const user = await this.adminUserRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (user.status !== 'PENDING') {
+      throw new BadRequestException('이미 처리된 사용자입니다.');
+    }
+
+    const updateData = {
+      status: 'REJECTED' as const,
+      approvedBy: rejectedBy,
+      approvedAt: new Date()
+    };
+
+    return this.adminUserRepository.update(userId, updateData);
+  }
+
+  /**
+   * 사용자 상태별 조회
+   */
+  async getUsersByStatus(status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'): Promise<AdminUser[]> {
+    return this.adminUserRepository.findByStatus(status);
   }
 
   /**
    * 역할별 기본 권한 설정
    */
-  private getDefaultPermissions(role: UserRole): string[] {
+  private getDefaultPermissions(role: AdminUserRole): string[] {
     switch (role) {
-      case UserRole.SUPER_ADMIN:
+      case AdminUserRole.SUPER_ADMIN:
         return [
           'users:read', 'users:create', 'users:update', 'users:delete',
           'system:configure', 'notifications:read', 'notifications:create', 
@@ -232,7 +296,7 @@ export class AdminService {
           'cache:manage', 'database:manage', 'roles:manage', 
           'permissions:assign', 'users:change_role'
         ];
-      case UserRole.ADMIN:
+      case AdminUserRole.ADMIN:
         return [
           'users:read', 'users:create', 'users:update', 'users:suspend',
           'users:ban', 'users:change_role', 'system:configure',

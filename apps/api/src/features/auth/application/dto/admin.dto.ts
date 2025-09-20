@@ -1,6 +1,6 @@
 import { IsEmail, IsString, IsOptional, IsBoolean, IsEnum, MinLength, IsArray } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole, Resource, Permission } from '@crypto-exchange/shared';
+import { AdminUserRole, Resource, Permission } from '@crypto-exchange/shared';
 
 export class CreateAdminDto {
   @ApiProperty({
@@ -36,11 +36,11 @@ export class CreateAdminDto {
 
   @ApiProperty({
     description: '관리자 역할',
-    enum: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-    example: UserRole.ADMIN
+    enum: [AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN],
+    example: AdminUserRole.ADMIN
   })
-  @IsEnum([UserRole.SUPER_ADMIN, UserRole.ADMIN])
-  role: UserRole.SUPER_ADMIN | UserRole.ADMIN;
+  @IsEnum([AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN])
+  role: AdminUserRole.SUPER_ADMIN | AdminUserRole.ADMIN;
 
   @ApiPropertyOptional({
     description: '관리자 활성 상태',
@@ -90,12 +90,12 @@ export class UpdateAdminDto {
 
   @ApiPropertyOptional({
     description: '관리자 역할',
-    enum: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
-    example: UserRole.SUPER_ADMIN
+    enum: [AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN],
+    example: AdminUserRole.SUPER_ADMIN
   })
   @IsOptional()
-  @IsEnum([UserRole.SUPER_ADMIN, UserRole.ADMIN])
-  role?: UserRole.SUPER_ADMIN | UserRole.ADMIN;
+  @IsEnum([AdminUserRole.SUPER_ADMIN, AdminUserRole.ADMIN])
+  role?: AdminUserRole.SUPER_ADMIN | AdminUserRole.ADMIN;
 
   @ApiPropertyOptional({
     description: '관리자 활성 상태',
@@ -235,11 +235,11 @@ export class AdminPermissionDto {
 export class AdminRolePermissionsDto {
   @ApiProperty({
     description: '역할',
-    enum: UserRole,
-    example: UserRole.ADMIN
+    enum: AdminUserRole,
+    example: AdminUserRole.ADMIN
   })
-  @IsEnum(UserRole)
-  role: UserRole;
+  @IsEnum(AdminUserRole)
+  role: AdminUserRole;
 
   @ApiProperty({
     description: '권한 목록',
@@ -282,10 +282,10 @@ export class AdminBulkActionDto {
 
   @ApiPropertyOptional({
     description: '새로운 역할 (change_role 작업시에만 사용)',
-    enum: UserRole,
-    example: UserRole.USER
+    enum: AdminUserRole,
+    example: AdminUserRole.SUPPORT
   })
   @IsOptional()
-  @IsEnum(UserRole)
-  newRole?: UserRole;
+  @IsEnum(AdminUserRole)
+  newRole?: AdminUserRole;
 }

@@ -64,6 +64,13 @@ export class AdminUserRepository implements AdminUserRepositoryInterface {
     });
   }
 
+  async findByStatus(status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED'): Promise<AdminUser[]> {
+    return this.adminUserRepository.find({
+      where: { status },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
   async updateLastLogin(id: string): Promise<void> {
     await this.adminUserRepository.update(id, { lastLoginAt: new Date() });
   }

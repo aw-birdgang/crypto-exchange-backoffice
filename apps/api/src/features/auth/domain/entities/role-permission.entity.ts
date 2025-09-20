@@ -1,6 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { ApiProperty } from '@nestjs/swagger';
-import { BaseEntity, UserRole, Resource, Permission } from '@crypto-exchange/shared';
+import { BaseEntity, AdminUserRole, Resource, Permission } from '@crypto-exchange/shared';
+import { Role } from './role.entity';
 
 @Entity('role_permissions')
 export class RolePermission implements BaseEntity {
@@ -13,12 +14,22 @@ export class RolePermission implements BaseEntity {
   id: string;
 
   @ApiProperty({
-    description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.ADMIN
+    description: '역할 ID',
+    example: '123e4567-e89b-12d3-a456-426614174000',
+    format: 'uuid'
   })
-  @Column({ type: 'enum', enum: UserRole })
-  role: UserRole;
+  @Column('uuid')
+  roleId: string;
+
+  @ApiProperty({
+    description: '사용자 역할',
+    enum: AdminUserRole,
+    example: AdminUserRole.ADMIN
+  })
+  // Role과의 관계로 변경
+  @ManyToOne(() => Role, role => role.permissions)
+  @JoinColumn({ name: 'roleId' })
+  role: Role;
 
   @ApiProperty({
     description: '리소스',
@@ -34,7 +45,7 @@ export class RolePermission implements BaseEntity {
     isArray: true,
     example: [Permission.CREATE, Permission.READ, Permission.UPDATE, Permission.DELETE]
   })
-  @Column({ type: 'simple-array' })
+  @Column('json')
   permissions: Permission[];
 
   @ApiProperty({

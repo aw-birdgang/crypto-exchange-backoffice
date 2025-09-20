@@ -1,15 +1,16 @@
-import { IsEnum, IsArray, IsString, IsOptional, IsEmail, IsBoolean, MinLength } from 'class-validator';
+import { IsEnum, IsArray, IsString, IsOptional, IsEmail, IsBoolean, MinLength, MaxLength } from 'class-validator';
+import { Transform } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { UserRole, Resource, Permission } from '@crypto-exchange/shared';
+import { AdminUserRole, Resource, Permission } from '@crypto-exchange/shared';
 
 export class CreateRolePermissionDto {
   @ApiProperty({
     description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.ADMIN
+    enum: AdminUserRole,
+    example: AdminUserRole.ADMIN
   })
-  @IsEnum(UserRole)
-  role: UserRole;
+  @IsEnum(AdminUserRole)
+  role: AdminUserRole;
 
   @ApiProperty({
     description: '리소스',
@@ -33,12 +34,12 @@ export class CreateRolePermissionDto {
 export class UpdateRolePermissionDto {
   @ApiPropertyOptional({
     description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.ADMIN
+    enum: AdminUserRole,
+    example: AdminUserRole.ADMIN
   })
   @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
+  @IsEnum(AdminUserRole)
+  role?: AdminUserRole;
 
   @ApiPropertyOptional({
     description: '리소스',
@@ -89,10 +90,10 @@ export class UserPermissionsResponseDto {
 
   @ApiProperty({
     description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.ADMIN
+    enum: AdminUserRole,
+    example: AdminUserRole.ADMIN
   })
-  role: UserRole;
+  role: AdminUserRole;
 
   @ApiProperty({
     description: '권한 목록',
@@ -159,6 +160,8 @@ export class CreateRoleDto {
   })
   @IsString()
   @MinLength(2)
+  @MaxLength(50)
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   name: string;
 
   @ApiProperty({
@@ -167,6 +170,8 @@ export class CreateRoleDto {
     maxLength: 200
   })
   @IsString()
+  @MaxLength(200)
+  @Transform(({ value }) => typeof value === 'string' ? value.trim() : value)
   description: string;
 
   @ApiPropertyOptional({
@@ -292,11 +297,11 @@ export class CreateUserDto {
 
   @ApiProperty({
     description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.USER
+    enum: AdminUserRole,
+    example: AdminUserRole.SUPPORT
   })
-  @IsEnum(UserRole)
-  role: UserRole;
+  @IsEnum(AdminUserRole)
+  role: AdminUserRole;
 
   @ApiPropertyOptional({
     description: '사용자 활성 상태',
@@ -346,12 +351,12 @@ export class UpdateUserDto {
 
   @ApiPropertyOptional({
     description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.USER
+    enum: AdminUserRole,
+    example: AdminUserRole.SUPPORT
   })
   @IsOptional()
-  @IsEnum(UserRole)
-  role?: UserRole;
+  @IsEnum(AdminUserRole)
+  role?: AdminUserRole;
 
   @ApiPropertyOptional({
     description: '사용자 활성 상태',
@@ -390,10 +395,10 @@ export class UserResponseDto {
 
   @ApiProperty({
     description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.USER
+    enum: AdminUserRole,
+    example: AdminUserRole.SUPPORT
   })
-  role: UserRole;
+  role: AdminUserRole;
 
   @ApiProperty({
     description: '사용자 활성 상태',

@@ -5,7 +5,8 @@ import { ConfigService } from '@nestjs/config';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
-import { AdminUser, AdminRole } from '../../domain/entities/admin-user.entity';
+import { AdminUser } from '../../domain/entities/admin-user.entity';
+import { AdminUserRole } from '@crypto-exchange/shared';
 import { ConflictException, UnauthorizedException } from '../../../../common/exceptions/business.exception';
 
 describe('AuthService', () => {
@@ -71,7 +72,7 @@ describe('AuthService', () => {
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',
-      adminRole: AdminRole.ADMIN,
+      adminRole: AdminUserRole.ADMIN,
       password: 'hashedPassword',
       username: 'test',
       permissions: [],
@@ -101,7 +102,7 @@ describe('AuthService', () => {
           email: 'test@example.com',
           firstName: 'Test',
           lastName: 'User',
-          role: AdminRole.ADMIN,
+          role: AdminUserRole.ADMIN,
         },
       });
 
@@ -142,7 +143,7 @@ describe('AuthService', () => {
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',
-      adminRole: AdminRole.ADMIN,
+      adminRole: AdminUserRole.ADMIN,
       password: 'hashedPassword',
       username: 'test',
       permissions: [],
@@ -169,7 +170,7 @@ describe('AuthService', () => {
           email: 'test@example.com',
           firstName: 'Test',
           lastName: 'User',
-          role: AdminRole.ADMIN,
+          role: AdminUserRole.ADMIN,
         },
       });
     });
@@ -199,7 +200,7 @@ describe('AuthService', () => {
     const jwtPayload = {
       sub: '1',
       email: 'test@example.com',
-      role: AdminRole.ADMIN,
+      role: AdminUserRole.ADMIN,
       type: 'access' as const,
     };
 
@@ -208,7 +209,7 @@ describe('AuthService', () => {
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'User',
-      adminRole: AdminRole.ADMIN,
+      adminRole: AdminUserRole.ADMIN,
       password: 'hashedPassword',
       username: 'test',
       permissions: [],

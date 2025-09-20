@@ -1,15 +1,15 @@
-import { Injectable } from '@nestjs/common';
-import { ConflictException, UnauthorizedException } from '../../../../common/exceptions/business.exception';
-import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
-import { Repository } from 'typeorm';
+import {Injectable} from '@nestjs/common';
+import {ConflictException, UnauthorizedException} from '../../../../common/exceptions/business.exception';
+import {JwtService} from '@nestjs/jwt';
+import {InjectRepository} from '@nestjs/typeorm';
+import {ConfigService} from '@nestjs/config';
+import {Repository} from 'typeorm';
 import * as bcrypt from 'bcrypt';
-import { AdminUser, AdminRole } from '../../domain/entities/admin-user.entity';
-import { LoginDto, RegisterDto, AuthResponseDto, RefreshTokenDto, RefreshResponseDto } from '../dto/auth.dto';
-import { JwtPayload, RefreshTokenPayload } from '@crypto-exchange/shared';
-import { ValidationUtil } from '../../../../common/utils/validation.util';
-import { ResponseUtil } from '../../../../common/utils/response.util';
+import {AdminUser} from '../../domain/entities/admin-user.entity';
+import {AdminUserRole} from '@crypto-exchange/shared';
+import {AuthResponseDto, LoginDto, RefreshResponseDto, RefreshTokenDto, RegisterDto} from '../dto/auth.dto';
+import {JwtPayload, RefreshTokenPayload} from '@crypto-exchange/shared';
+import {ValidationUtil} from '../../../../common/utils/validation.util';
 
 @Injectable()
 export class AuthService {
@@ -20,7 +20,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+  async register(registerDto: RegisterDto): Promise<{ message: string; userId: string }> {
     // 입력 검증
     ValidationUtil.validateEmail(registerDto.email);
     ValidationUtil.validatePassword(registerDto.password);
@@ -28,16 +28,13 @@ export class AuthService {
     // 중복 사용자 확인
     await this.checkUserExists(registerDto.email);
 
-    // 사용자 생성
+    // 사용자 생성 (PENDING 상태)
     const user = await this.createUser(registerDto);
     const savedUser = await this.adminUserRepository.save(user);
 
-    // 토큰 생성
-    const tokens = this.generateTokens(savedUser);
-
     return {
-      ...tokens,
-      user: this.mapUserToResponse(savedUser),
+      message: '회원가입이 완료되었습니다. 관리자 승인을 기다려주세요.',
+      userId: savedUser.id,
     };
   }
 
@@ -59,8 +56,10 @@ export class AuthService {
       ...registerDto,
       password: hashedPassword,
       username: registerDto.email.split('@')[0],
-      adminRole: AdminRole.ADMIN,
+      adminRole: AdminUserRole.SUPPORT,
       permissions: [],
+      status: 'PENDING',
+      isActive: false,
     });
   }
 
@@ -90,6 +89,16 @@ export class AuthService {
 
     // 토큰 생성
     const tokens = this.generateTokens(user);
+    
+    console.log('🔍 AuthService: Login successful, generated tokens:', {
+      accessToken: tokens.accessToken ? `${tokens.accessToken.substring(0, 20)}...` : 'No access token',
+      refreshToken: tokens.refreshToken ? `${tokens.refreshToken.substring(0, 20)}...` : 'No refresh token',
+      user: {
+        id: user.id,
+        email: user.email,
+        adminRole: user.adminRole
+      }
+    });
 
     return {
       ...tokens,
@@ -104,6 +113,10 @@ export class AuthService {
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
+    }
+
+    if (user.status !== 'APPROVED') {
+      throw new UnauthorizedException('Account is pending approval');
     }
 
     if (!user.isActive) {

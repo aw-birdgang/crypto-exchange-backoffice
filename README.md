@@ -37,7 +37,7 @@ crypto-exchange-backoffice/
 - Node.js 18.0.0 이상
 - pnpm 8.0.0 이상
 - Docker & Docker Compose (권장)
-- PostgreSQL 13 이상 (Docker 없이 로컬 설치 시)
+- MySQL 8.0 이상 (Docker 없이 로컬 설치 시)
 
 ### 설치
 
@@ -47,6 +47,34 @@ pnpm install
 
 # 모든 프로젝트 빌드
 pnpm build
+```
+
+### 데이터베이스 관리
+
+#### Docker 환경에서 실행 (권장)
+
+```bash
+# 1. 컨테이너 시작 (테이블 자동 생성됨)
+docker compose up -d
+
+# 2. 초기 데이터 삽입 (스크립트 사용)
+pnpm init:db:script
+
+# 또는 직접 실행
+./scripts/init-database.sh
+
+# 데이터베이스 정리
+pnpm docker:clean:db
+```
+
+#### 로컬 환경에서 실행
+
+```bash
+# 데이터베이스 정리
+pnpm clean:db
+
+# 초기 데이터 삽입 (Docker 컨테이너 필요)
+cd apps/api && DB_HOST=localhost DB_PORT=3306 DB_USERNAME=crypto_user DB_PASSWORD=password DB_DATABASE=crypto_exchange pnpm init:db
 ```
 
 ### 🐳 Docker로 실행 (권장)
@@ -91,7 +119,7 @@ cd apps/backoffice && pnpm dev
 ### Backend (API)
 - **NestJS** - Node.js 프레임워크
 - **TypeORM** - ORM
-- **PostgreSQL** - 데이터베이스
+- **MySQL** - 데이터베이스
 - **Redis** - 캐싱 및 세션 관리
 - **JWT** - 인증
 - **RBAC** - 역할 기반 접근 제어
@@ -152,11 +180,12 @@ cd apps/backoffice && pnpm dev
 3. **메뉴 접근**: 역할별 메뉴 표시/숨김
 4. **API 엔드포인트**: 세부 권한 검증
 
-### 자동 시드 데이터
-애플리케이션 시작 시 자동으로 다음 데이터가 생성됩니다:
-- **Admin 사용자**: `admin@crypto-exchange.com` / `admin123!` (SUPER_ADMIN 권한)
-- **역할별 권한**: 6가지 역할에 대한 26개 권한 규칙
-- **중복 방지**: 기존 데이터가 있으면 건너뛰고 업데이트만 수행
+### 자동 초기화 데이터
+Docker 컨테이너 시작 시 SQL 스크립트에 의해 자동으로 다음 데이터가 생성됩니다:
+- **5개 기본 역할**: SUPER_ADMIN, ADMIN, MODERATOR, SUPPORT, AUDITOR
+- **5개 관리자 계정**: 각 역할별 테스트 계정
+- **역할별 권한**: 리소스별 세부 권한 설정
+- **중복 방지**: INSERT IGNORE로 기존 데이터 보호
 
 ## 📁 Clean Architecture
 
@@ -322,8 +351,8 @@ docker-compose up -d
 ```env
 # 데이터베이스
 DB_HOST=localhost
-DB_PORT=5432
-DB_USERNAME=postgres
+DB_PORT=3306
+DB_USERNAME=root
 DB_PASSWORD=your-secure-password
 DB_DATABASE=crypto_exchange
 
@@ -437,25 +466,23 @@ pnpm docker:clean            # 모든 컨테이너와 이미지 정리
 ## 🐳 Docker
 
 ### 서비스 구성
-- **PostgreSQL**: 메인 데이터베이스
+- **MySQL**: 메인 데이터베이스
 - **Redis**: 캐싱 및 세션 관리
 - **API**: NestJS 백엔드 서버
 - **Backoffice**: React 프론트엔드 (Nginx)
-- **pgAdmin**: 데이터베이스 관리 도구 (개발용)
 
 ### 포트 매핑
 - **API**: http://localhost:3001
 - **Backoffice**: http://localhost:3000
-- **PostgreSQL**: localhost:5432
+- **MySQL**: localhost:3306
 - **Redis**: localhost:6379
-- **pgAdmin**: http://localhost:5050 (개발용)
 
 ### 환경 변수
 ```bash
 # API 서버
-DB_HOST=postgres
-DB_PORT=5432
-DB_USERNAME=postgres
+DB_HOST=mysql
+DB_PORT=3306
+DB_USERNAME=crypto_user
 DB_PASSWORD=password
 DB_DATABASE=crypto_exchange
 JWT_SECRET=your-super-secret-jwt-key

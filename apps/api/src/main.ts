@@ -3,6 +3,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+// cookie-parser 대신 수동 쿠키 파싱 사용
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,6 +22,32 @@ async function bootstrap() {
   const corsConfig = configService.get('app.cors');
   app.enableCors(corsConfig);
 
+  // 쿠키 파싱을 위한 커스텀 미들웨어
+  app.use((req: any, res: any, next: any) => {
+    if (req.headers.cookie) {
+      const cookies: { [key: string]: string } = {};
+      req.headers.cookie.split(';').forEach((cookie: string) => {
+        const [name, value] = cookie.trim().split('=');
+        if (name && value) {
+          cookies[name] = decodeURIComponent(value);
+        }
+      });
+      req.cookies = cookies;
+    }
+    next();
+  });
+
+  // 스웨거 요청을 위한 전용 미들웨어
+  app.use('/api-docs', (req: any, res: any, next: any) => {
+    console.log('🔍 Swagger Middleware - Request:', {
+      method: req.method,
+      url: req.url,
+      headers: req.headers,
+      authorization: req.headers.authorization || req.headers.Authorization
+    });
+    next();
+  });
+
   // Swagger 설정
   const config = new DocumentBuilder()
     .setTitle('Crypto Exchange API')
@@ -38,7 +65,7 @@ async function bootstrap() {
       ## 🔐 인증 방법
       1. **회원가입**: POST /auth/register
       2. **로그인**: POST /auth/login
-      3. **토큰 사용**: 상단의 "Authorize" 버튼 클릭 후 "Bearer {your-token}" 입력
+      3. **토큰 사용**: 상단의 "Authorize" 버튼 클릭 후 토큰 입력 (Bearer 접두사 없이)
       4. **토큰 갱신**: POST /auth/refresh
       
       ## 📊 모니터링
@@ -74,7 +101,7 @@ async function bootstrap() {
         scheme: 'bearer',
         bearerFormat: 'JWT',
         name: 'Authorization',
-        description: 'Enter JWT token (Bearer {token})',
+        description: 'Enter JWT token (Bearer 접두사 없이 토큰만 입력)',
         in: 'header',
       },
       'JWT-auth',
@@ -100,6 +127,9 @@ async function bootstrap() {
       docExpansion: 'none',
       defaultModelsExpandDepth: 2,
       defaultModelExpandDepth: 2,
+      tryItOutEnabled: true,
+      supportedSubmitMethods: ['get', 'post', 'put', 'delete', 'patch'],
+      // 스웨거 인터셉터 제거 - 작동하지 않음
     },
     customSiteTitle: 'Crypto Exchange API Documentation',
     customfavIcon: '/favicon.ico',

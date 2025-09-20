@@ -3,7 +3,7 @@ import { PermissionService } from './permission.service';
 import { PermissionRepositoryInterface } from '../../domain/repositories/permission.repository.interface';
 import { RoleRepositoryInterface } from '../../domain/repositories/role.repository.interface';
 import { CacheService } from '../../../../common/cache/cache.service';
-import { UserRole, Resource, Permission, UserPermissions, Role } from '@crypto-exchange/shared';
+import { AdminUserRole, Resource, Permission, UserPermissions, Role } from '@crypto-exchange/shared';
 import { ForbiddenException } from '../../../../common/exceptions/business.exception';
 
 describe('PermissionService', () => {
@@ -72,7 +72,7 @@ describe('PermissionService', () => {
     const userId = '1';
     const mockPermissions: UserPermissions = {
       userId: '1',
-      role: UserRole.ADMIN,
+      role: AdminUserRole.ADMIN,
       permissions: [
         {
           resource: Resource.USERS,

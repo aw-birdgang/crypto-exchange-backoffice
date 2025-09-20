@@ -2,7 +2,6 @@ import {Body, Controller, Delete, Get, Inject, Param, Post, Put, Request, UseGua
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiBody,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
@@ -12,7 +11,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse
 } from '@nestjs/swagger';
-import {Permission, Resource, Role, UserPermissions, UserRole,} from '@crypto-exchange/shared';
+import {Permission, Resource, Role, UserPermissions, AdminUserRole,} from '@crypto-exchange/shared';
 import {PermissionService} from '../application/services/permission.service';
 import {
   CreateRolePermissionDto,
@@ -31,6 +30,7 @@ import {
 import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {PermissionGuard, RequirePermissions,} from '../application/guards/permission.guard';
 import {RolePermission} from '../domain/entities/role-permission.entity';
+import { ApiBodyHelpers } from './constants/api-body.constants';
 
 @ApiTags('Permissions')
 @ApiBearerAuth('JWT-auth')
@@ -102,21 +102,47 @@ export class PermissionController {
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async getMyPermissions(@Request() req: any): Promise<UserPermissions> {
     try {
+      // 요청 검증
+      if (!req.user || !req.user.id) {
+        throw new Error('User information not found in request');
+      }
+
       console.log('🔍 PermissionController: Getting my permissions for user:', {
         id: req.user.id,
         email: req.user.email,
         adminRole: req.user.adminRole
       });
+
       const permissions = await this.permissionService.getUserPermissions(req.user.id);
+      
       console.log('✅ PermissionController: Successfully retrieved permissions:', {
         userId: permissions.userId,
         role: permissions.role,
-        permissionsCount: permissions.permissions?.length || 0
+        permissionsCount: permissions.permissions?.length || 0,
+        resources: permissions.permissions?.map(p => p.resource) || []
       });
+      
       return permissions;
     } catch (error) {
-      console.error('❌ PermissionController: Error getting my permissions:', error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
+      console.error('❌ PermissionController: Error getting my permissions:', {
+        userId: req.user?.id,
+        error: errorMessage,
+        stack: errorStack
+      });
+      
+      // 에러 타입에 따른 HTTP 상태 코드 설정
+      if (errorMessage.includes('User not found')) {
+        throw new Error(`User not found: ${req.user.id}`);
+      } else if (errorMessage.includes('Invalid userId')) {
+        throw new Error('Invalid user ID provided');
+      } else if (errorMessage.includes('Failed to retrieve permissions')) {
+        throw new Error(`Failed to retrieve permissions for user: ${req.user.id}`);
+      } else {
+        throw new Error(`Unexpected error while getting user permissions: ${errorMessage}`);
+      }
     }
   }
 
@@ -125,10 +151,7 @@ export class PermissionController {
     summary: '권한 확인',
     description: '현재 사용자가 특정 리소스에 대한 특정 권한을 가지고 있는지 확인합니다.'
   })
-  @ApiBody({
-    type: PermissionCheckDto,
-    description: '권한 확인 요청'
-  })
+  @ApiBodyHelpers.permissionCheck()
   @ApiResponse({
     status: 200,
     description: '권한 확인 결과',
@@ -189,10 +212,7 @@ export class PermissionController {
     summary: '역할 권한 생성',
     description: '새로운 역할 권한을 생성합니다. 관리자 권한이 필요합니다.'
   })
-  @ApiBody({
-    type: CreateRolePermissionDto,
-    description: '생성할 역할 권한 정보'
-  })
+  @ApiBodyHelpers.createRolePermission()
   @ApiResponse({
     status: 201,
     description: '역할 권한 생성 성공',
@@ -227,10 +247,7 @@ export class PermissionController {
     description: '역할 권한 ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
-  @ApiBody({
-    type: CreateRolePermissionDto,
-    description: '수정할 역할 권한 정보'
-  })
+  @ApiBodyHelpers.createRolePermission()
   @ApiResponse({
     status: 200,
     description: '역할 권한 수정 성공',
@@ -282,8 +299,8 @@ export class PermissionController {
   @ApiParam({
     name: 'role',
     description: '사용자 역할',
-    enum: UserRole,
-    example: UserRole.ADMIN
+    enum: AdminUserRole,
+    example: AdminUserRole.ADMIN
   })
   @ApiResponse({
     status: 200,
@@ -295,7 +312,7 @@ export class PermissionController {
   @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async getRolePermissions(
-    @Param('role') role: UserRole
+    @Param('role') role: AdminUserRole
   ): Promise<RolePermission[]> {
     return this.permissionService.getRolePermissions(role);
   }
@@ -461,10 +478,7 @@ export class PermissionController {
     summary: '역할 생성',
     description: '새로운 역할을 생성합니다. 관리자 권한이 필요합니다.'
   })
-  @ApiBody({
-    type: CreateRoleDto,
-    description: '생성할 역할 정보'
-  })
+  @ApiBodyHelpers.createRole()
   @ApiResponse({
     status: 201,
     description: '역할 생성 성공',
@@ -484,16 +498,27 @@ export class PermissionController {
   @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
   @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
   async createRole(@Body() role: CreateRoleDto): Promise<RoleResponseDto> {
-    const createdRole = await this.permissionService.createRole(role);
-    return {
-      id: createdRole.id,
-      name: createdRole.name,
-      description: createdRole.description,
-      isSystem: createdRole.isSystem,
-      permissions: createdRole.permissions || [],
-      createdAt: createdRole.createdAt as string,
-      updatedAt: createdRole.updatedAt as string
-    };
+    console.log('🔍 CreateRole - Raw body received:', JSON.stringify(role, null, 2));
+    console.log('🔍 CreateRole - Body type:', typeof role);
+    console.log('🔍 CreateRole - Body keys:', Object.keys(role));
+    
+    try {
+      const createdRole = await this.permissionService.createRole(role);
+      console.log('✅ CreateRole - Successfully created role:', JSON.stringify(createdRole, null, 2));
+      
+      return {
+        id: createdRole.id,
+        name: createdRole.name,
+        description: createdRole.description,
+        isSystem: createdRole.isSystem,
+        permissions: createdRole.permissions || [],
+        createdAt: createdRole.createdAt as string,
+        updatedAt: createdRole.updatedAt as string
+      };
+    } catch (error) {
+      console.error('❌ CreateRole - Error creating role:', error);
+      throw error;
+    }
   }
 
   @Put('roles/:id')
@@ -508,10 +533,7 @@ export class PermissionController {
     description: '역할 ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
-  @ApiBody({
-    type: UpdateRoleDto,
-    description: '수정할 역할 정보'
-  })
+  @ApiBodyHelpers.updateRole()
   @ApiResponse({
     status: 200,
     description: '역할 수정 성공',

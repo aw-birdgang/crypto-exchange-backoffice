@@ -30,7 +30,30 @@ export const API_ROUTES = {
 export const ROUTES = {
   LOGIN: '/login',
   DASHBOARD: '/dashboard',
-  PERMISSIONS: '/settings/permissions',
+  
+  // 지갑관리 라우트
+  WALLET: {
+    TRANSACTIONS: '/wallet/transactions',
+  },
+  
+  // 고객관리 라우트
+  CUSTOMER: {
+    SUPPORT: '/customer/support',
+  },
+  
+  // 어드민 계정 관리 라우트
+  ADMIN: {
+    PERMISSIONS: '/admin/permissions',
+    USERS: '/admin/users',
+  },
+  
+  // 기존 라우트 (호환성을 위해 유지)
+  PERMISSIONS: '/admin/permissions',
+  USERS: '/customer/users',
+  USERS_PENDING: '/customer/users/pending',
+  USERS_APPROVED: '/customer/users/approved',
+  USERS_REJECTED: '/customer/users/rejected',
+  USERS_SUSPENDED: '/customer/users/suspended',
 } as const;
 
 export const STORAGE_KEYS = {

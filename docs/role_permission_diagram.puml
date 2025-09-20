@@ -1,0 +1,216 @@
+@startuml Role Permission System Architecture
+
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam classBackgroundColor #F8F9FA
+skinparam classBorderColor #343A40
+skinparam arrowColor #007BFF
+skinparam noteBackgroundColor #E3F2FD
+skinparam noteBorderColor #1976D2
+
+title Crypto Exchange Backoffice - Role & Permission System
+
+package "Frontend (React + Zustand)" {
+  class AuthStore {
+    + user: User
+    + accessToken: string
+    + refreshToken: string
+    + isAuthenticated: boolean
+    + login()
+    + logout()
+    + refreshTokens()
+  }
+  
+  class PermissionStore {
+    + userPermissions: UserPermissions
+    + roles: Role[]
+    + hasPermission()
+    + hasAnyPermission()
+    + hasMenuAccess()
+    + fetchMyPermissions()
+  }
+  
+  class PermissionGate {
+    + checkPermission()
+    + render()
+  }
+  
+  class ProtectedRoute {
+    + checkAccess()
+    + render()
+  }
+}
+
+package "Backend (NestJS)" {
+  class AuthController {
+    + login()
+    + register()
+    + refresh()
+    + getProfile()
+    + getMyRole()
+  }
+  
+  class PermissionController {
+    + getMyPermissions()
+    + checkPermission()
+    + getAllRoles()
+    + createRole()
+    + updateRole()
+    + deleteRole()
+  }
+  
+  class AdminController {
+    + getDashboard()
+    + getAllAdmins()
+    + createAdmin()
+    + updateAdmin()
+    + deleteAdmin()
+  }
+  
+  class AuthService {
+    + login()
+    + register()
+    + validateUser()
+    + generateTokens()
+  }
+  
+  class PermissionService {
+    + getUserPermissions()
+    + hasPermission()
+    + getAllRoles()
+    + createRole()
+    + updateRole()
+    + deleteRole()
+  }
+  
+  class AdminService {
+    + getAdminDashboard()
+    + getAllAdmins()
+    + createAdmin()
+    + updateAdmin()
+    + deleteAdmin()
+  }
+}
+
+package "Database (MySQL)" {
+  class AdminUser {
+    + id: UUID
+    + email: string
+    + username: string
+    + password: string
+    + firstName: string
+    + lastName: string
+    + adminRole: AdminRole
+    + permissions: string[]
+    + isActive: boolean
+    + lastLoginAt: Date
+    + createdAt: Date
+    + updatedAt: Date
+  }
+  
+  class Role {
+    + id: UUID
+    + name: string
+    + description: string
+    + isSystem: boolean
+    + createdAt: Date
+    + updatedAt: Date
+  }
+  
+  class RolePermission {
+    + id: UUID
+    + roleId: UUID
+    + resource: Resource
+    + permissions: Permission[]
+    + createdAt: Date
+    + updatedAt: Date
+  }
+}
+
+package "Enums & Types" {
+  enum AdminRole {
+    SUPER_ADMIN
+    ADMIN
+    MODERATOR
+    SUPPORT
+    AUDITOR
+  }
+  
+  enum AdminUserRole {
+    SUPER_ADMIN
+    ADMIN
+    USER
+  }
+  
+  enum Resource {
+    DASHBOARD
+    SETTINGS
+    PERMISSIONS
+    USERS
+    ROLES
+  }
+  
+  enum Permission {
+    CREATE
+    READ
+    UPDATE
+    DELETE
+    MANAGE
+  }
+}
+
+' Frontend relationships
+AuthStore --> PermissionStore : uses
+PermissionStore --> PermissionGate : provides data
+PermissionStore --> ProtectedRoute : provides data
+
+' Backend relationships
+AuthController --> AuthService : uses
+PermissionController --> PermissionService : uses
+AdminController --> AdminService : uses
+
+' Service to Database relationships
+AuthService --> AdminUser : queries
+PermissionService --> Role : queries
+PermissionService --> RolePermission : queries
+AdminService --> AdminUser : queries
+
+' Database relationships
+AdminUser ||--|| AdminRole : has
+Role ||--o{ RolePermission : has many
+RolePermission ||--|| Resource : uses
+RolePermission ||--o{ Permission : has many
+
+' Frontend to Backend relationships
+AuthStore --> AuthController : API calls
+PermissionStore --> PermissionController : API calls
+PermissionGate --> PermissionController : API calls
+ProtectedRoute --> PermissionController : API calls
+
+' Enum relationships
+AdminUser --> AdminRole : uses
+RolePermission --> Resource : uses
+RolePermission --> Permission : uses
+
+note right of AdminUser
+  Legacy permissions field (JSON array)
+  will be deprecated in favor of
+  Role-Permission system
+end note
+
+note right of RolePermission
+  New permission system
+  replacing AdminUser.permissions
+end note
+
+note bottom of PermissionStore
+  Zustand store with persistence
+  for client-side state management
+end note
+
+note bottom of PermissionService
+  Central service for all
+  permission-related operations
+end note
+
+@enduml

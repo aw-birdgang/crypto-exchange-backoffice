@@ -2,7 +2,6 @@ import {Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuar
 import {
   ApiBadRequestResponse,
   ApiBearerAuth,
-  ApiBody,
   ApiForbiddenResponse,
   ApiInternalServerErrorResponse,
   ApiNotFoundResponse,
@@ -24,8 +23,9 @@ import {
 import {CreateUserDto, UpdateUserDto, UserResponseDto,} from '../application/dto/permission.dto';
 import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {PermissionGuard, RequirePermissions} from '../application/guards/permission.guard';
-import {Permission, Resource, UserRole} from '@crypto-exchange/shared';
-import {AdminUser, AdminRole} from '@/features/auth/domain/entities/admin-user.entity';
+import {Permission, Resource, AdminUserRole} from '@crypto-exchange/shared';
+import {AdminUser} from '@/features/auth/domain/entities/admin-user.entity';
+import { ApiBodyHelpers } from './constants/api-body.constants';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
@@ -34,19 +34,6 @@ import {AdminUser, AdminRole} from '@/features/auth/domain/entities/admin-user.e
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
-  /**
-   * AdminRole을 UserRole로 매핑
-   */
-  private mapAdminRoleToUserRole(adminRole: AdminRole): UserRole {
-    switch (adminRole) {
-      case AdminRole.SUPER_ADMIN:
-        return UserRole.SUPER_ADMIN;
-      case AdminRole.ADMIN:
-        return UserRole.ADMIN;
-      default:
-        return UserRole.USER;
-    }
-  }
 
   @Get('dashboard')
   @UseGuards(PermissionGuard)
@@ -171,34 +158,7 @@ export class AdminController {
     summary: '관리자 생성',
     description: '새로운 관리자를 생성합니다. SUPER_ADMIN 권한이 필요합니다.',
   })
-  @ApiBody({
-    type: CreateAdminDto,
-    description: '생성할 관리자 정보',
-    examples: {
-      superAdmin: {
-        summary: '슈퍼 관리자 생성',
-        value: {
-          email: 'superadmin@crypto-exchange.com',
-          password: 'superadmin123!',
-          firstName: 'Super',
-          lastName: 'Admin',
-          role: 'super_admin',
-          isActive: true
-        }
-      },
-      admin: {
-        summary: '일반 관리자 생성',
-        value: {
-          email: 'admin@crypto-exchange.com',
-          password: 'admin123!',
-          firstName: 'Admin',
-          lastName: 'User',
-          role: 'admin',
-          isActive: true
-        }
-      }
-    }
-  })
+  @ApiBodyHelpers.createAdmin()
   @ApiResponse({
     status: 201,
     description: '관리자 생성 성공',
@@ -236,10 +196,7 @@ export class AdminController {
     description: '관리자 ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
-  @ApiBody({
-    type: UpdateAdminDto,
-    description: '수정할 관리자 정보'
-  })
+  @ApiBodyHelpers.updateAdmin()
   @ApiResponse({
     status: 200,
     description: '관리자 정보 수정 성공',
@@ -303,27 +260,7 @@ export class AdminController {
     summary: '대량 사용자 작업',
     description: '여러 사용자에 대해 대량 작업을 수행합니다. (활성화, 비활성화, 삭제, 역할 변경)',
   })
-  @ApiBody({
-    type: AdminBulkActionDto,
-    description: '대량 작업 정보',
-    examples: {
-      activate: {
-        summary: '사용자 활성화',
-        value: {
-          userIds: ['user1', 'user2', 'user3'],
-          action: 'activate'
-        }
-      },
-      changeRole: {
-        summary: '사용자 역할 변경',
-        value: {
-          userIds: ['user1', 'user2'],
-          action: 'change_role',
-          newRole: 'trader'
-        }
-      }
-    }
-  })
+  @ApiBodyHelpers.bulkAction()
   @ApiResponse({
     status: 200,
     description: '대량 작업 완료',
@@ -384,83 +321,20 @@ export class AdminController {
     return { hasPermission };
   }
 
-  @Post('users')
-  @UseGuards(PermissionGuard)
-  @RequirePermissions(Resource.SETTINGS, [Permission.CREATE])
-  @ApiOperation({
-    summary: '관리자 권한으로 사용자 생성',
-    description: '관리자 권한으로 새로운 사용자를 생성합니다.',
-  })
-  @ApiBody({
-    type: CreateUserDto,
-    description: '생성할 사용자 정보',
-    examples: {
-      example1: {
-        summary: '일반 사용자 생성',
-        value: {
-          email: 'user@example.com',
-          password: 'password123',
-          firstName: 'John',
-          lastName: 'Doe',
-          role: 'user',
-          isActive: true
-        }
-      }
-    }
-  })
-  @ApiResponse({
-    status: 201,
-    description: '사용자 생성 성공',
-    type: UserResponseDto
-  })
-  @ApiBadRequestResponse({ description: '잘못된 요청 데이터' })
-  @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
-  @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
-  @ApiInternalServerErrorResponse({ description: '서버 내부 오류' })
-  async createUserAsAdmin(
-    @Body() userData: CreateUserDto,
-    @Request() req: any,
-  ): Promise<UserResponseDto> {
-    // CreateUserDto를 CreateAdminDto로 변환
-    const adminData: CreateAdminDto = {
-      email: userData.email,
-      password: userData.password,
-      firstName: userData.firstName,
-      lastName: userData.lastName,
-      role: userData.role === UserRole.SUPER_ADMIN ? UserRole.SUPER_ADMIN : UserRole.ADMIN,
-      isActive: userData.isActive
-    };
-    
-    const createdUser = await this.adminService.createAdmin(adminData);
-    return {
-      id: createdUser.id,
-      email: createdUser.email,
-      firstName: createdUser.firstName,
-      lastName: createdUser.lastName,
-      role: this.mapAdminRoleToUserRole(createdUser.adminRole),
-      isActive: createdUser.isActive,
-      lastLoginAt: createdUser.lastLoginAt?.toISOString() || '',
-      createdAt: createdUser.createdAt.toISOString(),
-      updatedAt: createdUser.updatedAt.toISOString()
-    };
-  }
 
   @Put('users/:id')
   @UseGuards(PermissionGuard)
   @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
   @ApiOperation({
-    summary: '관리자 권한으로 사용자 수정',
-    description: '관리자 권한으로 사용자 정보를 수정합니다.',
+    summary: '승인된 사용자 정보 수정',
+    description: '이미 승인된 사용자의 정보를 수정합니다.',
   })
   @ApiParam({
     name: 'id',
     description: '사용자 ID (UUID)',
     example: '123e4567-e89b-12d3-a456-426614174000'
   })
-  @ApiBody({
-    type: UpdateUserDto,
-    description: '수정할 사용자 정보'
-  })
+  @ApiBodyHelpers.updateUser()
   @ApiResponse({
     status: 200,
     description: '사용자 수정 성공',
@@ -482,17 +356,17 @@ export class AdminController {
       password: userData.password,
       firstName: userData.firstName,
       lastName: userData.lastName,
-      role: userData.role === UserRole.SUPER_ADMIN ? UserRole.SUPER_ADMIN : UserRole.ADMIN,
+      role: userData.role === AdminUserRole.SUPER_ADMIN ? AdminUserRole.SUPER_ADMIN : AdminUserRole.ADMIN,
       isActive: userData.isActive
     };
-    
+
     const updatedUser = await this.adminService.updateAdmin(id, adminData);
     return {
       id: updatedUser.id,
       email: updatedUser.email,
       firstName: updatedUser.firstName,
       lastName: updatedUser.lastName,
-      role: this.mapAdminRoleToUserRole(updatedUser.adminRole),
+      role: updatedUser.adminRole,
       isActive: updatedUser.isActive,
       lastLoginAt: updatedUser.lastLoginAt?.toISOString() || '',
       createdAt: updatedUser.createdAt.toISOString(),
@@ -530,5 +404,106 @@ export class AdminController {
   ): Promise<{ message: string }> {
     await this.adminService.deleteAdmin(id);
     return { message: '사용자가 삭제되었습니다.' };
+  }
+
+  @Get('users/pending')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.READ])
+  @ApiOperation({
+    summary: '대기 중인 사용자 목록 조회',
+    description: '승인 대기 중인 사용자 목록을 조회합니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '대기 중인 사용자 목록 조회 성공',
+    type: [AdminUser]
+  })
+  @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
+  @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
+  async getPendingUsers(): Promise<AdminUser[]> {
+    return this.adminService.getPendingUsers();
+  }
+
+  @Put('users/:id/approve')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
+  @ApiOperation({
+    summary: '사용자 승인',
+    description: '대기 중인 사용자를 승인하고 역할을 부여합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: '사용자 ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiResponse({
+    status: 200,
+    description: '사용자 승인 성공',
+    type: AdminUser
+  })
+  @ApiBadRequestResponse({ description: '잘못된 요청 데이터' })
+  @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
+  @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
+  @ApiNotFoundResponse({ description: '사용자를 찾을 수 없음' })
+  async approveUser(
+    @Param('id') id: string,
+    @Body() approvalData: { role: AdminUserRole; isActive: boolean },
+    @Request() req: any,
+  ): Promise<AdminUser> {
+    return this.adminService.approveUser(id, approvalData, req.user.id);
+  }
+
+  @Put('users/:id/reject')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
+  @ApiOperation({
+    summary: '사용자 거부',
+    description: '대기 중인 사용자의 가입을 거부합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: '사용자 ID (UUID)',
+    example: '123e4567-e89b-12d3-a456-426614174000'
+  })
+  @ApiResponse({
+    status: 200,
+    description: '사용자 거부 성공',
+    type: AdminUser
+  })
+  @ApiBadRequestResponse({ description: '잘못된 요청 데이터' })
+  @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
+  @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
+  @ApiNotFoundResponse({ description: '사용자를 찾을 수 없음' })
+  async rejectUser(
+    @Param('id') id: string,
+    @Request() req: any,
+  ): Promise<AdminUser> {
+    return this.adminService.rejectUser(id, req.user.id);
+  }
+
+  @Get('users/status/:status')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.READ])
+  @ApiOperation({
+    summary: '상태별 사용자 목록 조회',
+    description: '특정 상태의 사용자 목록을 조회합니다.',
+  })
+  @ApiParam({
+    name: 'status',
+    description: '사용자 상태',
+    enum: ['PENDING', 'APPROVED', 'REJECTED', 'SUSPENDED'],
+    example: 'PENDING'
+  })
+  @ApiResponse({
+    status: 200,
+    description: '상태별 사용자 목록 조회 성공',
+    type: [AdminUser]
+  })
+  @ApiUnauthorizedResponse({ description: '인증되지 않은 사용자' })
+  @ApiForbiddenResponse({ description: '권한이 없는 사용자' })
+  async getUsersByStatus(
+    @Param('status') status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED',
+  ): Promise<AdminUser[]> {
+    return this.adminService.getUsersByStatus(status);
   }
 }

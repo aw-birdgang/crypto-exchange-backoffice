@@ -8,8 +8,6 @@ import { AdminController } from './admin.controller';
 import { AuthService } from '../application/services/auth.service';
 import { PermissionService } from '../application/services/permission.service';
 import { AdminService } from '../application/services/admin.service';
-import { SeedService } from '../application/services/seed.service';
-import { InitializationService } from '../application/services/initialization.service';
 import { AdminUser } from '../domain/entities/admin-user.entity';
 import { RolePermission } from '../domain/entities/role-permission.entity';
 import { Role } from '../domain/entities/role.entity';
@@ -31,8 +29,6 @@ import { RoleRepositoryInterface } from '../domain/repositories/role.repository.
     AuthService,
     PermissionService,
     AdminService,
-    SeedService,
-    InitializationService,
     {
       provide: 'PermissionRepositoryInterface',
       useClass: PermissionRepository,

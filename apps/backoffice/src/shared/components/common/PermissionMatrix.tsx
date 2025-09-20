@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Table, Checkbox, Space, Typography, Tag, Button } from 'antd';
-import { Resource, Permission, UserRole } from '@crypto-exchange/shared';
+import { Resource, Permission, AdminUserRole } from '@crypto-exchange/shared';
 
 const { Title, Text } = Typography;
 
@@ -9,7 +9,7 @@ interface PermissionMatrixProps {
     resource: Resource;
     permissions: Permission[];
   }[];
-  role?: UserRole;
+  role?: AdminUserRole;
   onChange?: (permissions: { resource: Resource; permissions: Permission[] }[]) => void;
   readOnly?: boolean;
   showResourceDescription?: boolean;
@@ -21,6 +21,16 @@ const resourceLabels: Record<Resource, string> = {
   [Resource.PERMISSIONS]: '권한 관리',
   [Resource.USERS]: '사용자 관리',
   [Resource.ROLES]: '역할 관리',
+  
+  // 지갑관리 리소스
+  [Resource.WALLET]: '지갑',
+  [Resource.WALLET_TRANSACTIONS]: '지갑 거래',
+  
+  // 고객관리 리소스
+  [Resource.CUSTOMER_SUPPORT]: '고객 지원',
+  
+  // 어드민 계정 관리 리소스
+  [Resource.ADMIN_USERS]: '관리자 계정',
 };
 
 const permissionLabels: Record<Permission, string> = {
@@ -45,6 +55,16 @@ const resourceDescriptions: Record<Resource, string> = {
   [Resource.PERMISSIONS]: '권한 및 접근 제어 관리',
   [Resource.USERS]: '사용자 계정 및 프로필 관리',
   [Resource.ROLES]: '역할 및 권한 그룹 관리',
+  
+  // 지갑관리 리소스
+  [Resource.WALLET]: '지갑 관리 및 모니터링',
+  [Resource.WALLET_TRANSACTIONS]: '지갑 거래 내역 관리',
+  
+  // 고객관리 리소스
+  [Resource.CUSTOMER_SUPPORT]: '고객 지원 및 문의 관리',
+  
+  // 어드민 계정 관리 리소스
+  [Resource.ADMIN_USERS]: '관리자 계정 관리',
 };
 
 export const PermissionMatrix: React.FC<PermissionMatrixProps> = ({

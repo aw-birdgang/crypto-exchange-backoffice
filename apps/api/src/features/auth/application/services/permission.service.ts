@@ -1,9 +1,8 @@
 import { Injectable, ForbiddenException, Inject } from '@nestjs/common';
-import { UserRole, Resource, Permission, UserPermissions, Role } from '@crypto-exchange/shared';
+import { AdminUserRole, Resource, Permission, UserPermissions, Role } from '@crypto-exchange/shared';
 import { PermissionRepositoryInterface } from '../../domain/repositories/permission.repository.interface';
 import { RoleRepositoryInterface } from '../../domain/repositories/role.repository.interface';
 import { RolePermission } from '../../domain/entities/role-permission.entity';
-import { CacheService } from '../../../../common/cache/cache.service';
 
 @Injectable()
 export class PermissionService {
@@ -12,36 +11,51 @@ export class PermissionService {
     private permissionRepository: PermissionRepositoryInterface,
     @Inject('RoleRepositoryInterface')
     private roleRepository: RoleRepositoryInterface,
-    private cacheService: CacheService,
   ) {}
 
   async getUserPermissions(userId: string): Promise<UserPermissions> {
     try {
-      const cacheKey = CacheService.generateKey('user_permissions', userId);
-      
-      // 캐시에서 먼저 확인
-      const cachedPermissions = await this.cacheService.get<UserPermissions>(cacheKey);
-      if (cachedPermissions) {
-        console.log('✅ PermissionService: Retrieved permissions from cache for user:', userId);
-        return cachedPermissions;
+      // 입력 검증
+      if (!userId || typeof userId !== 'string' || userId.trim().length === 0) {
+        throw new Error('Invalid userId provided');
       }
 
       console.log('🚀 PermissionService: getUserPermissions called with userId:', userId);
       console.log('🔍 PermissionService: Calling permissionRepository.getUserPermissions...');
+      
       const permissions = await this.permissionRepository.getUserPermissions(userId);
       
-      // 캐시에 저장 (30분 TTL)
-      await this.cacheService.set(cacheKey, permissions, CacheService.TTL.MEDIUM);
-      
+      // 응답 검증
+      if (!permissions || !permissions.userId || !permissions.role) {
+        throw new Error('Invalid permissions data received from repository');
+      }
+
       console.log('✅ PermissionService: Successfully retrieved permissions:', {
         userId: permissions.userId,
         role: permissions.role,
-        permissionsCount: permissions.permissions?.length || 0
+        permissionsCount: permissions.permissions?.length || 0,
+        resources: permissions.permissions?.map(p => p.resource) || []
       });
+      
       return permissions;
     } catch (error) {
-      console.error('❌ PermissionService: Error getting user permissions:', error);
-      throw error;
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      const errorStack = error instanceof Error ? error.stack : undefined;
+      
+      console.error('❌ PermissionService: Error getting user permissions:', {
+        userId,
+        error: errorMessage,
+        stack: errorStack
+      });
+      
+      // 에러 타입에 따른 처리
+      if (errorMessage.includes('User not found')) {
+        throw new Error(`User not found: ${userId}`);
+      } else if (errorMessage.includes('Failed to get user permissions')) {
+        throw new Error(`Failed to retrieve permissions for user: ${userId}`);
+      } else {
+        throw new Error(`Unexpected error while getting user permissions: ${errorMessage}`);
+      }
     }
   }
 
@@ -83,19 +97,12 @@ export class PermissionService {
   }
 
   // 권한 관리 CRUD
-  async createRolePermission(rolePermission: Partial<RolePermission>): Promise<RolePermission> {
-    return this.permissionRepository.createRolePermission(rolePermission);
-  }
-
-  async updateRolePermission(id: string, rolePermission: Partial<RolePermission>): Promise<RolePermission> {
-    return this.permissionRepository.updateRolePermission(id, rolePermission);
-  }
 
   async deleteRolePermission(id: string): Promise<void> {
     return this.permissionRepository.deleteRolePermission(id);
   }
 
-  async getRolePermissions(role: UserRole): Promise<RolePermission[]> {
+  async getRolePermissions(role: AdminUserRole): Promise<RolePermission[]> {
     return this.permissionRepository.getRolePermissions(role);
   }
 
@@ -110,15 +117,6 @@ export class PermissionService {
   // Role 관리 메서드들
   async getAllRoles(): Promise<Role[]> {
     try {
-      const cacheKey = 'all_roles';
-      
-      // 캐시에서 먼저 확인
-      const cachedRoles = await this.cacheService.get<Role[]>(cacheKey);
-      if (cachedRoles) {
-        console.log('✅ PermissionService: Retrieved roles from cache');
-        return cachedRoles;
-      }
-
       console.log('🔍 PermissionService: Getting all roles from repository...');
       const roles = await this.roleRepository.findAll();
       console.log('✅ PermissionService: Found roles:', roles.length);
@@ -127,9 +125,6 @@ export class PermissionService {
         console.log('🔍 PermissionService: Mapping role:', role.name);
         return role.toRoleType();
       });
-      
-      // 캐시에 저장 (1시간 TTL)
-      await this.cacheService.set(cacheKey, mappedRoles, CacheService.TTL.LONG);
       
       console.log('✅ PermissionService: Mapped roles successfully:', mappedRoles.length);
       return mappedRoles;
@@ -144,21 +139,84 @@ export class PermissionService {
     return role ? role.toRoleType() : null;
   }
 
+  async getRoleByName(name: string): Promise<Role | null> {
+    const role = await this.roleRepository.findByName(name);
+    return role ? role.toRoleType() : null;
+  }
+
   async createRole(roleData: Partial<Role>): Promise<Role> {
+    console.log('🔍 PermissionService: Creating role with data:', JSON.stringify(roleData, null, 2));
+    
+    // 중복 검사: 같은 이름의 역할이 이미 존재하는지 확인
+    if (roleData.name) {
+      const existingRole = await this.roleRepository.findByName(roleData.name);
+      if (existingRole) {
+        console.log('❌ PermissionService: Role with name already exists:', roleData.name);
+        throw new Error(`역할 이름 '${roleData.name}'이 이미 존재합니다.`);
+      }
+    }
+    
     // permissions 필드를 제외하고 엔티티 생성
     const { permissions, ...entityData } = roleData as any;
+    console.log('🔍 PermissionService: Entity data (after removing permissions):', JSON.stringify(entityData, null, 2));
+    
     const role = await this.roleRepository.create(entityData);
-    return role.toRoleType();
+    console.log('✅ PermissionService: Created role entity:', JSON.stringify(role, null, 2));
+    
+    const roleType = role.toRoleType();
+    console.log('✅ PermissionService: Converted to RoleType:', JSON.stringify(roleType, null, 2));
+    
+    return roleType;
   }
 
   async updateRole(id: string, roleData: Partial<Role>): Promise<Role> {
+    // 중복 검사: 같은 이름의 역할이 이미 존재하는지 확인 (자기 자신 제외)
+    if (roleData.name) {
+      const existingRole = await this.roleRepository.findByName(roleData.name);
+      if (existingRole && existingRole.id !== id) {
+        console.log('❌ PermissionService: Role with name already exists:', roleData.name);
+        throw new Error(`역할 이름 '${roleData.name}'이 이미 존재합니다.`);
+      }
+    }
+    
     // permissions 필드를 제외하고 엔티티 업데이트
     const { permissions, ...entityData } = roleData as any;
     const role = await this.roleRepository.update(id, entityData);
+    
     return role.toRoleType();
   }
 
   async deleteRole(id: string): Promise<void> {
-    return this.roleRepository.delete(id);
+    await this.roleRepository.delete(id);
+  }
+
+  async createRolePermission(rolePermissionData: any): Promise<RolePermission> {
+    // AdminUserRole을 Role 엔티티로 변환
+    const role = await this.roleRepository.findByName(rolePermissionData.role);
+    if (!role) {
+      throw new Error(`Role not found: ${rolePermissionData.role}`);
+    }
+    
+    const rolePermission = {
+      ...rolePermissionData,
+      role: role
+    };
+    
+    return this.permissionRepository.createRolePermission(rolePermission);
+  }
+
+  async updateRolePermission(id: string, rolePermissionData: any): Promise<RolePermission> {
+    // AdminUserRole을 Role 엔티티로 변환
+    const role = await this.roleRepository.findByName(rolePermissionData.role);
+    if (!role) {
+      throw new Error(`Role not found: ${rolePermissionData.role}`);
+    }
+    
+    const rolePermission = {
+      ...rolePermissionData,
+      role: role
+    };
+    
+    return this.permissionRepository.updateRolePermission(id, rolePermission);
   }
 }

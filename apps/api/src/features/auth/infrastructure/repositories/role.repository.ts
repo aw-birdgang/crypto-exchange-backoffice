@@ -26,9 +26,23 @@ export class RoleRepository implements RoleRepositoryInterface {
       }
       
       const roles = await this.roleRepository.find({
+        relations: ['permissions', 'permissions.role'], // 권한 관계와 권한의 역할 관계 포함
         order: { createdAt: 'ASC' },
       });
       console.log('✅ RoleRepository: Found roles:', roles.length);
+      console.log('🔍 RoleRepository: Role details:', roles.map(r => ({ 
+        id: r.id, 
+        name: r.name, 
+        description: r.description, 
+        isSystem: r.isSystem,
+        permissionsCount: r.permissions?.length || 0,
+        permissions: r.permissions?.map(p => ({ 
+          id: p.id,
+          role: p.role ? p.role.name : 'NULL_ROLE',
+          resource: p.resource, 
+          permissions: p.permissions 
+        })) || []
+      })));
       return roles;
     } catch (error) {
       console.error('❌ RoleRepository: Error in findAll:', error);
@@ -75,6 +89,7 @@ export class RoleRepository implements RoleRepositoryInterface {
   async findById(id: string): Promise<Role | null> {
     return this.roleRepository.findOne({
       where: { id },
+      relations: ['permissions'], // 권한 관계 포함
     });
   }
 
@@ -85,8 +100,26 @@ export class RoleRepository implements RoleRepositoryInterface {
   }
 
   async create(role: Partial<Role>): Promise<Role> {
-    const newRole = this.roleRepository.create(role);
-    return this.roleRepository.save(newRole);
+    console.log('🔍 RoleRepository: Creating role with data:', JSON.stringify(role, null, 2));
+    
+    try {
+      const newRole = this.roleRepository.create(role);
+      console.log('🔍 RoleRepository: Created entity:', JSON.stringify(newRole, null, 2));
+      
+      const savedRole = await this.roleRepository.save(newRole);
+      console.log('✅ RoleRepository: Saved role:', JSON.stringify(savedRole, null, 2));
+      
+      // 저장 후 즉시 조회하여 실제로 저장되었는지 확인
+      const verifyRole = await this.roleRepository.findOne({
+        where: { id: savedRole.id }
+      });
+      console.log('🔍 RoleRepository: Verification query result:', JSON.stringify(verifyRole, null, 2));
+      
+      return savedRole;
+    } catch (error) {
+      console.error('❌ RoleRepository: Error creating role:', error);
+      throw error;
+    }
   }
 
   async update(id: string, role: Partial<Role>): Promise<Role> {
