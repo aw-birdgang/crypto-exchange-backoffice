@@ -1,5 +1,6 @@
 import {Injectable} from '@nestjs/common';
 import {ConflictException, UnauthorizedException} from '../../../../common/exceptions/business.exception';
+import {ExceptionFactory} from '../../../../common/exceptions/enhanced-business.exception';
 import {JwtService} from '@nestjs/jwt';
 import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '@nestjs/config';
@@ -44,7 +45,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictException('User with this email already exists');
+      throw ExceptionFactory.emailDuplicate({ email });
     }
   }
 
@@ -112,20 +113,20 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw ExceptionFactory.invalidCredentials({ email });
     }
 
     if (user.status !== 'APPROVED') {
-      throw new UnauthorizedException('Account is pending approval');
+      throw ExceptionFactory.accountPending({ userId: user.id, status: user.status });
     }
 
     if (!user.isActive) {
-      throw new UnauthorizedException('Account is deactivated');
+      throw ExceptionFactory.accountDeactivated({ userId: user.id });
     }
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw ExceptionFactory.invalidCredentials({ email });
     }
 
     return user;
@@ -137,7 +138,7 @@ export class AuthService {
     });
 
     if (!user || !user.isActive) {
-      throw new UnauthorizedException('User not found or inactive');
+      throw ExceptionFactory.userNotFound({ userId: payload.sub });
     }
 
     return user;
@@ -157,7 +158,7 @@ export class AuthService {
       }) as RefreshTokenPayload;
 
       if (payload.type !== 'refresh') {
-        throw new UnauthorizedException('Invalid token type');
+        throw ExceptionFactory.tokenInvalid({ tokenType: payload.type });
       }
 
       const user = await this.adminUserRepository.findOne({
@@ -165,7 +166,7 @@ export class AuthService {
       });
 
       if (!user || !user.isActive) {
-        throw new UnauthorizedException('User not found or inactive');
+        throw ExceptionFactory.userNotFound({ userId: payload.sub });
       }
 
       const newAccessToken = this.generateAccessToken(user);
@@ -176,7 +177,9 @@ export class AuthService {
         refreshToken: newRefreshToken,
       };
     } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
+      throw ExceptionFactory.tokenInvalid({ 
+        error: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   }
 

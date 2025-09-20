@@ -1,36 +1,61 @@
 import { AxiosError } from 'axios';
-import { ApiResponse } from '@crypto-exchange/shared';
+import { ApiResponse, ExtendedApiError, ErrorResponse } from '@crypto-exchange/shared';
 
 export interface AppError {
   message: string;
   code?: string;
   status?: number;
   details?: any;
+  severity?: string;
+  category?: string;
+  timestamp?: string;
+  requestId?: string;
 }
 
 export class ErrorHandler {
   static handleApiError(error: AxiosError): AppError {
     if (error.response) {
       // 서버에서 응답을 받았지만 에러 상태 코드
-      const response = error.response.data as ApiResponse<any>;
-      return {
-        message: response.message || 'API Error',
-        code: 'API_ERROR',
-        status: error.response.status,
-        details: response.data,
-      };
+      const response = error.response.data as ErrorResponse;
+      
+      if (response.error) {
+        // 새로운 에러코드 시스템 사용
+        return {
+          message: response.error.message,
+          code: response.error.code,
+          status: response.error.status,
+          severity: response.error.severity,
+          category: response.error.category,
+          details: response.error.details,
+          timestamp: response.error.timestamp,
+          requestId: response.error.requestId,
+        };
+      } else {
+        // 기존 ApiResponse 형식
+        const legacyResponse = response as unknown as ApiResponse<any>;
+        return {
+          message: legacyResponse.message || 'API Error',
+          code: 'API_ERROR',
+          status: error.response.status,
+          details: legacyResponse.data,
+        };
+      }
     } else if (error.request) {
       // 요청이 전송되었지만 응답을 받지 못함
       return {
         message: '서버에 연결할 수 없습니다. 네트워크를 확인해주세요.',
-        code: 'NETWORK_ERROR',
+        code: 'NETWORK_INTERNAL_CONNECTION_FAILED',
         status: 0,
+        severity: 'high',
+        category: 'network',
       };
     } else {
       // 요청 설정 중에 에러 발생
       return {
         message: error.message || '알 수 없는 오류가 발생했습니다.',
-        code: 'REQUEST_ERROR',
+        code: 'NETWORK_INTERNAL_REQUEST_FAILED',
+        severity: 'medium',
+        category: 'network',
       };
     }
   }
@@ -39,13 +64,17 @@ export class ErrorHandler {
     if (error instanceof Error) {
       return {
         message: error.message,
-        code: 'GENERIC_ERROR',
+        code: 'SYSTEM_INTERNAL_INTERNAL_SERVER_ERROR',
+        severity: 'medium',
+        category: 'system',
       };
     }
 
     return {
       message: '알 수 없는 오류가 발생했습니다.',
-      code: 'UNKNOWN_ERROR',
+      code: 'SYSTEM_INTERNAL_INTERNAL_SERVER_ERROR',
+      severity: 'high',
+      category: 'system',
     };
   }
 
@@ -71,7 +100,11 @@ export class ErrorHandler {
 
   static shouldRetry(error: AppError): boolean {
     // 네트워크 에러나 5xx 에러는 재시도 가능
-    if (error.code === 'NETWORK_ERROR') {
+    if (error.code?.startsWith('NETWORK_') || error.code === 'NETWORK_ERROR') {
+      return true;
+    }
+
+    if (error.severity === 'critical' || error.severity === 'high') {
       return true;
     }
 
