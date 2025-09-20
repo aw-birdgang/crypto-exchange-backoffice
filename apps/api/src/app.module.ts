@@ -9,12 +9,13 @@ import {ResponseInterceptor} from './common/interceptors/response.interceptor';
 import {CacheModule} from './common/cache/cache.module';
 import {LoggerModule} from './common/logger/logger.module';
 import {HealthModule} from './common/health/health.module';
-import {CorsMiddleware, RequestLoggingMiddleware, SecurityMiddleware} from './common/middleware/security.middleware';
+import {LoggingMiddleware, RequestIdMiddleware, CorsMiddleware, SecurityMiddleware} from './common/middleware';
 import {RateLimitGuard} from './common/guards/rate-limit.guard';
 import {PerformanceInterceptor} from './common/interceptors/performance.interceptor';
 import appConfig from './config/app.config';
 import databaseConfig from './config/database.config';
 import jwtConfig from './config/jwt.config';
+import {validationSchema} from './config/validation.schema';
 
 @Module({
   imports: [
@@ -22,6 +23,11 @@ import jwtConfig from './config/jwt.config';
       isGlobal: true,
       envFilePath: '.env',
       load: [appConfig, databaseConfig, jwtConfig],
+      validationSchema,
+      validationOptions: {
+        allowUnknown: true,
+        abortEarly: true,
+      },
     }),
           TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
@@ -66,7 +72,7 @@ import jwtConfig from './config/jwt.config';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(SecurityMiddleware, CorsMiddleware, RequestLoggingMiddleware)
+      .apply(RequestIdMiddleware, SecurityMiddleware, CorsMiddleware, LoggingMiddleware)
       .forRoutes('*');
   }
 }

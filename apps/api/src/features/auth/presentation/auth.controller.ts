@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, UseGuards, Request, Param, Query } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
@@ -15,6 +15,9 @@ import { Public } from '../application/decorators/public.decorator';
 import { ApiBodyHelpers } from './constants/api-body.constants';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { PermissionService } from '../application/services/permission.service';
+import { CurrentUser, RequestId } from '../../../common/decorators';
+import { AdminUser } from '../domain/entities/admin-user.entity';
+import { ParseIntPipe, ParseUuidPipe, ParseBooleanPipe, TrimPipe } from '../../../common/pipes';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -242,15 +245,9 @@ export class AuthController {
       error: 'Unauthorized'
     }
   })
-  async getProfile(@Request() req: any) {
-    console.log('🔍 AuthController: getProfile called');
-    console.log('🔍 AuthController: Request user:', req.user);
-    
-    const user = req.user;
-    if (!user) {
-      console.log('❌ AuthController: No user found in request');
-      throw new Error('User not found in request');
-    }
+  async getProfile(@CurrentUser() user: AdminUser, @RequestId() requestId: string) {
+    console.log('🔍 AuthController: getProfile called with requestId:', requestId);
+    console.log('🔍 AuthController: Current user:', user);
     
     const profile = {
       id: user.id,
@@ -305,15 +302,9 @@ export class AuthController {
       error: 'Unauthorized'
     }
   })
-  async getMyRole(@Request() req: any) {
-    console.log('🔍 AuthController: getMyRole called');
-    console.log('🔍 AuthController: Request user:', req.user);
-    
-    const user = req.user;
-    if (!user) {
-      console.log('❌ AuthController: No user found in request');
-      throw new Error('User not found in request');
-    }
+  async getMyRole(@CurrentUser() user: AdminUser, @RequestId() requestId: string) {
+    console.log('🔍 AuthController: getMyRole called with requestId:', requestId);
+    console.log('🔍 AuthController: Current user:', user);
     
     // AdminRole을 AdminUserRole로 매핑
     let userRole: string;
@@ -370,15 +361,9 @@ export class AuthController {
       error: 'Unauthorized'
     }
   })
-  async getMyRoleId(@Request() req: any) {
-    console.log('🔍 AuthController: getMyRoleId called');
-    console.log('🔍 AuthController: Request user:', req.user);
-    
-    const user = req.user;
-    if (!user) {
-      console.log('❌ AuthController: No user found in request');
-      throw new Error('User not found in request');
-    }
+  async getMyRoleId(@CurrentUser() user: AdminUser, @RequestId() requestId: string) {
+    console.log('🔍 AuthController: getMyRoleId called with requestId:', requestId);
+    console.log('🔍 AuthController: Current user:', user);
     
     // AdminRole을 AdminUserRole로 매핑
     let userRole: string;
@@ -449,12 +434,13 @@ export class AuthController {
       }
     }
   })
-  async testAuth(@Request() req: any) {
-    console.log('🔍 AuthController: testAuth called');
+  async testAuth(@Request() req: any, @RequestId() requestId: string) {
+    console.log('🔍 AuthController: testAuth called with requestId:', requestId);
     console.log('🔍 AuthController: All headers:', req.headers);
     
     return {
       message: 'Test endpoint working',
+      requestId,
       headers: {
         authorization: req.headers.authorization || req.headers.Authorization || 'No authorization header',
         'user-agent': req.headers['user-agent'],
@@ -462,6 +448,50 @@ export class AuthController {
         'referer': req.headers['referer'],
         allHeaders: Object.keys(req.headers)
       },
+      timestamp: new Date().toISOString()
+    };
+  }
+
+  @Get('test-pipes/:id')
+  @Public()
+  @ApiOperation({
+    summary: '파이프 테스트 엔드포인트',
+    description: '커스텀 파이프들의 동작을 테스트할 수 있는 엔드포인트입니다.'
+  })
+  @ApiResponse({
+    status: 200,
+    description: '파이프 테스트 성공',
+    example: {
+      message: 'Pipes test successful',
+      parsedId: 123,
+      parsedUuid: '123e4567-e89b-12d3-a456-426614174000',
+      parsedBoolean: true,
+      trimmedText: 'Hello World',
+      requestId: 'req-123'
+    }
+  })
+  async testPipes(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('uuid', ParseUuidPipe) uuid: string,
+    @Query('boolean', ParseBooleanPipe) boolean: boolean,
+    @Query('text', TrimPipe) text: string,
+    @RequestId() requestId: string,
+  ) {
+    console.log('🔍 AuthController: testPipes called with:', {
+      id,
+      uuid,
+      boolean,
+      text,
+      requestId
+    });
+
+    return {
+      message: 'Pipes test successful',
+      parsedId: id,
+      parsedUuid: uuid,
+      parsedBoolean: boolean,
+      trimmedText: text,
+      requestId,
       timestamp: new Date().toISOString()
     };
   }
