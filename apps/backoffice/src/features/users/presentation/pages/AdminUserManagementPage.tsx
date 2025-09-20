@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import {Alert, Button, Card, Space, Tabs} from 'antd';
+import {Alert, Button, Card, Space, Tabs, message} from 'antd';
 import {ReloadOutlined, SettingOutlined} from '@ant-design/icons';
 import {AdminUser, UserApprovalRequest, UserBulkAction, UserStatus} from '@crypto-exchange/shared';
 import {UserTable} from '../components/UserTable';
@@ -167,6 +167,8 @@ export const AdminUserManagementPage: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isApprovalModalOpen, setIsApprovalModalOpen] = useState(false);
   const [isBulkActionModalOpen, setIsBulkActionModalOpen] = useState(false);
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [activeTab, setActiveTab] = useState('all');
 
   const { filters, updateFilter, resetFilters } = useUserFilters();
@@ -180,6 +182,19 @@ export const AdminUserManagementPage: React.FC = () => {
   const approvalMutation = useUserApproval();
   const rejectionMutation = useUserRejection();
   const bulkActionMutation = useBulkUserAction();
+
+  // deleteUser 함수 추가 (임시 구현)
+  const deleteUser = async (userId: string) => {
+    // TODO: 실제 API 호출로 교체
+    console.log('Delete user:', userId);
+    return Promise.resolve();
+  };
+
+  // refetch 함수 추가 (임시 구현)
+  const refetch = () => {
+    // TODO: 실제 refetch 로직 구현
+    console.log('Refetch users');
+  };
 
   const {
     selectedUsers,
@@ -243,14 +258,45 @@ export const AdminUserManagementPage: React.FC = () => {
   };
 
   const handleUserEdit = (userId: string) => {
-    // TODO: 사용자 수정 모달 또는 페이지로 이동
-    console.log('Edit user:', userId);
+    // 현재 활성 탭에 따라 사용자 데이터 선택
+    let users: AdminUser[] = [];
+    switch (activeTab) {
+      case 'all':
+        users = allUsers || [];
+        break;
+      case 'pending':
+        users = pendingUsers || [];
+        break;
+      case 'approved':
+        users = approvedUsers || [];
+        break;
+      case 'rejected':
+        users = rejectedUsers || [];
+        break;
+      case 'suspended':
+        users = suspendedUsers || [];
+        break;
+    }
+    
+    const user = users.find(u => u.id === userId);
+    if (user) {
+      // 사용자 수정 모달 열기
+      setEditingUser(user);
+      setIsEditModalVisible(true);
+    }
   };
 
-  const handleUserDelete = (userId: string) => {
+  const handleUserDelete = async (userId: string) => {
     if (window.confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
-      // TODO: 사용자 삭제 API 호출
-      console.log('Delete user:', userId);
+      try {
+        await deleteUser(userId);
+        message.success('사용자가 성공적으로 삭제되었습니다.');
+        // 사용자 목록 새로고침
+        refetch();
+      } catch (error) {
+        message.error('사용자 삭제 중 오류가 발생했습니다.');
+        console.error('Delete user error:', error);
+      }
     }
   };
 

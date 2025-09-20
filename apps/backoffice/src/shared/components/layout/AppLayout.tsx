@@ -75,7 +75,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         navigate(ROUTES.CUSTOMER.SUPPORT);
         break;
       case 'admin':
-        navigate(ROUTES.ADMIN.PERMISSIONS);
+        navigate(ROUTES.ADMIN.USERS);
         break;
     }
   };

@@ -6,6 +6,7 @@ import { ConfigProvider } from 'antd';
 import koKR from 'antd/locale/ko_KR';
 import App from './App';
 import { appConfig } from './config/app.config';
+import { QueryError, isQueryError } from '@crypto-exchange/shared';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -13,9 +14,9 @@ const queryClient = new QueryClient({
     queries: {
       staleTime: appConfig.query.staleTime,
       gcTime: appConfig.query.gcTime,
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error: QueryError) => {
         // 401 에러는 재시도하지 않음
-        if (error?.response?.status === 401) {
+        if (isQueryError(error) && error.response?.status === 401) {
           return false;
         }
         return failureCount < appConfig.query.retryCount;
@@ -23,9 +24,9 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: appConfig.query.refetchOnWindowFocus,
     },
     mutations: {
-      retry: (failureCount, error: any) => {
+      retry: (failureCount, error: QueryError) => {
         // 401 에러는 재시도하지 않음
-        if (error?.response?.status === 401) {
+        if (isQueryError(error) && error.response?.status === 401) {
           return false;
         }
         return failureCount < 2;

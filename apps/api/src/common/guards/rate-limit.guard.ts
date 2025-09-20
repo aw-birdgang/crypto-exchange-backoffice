@@ -82,7 +82,7 @@ export class RateLimitGuard implements CanActivate {
       request.ip ||
       request.connection.remoteAddress ||
       request.socket.remoteAddress ||
-      (request.connection as any)?.socket?.remoteAddress ||
+      (request.connection as { socket?: { remoteAddress?: string } })?.socket?.remoteAddress ||
       'unknown'
     );
   }

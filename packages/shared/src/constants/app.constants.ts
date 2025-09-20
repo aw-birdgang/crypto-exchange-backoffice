@@ -1,3 +1,4 @@
+
 export const APP_CONSTANTS = {
   JWT_SECRET: 'your-super-secret-jwt-key-change-in-production',
   JWT_EXPIRES_IN: '24h',
@@ -65,16 +66,6 @@ export const STORAGE_KEYS = {
   AUTH_LOGGED_OUT: 'auth-logged-out',
 } as const;
 
-export const DATE_FORMATS = {
-  DATETIME: 'YYYY-MM-DD HH:mm:ss',
-  DATE: 'YYYY-MM-DD',
-  TIME: 'HH:mm:ss',
-} as const;
-
-export const DATABASE_CONSTANTS = {
-  DEFAULT_CONNECTION: 'default',
-} as const;
-
 // 권한 관리 상수
 export const ROLE_PERMISSIONS = {
   SUPER_ADMIN: {
@@ -106,3 +97,4 @@ export const MENU_PERMISSIONS = {
   users: ['super_admin', 'admin'],
   roles: ['super_admin', 'admin'],
 } as const;
+

@@ -1,3 +1,4 @@
+
 export interface BaseEntity {
   id: string;
   createdAt: Date | string;
@@ -17,13 +18,7 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  error?: string;
-  timestamp?: string;
-}
+// ApiResponse는 api.types.ts에서 정의됨
 
 export interface JwtPayload {
   sub: string;
@@ -41,6 +36,7 @@ export interface RefreshTokenPayload {
   iat?: number;
   exp?: number;
 }
+
 
 export enum AdminUserRole {
   SUPER_ADMIN = 'SUPER_ADMIN',

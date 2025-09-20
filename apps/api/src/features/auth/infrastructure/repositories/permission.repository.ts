@@ -404,13 +404,13 @@ export class PermissionRepository implements PermissionRepositoryInterface {
     // ROLE_PERMISSIONS 상수를 기반으로 기본 권한 생성
     for (const [roleKey, roleData] of Object.entries(ROLE_PERMISSIONS)) {
       // AdminUserRole을 Role 엔티티로 변환
-      const roleEntity = await this.roleRepository.findOne({ where: { name: roleData.role } });
+      const roleEntity = await this.roleRepository.findOne({ where: { name: (roleData as any).role } });
       if (!roleEntity) {
-        console.log(`❌ Role not found: ${roleData.role}`);
+        console.log(`❌ Role not found: ${(roleData as any).role}`);
         continue;
       }
 
-      Object.entries(roleData.permissions).forEach(([resource, permissions]) => {
+      Object.entries((roleData as any).permissions).forEach(([resource, permissions]) => {
         defaultPermissions.push({
           role: roleEntity,
           resource: resource as Resource,

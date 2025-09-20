@@ -1,6 +1,6 @@
-import { create } from 'zustand';
-import { devtools } from 'zustand/middleware';
-import { AdminUser, UserStatus, AdminUserRole, UserFilters } from '@crypto-exchange/shared';
+import {create} from 'zustand';
+import {devtools} from 'zustand/middleware';
+import {AdminUser, UserFilters, UserStatus} from '@crypto-exchange/shared';
 
 interface UserState {
   // 상태
@@ -10,7 +10,7 @@ interface UserState {
   searchQuery: string;
   isLoading: boolean;
   error: string | null;
-  
+
   // 액션
   setUsers: (users: AdminUser[]) => void;
   addUser: (user: AdminUser) => void;

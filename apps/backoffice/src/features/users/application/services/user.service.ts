@@ -1,13 +1,12 @@
-import { ApiService } from '@/shared/services/api.service';
-import { 
-  AdminUser, 
-  UserStatus, 
-  AdminUserRole, 
-  UserApprovalRequest, 
-  UserBulkAction, 
-  UserStats, 
+import {ApiService} from '@/shared/services/api.service';
+import {
+  AdminUser,
+  AdminUserRole,
+  UserApprovalRequest,
+  UserBulkAction,
   UserFilters,
-  PaginatedResponse 
+  UserStats,
+  UserStatus
 } from '@crypto-exchange/shared';
 
 export class UserService {
@@ -22,7 +21,7 @@ export class UserService {
    */
   async getAllUsers(filters?: UserFilters): Promise<AdminUser[]> {
     const params = new URLSearchParams();
-    
+
     if (filters?.status) params.append('status', filters.status);
     if (filters?.role) params.append('role', filters.role);
     if (filters?.isActive !== undefined) params.append('isActive', filters.isActive.toString());

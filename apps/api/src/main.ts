@@ -3,11 +3,27 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
-// cookie-parser 대신 수동 쿠키 파싱 사용
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const configService = app.get(ConfigService);
+
+  // 보안 헤더 설정
+  app.use(helmet({
+    contentSecurityPolicy: false, // Swagger UI를 위해 비활성화
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  // 압축 미들웨어 (개발 환경에서만)
+  if (process.env.NODE_ENV === 'development') {
+    try {
+      const compression = require('compression');
+      app.use(compression());
+    } catch (error) {
+      console.warn('Compression middleware not available:', error instanceof Error ? error.message : 'Unknown error');
+    }
+  }
 
   // Global validation pipe
   app.useGlobalPipes(
@@ -22,31 +38,41 @@ async function bootstrap() {
   const corsConfig = configService.get('app.cors');
   app.enableCors(corsConfig);
 
-  // 쿠키 파싱을 위한 커스텀 미들웨어
+  // 쿠키 파싱을 위한 최적화된 미들웨어
   app.use((req: any, res: any, next: any) => {
-    if (req.headers.cookie) {
+    // 쿠키가 있는 경우에만 파싱
+    if (req.headers.cookie && !req.cookies) {
       const cookies: { [key: string]: string } = {};
-      req.headers.cookie.split(';').forEach((cookie: string) => {
-        const [name, value] = cookie.trim().split('=');
+      const cookieString = req.headers.cookie;
+      
+      // 정규식을 사용한 더 효율적인 파싱
+      const cookieRegex = /([^=]+)=([^;]*)/g;
+      let match;
+      
+      while ((match = cookieRegex.exec(cookieString)) !== null) {
+        const [, name, value] = match;
         if (name && value) {
-          cookies[name] = decodeURIComponent(value);
+          cookies[name.trim()] = decodeURIComponent(value.trim());
         }
-      });
+      }
+      
       req.cookies = cookies;
     }
     next();
   });
 
-  // 스웨거 요청을 위한 전용 미들웨어
-  app.use('/api-docs', (req: any, res: any, next: any) => {
-    console.log('🔍 Swagger Middleware - Request:', {
-      method: req.method,
-      url: req.url,
-      headers: req.headers,
-      authorization: req.headers.authorization || req.headers.Authorization
+  // 스웨거 요청을 위한 전용 미들웨어 (개발 환경에서만)
+  if (process.env.NODE_ENV === 'development') {
+    app.use('/api-docs', (req: any, res: any, next: any) => {
+      console.log('🔍 Swagger Middleware - Request:', {
+        method: req.method,
+        url: req.url,
+        headers: req.headers,
+        authorization: req.headers.authorization || req.headers.Authorization
+      });
+      next();
     });
-    next();
-  });
+  }
 
   // Swagger 설정
   const config = new DocumentBuilder()

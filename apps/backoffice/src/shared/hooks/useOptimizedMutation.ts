@@ -1,41 +1,31 @@
+import React from 'react';
 import { useMutation, UseMutationOptions, UseMutationResult } from '@tanstack/react-query';
 import { useErrorHandler } from './useErrorHandler';
+import { MutationError, isMutationError } from '@crypto-exchange/shared';
 
-interface OptimizedMutationOptions<TData, TError = unknown, TVariables = unknown> 
+interface OptimizedMutationOptions<TData, TError = MutationError, TVariables = unknown> 
   extends Omit<UseMutationOptions<TData, TError, TVariables>, 'onError'> {
   errorMessage?: string;
   successMessage?: string;
 }
 
-export function useOptimizedMutation<TData = unknown, TError = unknown, TVariables = unknown>(
+export function useOptimizedMutation<TData = unknown, TError = MutationError, TVariables = unknown>(
   options: OptimizedMutationOptions<TData, TError, TVariables>,
 ): UseMutationResult<TData, TError, TVariables> {
   const { handleError } = useErrorHandler();
 
-  return useMutation({
+  const mutation = useMutation({
     ...options,
-    onSuccess: (data, variables, context) => {
-      if (options.successMessage) {
-        // 성공 메시지 표시 (antd message 사용)
-        import('antd').then(({ message }) => {
-          message.success(options.successMessage);
-        });
-      }
-      (options.onSuccess as any)?.(data, variables, undefined, context);
-    },
-    // 성능 최적화를 위한 기본 설정
-    retry: (failureCount, error: any) => {
-      // 401, 403 에러는 재시도하지 않음
-      if (error?.status === 401 || error?.status === 403) {
-        return false;
-      }
-      
-      // 네트워크 에러나 5xx 에러는 재시도
-      if (error?.status >= 500 || error?.code === 'NETWORK_ERROR') {
-        return failureCount < 2;
-      }
-      
-      return false;
-    },
   });
+
+  // 성공 메시지 처리를 위한 useEffect
+  React.useEffect(() => {
+    if (mutation.isSuccess && options.successMessage) {
+      import('antd').then(({ message }) => {
+        message.success(options.successMessage);
+      });
+    }
+  }, [mutation.isSuccess, options.successMessage]);
+
+  return mutation;
 }

@@ -24,8 +24,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
     const errorResponse: ApiResponse<null> = {
       success: false,
+      data: null,
       message,
-      error,
+      error: typeof error === 'string' ? error : JSON.stringify(error),
       timestamp: new Date().toISOString(),
     };
 

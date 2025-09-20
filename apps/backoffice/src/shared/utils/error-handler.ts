@@ -15,9 +15,9 @@ export class ErrorHandler {
       const response = error.response.data as ApiResponse<any>;
       return {
         message: response.message || 'API Error',
-        code: response.error || 'API_ERROR',
+        code: 'API_ERROR',
         status: error.response.status,
-        details: response.error,
+        details: response.data,
       };
     } else if (error.request) {
       // 요청이 전송되었지만 응답을 받지 못함

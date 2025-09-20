@@ -1,21 +1,22 @@
 import { useQuery, UseQueryOptions, UseQueryResult } from '@tanstack/react-query';
 import { useErrorHandler } from './useErrorHandler';
+import { QueryError, isQueryError } from '@crypto-exchange/shared';
 
-interface OptimizedQueryOptions<TData, TError = unknown> extends Omit<UseQueryOptions<TData, TError>, 'onError'> {
+interface OptimizedQueryOptions<TData, TError = QueryError> extends Omit<UseQueryOptions<TData, TError>, 'onError'> {
   errorMessage?: string;
   retry?: boolean;
 }
 
-export function useOptimizedQuery<TData = unknown, TError = unknown>(
+export function useOptimizedQuery<TData = unknown, TError = QueryError>(
   options: OptimizedQueryOptions<TData, TError>,
 ): UseQueryResult<TData, TError> {
   const { handleError } = useErrorHandler();
 
   return useQuery({
     ...options,
-    retry: (failureCount, error: any) => {
+    retry: (failureCount, error: TError) => {
       // 401 에러는 재시도하지 않음
-      if (error?.status === 401) {
+      if (isQueryError(error) && error.status === 401) {
         return false;
       }
       
