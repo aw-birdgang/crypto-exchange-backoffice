@@ -11,6 +11,7 @@ import {
   AdminBulkActionDto 
 } from '../dto/admin.dto';
 import { AdminUserRole, Resource, Permission } from '@crypto-exchange/shared';
+import { PermissionMappingUtil } from '../utils/permission-mapping.util';
 
 @Injectable()
 export class AdminService {
@@ -287,25 +288,7 @@ export class AdminService {
    * 역할별 기본 권한 설정
    */
   private getDefaultPermissions(role: AdminUserRole): string[] {
-    switch (role) {
-      case AdminUserRole.SUPER_ADMIN:
-        return [
-          'users:read', 'users:create', 'users:update', 'users:delete',
-          'system:configure', 'notifications:read', 'notifications:create', 
-          'notifications:delete', 'logs:read', 'system:restart', 
-          'cache:manage', 'database:manage', 'roles:manage', 
-          'permissions:assign', 'users:change_role'
-        ];
-      case AdminUserRole.ADMIN:
-        return [
-          'users:read', 'users:create', 'users:update', 'users:suspend',
-          'users:ban', 'users:change_role', 'system:configure',
-          'notifications:read', 'notifications:create', 'notifications:delete',
-          'logs:read', 'cache:manage'
-        ];
-      default:
-        return ['users:read', 'notifications:read'];
-    }
+    return PermissionMappingUtil.getDefaultPermissions(role);
   }
 
 }

@@ -17,6 +17,7 @@ export class PerformanceInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const { method, url, ip } = request;
     const userAgent = request.get('User-Agent') || '';
+    const requestId = request.requestId || 'unknown';
 
     return next.handle().pipe(
       tap(() => {
@@ -35,6 +36,7 @@ export class PerformanceInterceptor implements NestInterceptor {
             duration,
             ip,
             userAgent,
+            requestId,
             type: 'performance',
           });
         } else {
@@ -45,6 +47,7 @@ export class PerformanceInterceptor implements NestInterceptor {
             duration,
             ip,
             userAgent,
+            requestId,
             type: 'performance',
           });
         }
@@ -56,6 +59,7 @@ export class PerformanceInterceptor implements NestInterceptor {
             url,
             duration,
             threshold,
+            requestId,
             type: 'slow_request',
           });
         }

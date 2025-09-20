@@ -66,7 +66,14 @@ export class UserService {
    * 사용자 정보 수정
    */
   async updateUser(userId: string, userData: Partial<AdminUser>): Promise<AdminUser> {
-    return await this.apiService.put<AdminUser>(`/admin/users/${userId}`, userData);
+    // role 필드를 adminRole로 매핑
+    const mappedData = { ...userData };
+    if ('role' in mappedData && mappedData.role) {
+      mappedData.adminRole = mappedData.role as AdminUserRole;
+      delete mappedData.role;
+    }
+    
+    return await this.apiService.put<AdminUser>(`/admin/users/${userId}`, mappedData);
   }
 
   /**

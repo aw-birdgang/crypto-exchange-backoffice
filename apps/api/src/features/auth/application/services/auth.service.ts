@@ -11,6 +11,8 @@ import {AdminUserRole} from '@crypto-exchange/shared';
 import {AuthResponseDto, LoginDto, RefreshResponseDto, RefreshTokenDto, RegisterDto} from '../dto/auth.dto';
 import {JwtPayload, RefreshTokenPayload} from '@crypto-exchange/shared';
 import {ValidationUtil} from '../../../../common/utils/validation.util';
+import {RoleMappingUtil} from '../utils/role-mapping.util';
+import {PermissionService} from './permission.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +21,7 @@ export class AuthService {
     private adminUserRepository: Repository<AdminUser>,
     private jwtService: JwtService,
     private configService: ConfigService,
+    private permissionService: PermissionService,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ message: string; userId: string }> {
@@ -214,5 +217,39 @@ export class AuthService {
       secret: jwtSecret,
       expiresIn: jwtRefreshExpiresIn,
     });
+  }
+
+  /**
+   * 사용자의 역할 ID 조회
+   */
+  async getUserRoleId(user: AdminUser): Promise<{
+    roleId: string | null;
+    roleName: string;
+    adminRole: AdminUserRole;
+  }> {
+    // AdminRole을 역할 이름으로 변환
+    const roleName = RoleMappingUtil.mapAdminRoleToRoleName(user.adminRole);
+    
+    // 역할 이름으로 역할 조회하여 ID 반환
+    const role = await this.permissionService.getRoleByName(roleName);
+    
+    return {
+      roleId: role?.id || null,
+      roleName,
+      adminRole: user.adminRole,
+    };
+  }
+
+  /**
+   * 사용자의 역할 상세 정보 조회
+   */
+  async getMyRole(user: AdminUser) {
+    // AdminRole을 역할 이름으로 변환
+    const roleName = RoleMappingUtil.mapAdminRoleToRoleName(user.adminRole);
+    
+    // 역할 이름으로 역할 조회
+    const role = await this.permissionService.getRoleByName(roleName);
+    
+    return role;
   }
 }
