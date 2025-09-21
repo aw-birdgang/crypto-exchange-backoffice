@@ -24,7 +24,8 @@ export class AdminUserManagementUseCaseImpl implements AdminUserManagementUseCas
   async getAllUsers(filters?: UserFilters): Promise<AdminUser[]> {
     // 비즈니스 로직: 필터 검증 및 기본값 설정
     const validatedFilters = this.validateFilters(filters);
-    return await this.adminUserService.getAllUsers(validatedFilters);
+    const result = await this.adminUserService.getAllUsers(validatedFilters);
+    return result.users || result;
   }
 
   async getPendingUsers(): Promise<AdminUser[]> {
@@ -271,7 +272,8 @@ export class AdminUserAnalyticsUseCaseImpl implements AdminUserAnalyticsUseCase 
   }
 
   async getUserCountsByRole(): Promise<Record<AdminUserRole, number>> {
-    const users = await this.adminUserService.getAllUsers();
+    const result = await this.adminUserService.getAllUsers();
+    const users = result.users || result;
     const counts = {} as Record<AdminUserRole, number>;
     
     // 초기화
@@ -280,7 +282,7 @@ export class AdminUserAnalyticsUseCaseImpl implements AdminUserAnalyticsUseCase 
     });
 
     // 카운트
-    users.forEach(user => {
+    users.forEach((user: AdminUser) => {
       if (user.adminRole) {
         counts[user.adminRole]++;
       }

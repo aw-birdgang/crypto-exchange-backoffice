@@ -5,6 +5,7 @@ import {
   UserOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
+import { useTheme } from '../../theme';
 
 export type MainCategory = 'wallet' | 'customer' | 'admin';
 
@@ -18,6 +19,7 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
   onCategoryChange,
 }) => {
   const { token } = theme.useToken();
+  const { theme: appTheme } = useTheme();
 
   const mainCategories = [
     {
@@ -56,7 +58,11 @@ export const TopNavigation: React.FC<TopNavigationProps> = ({
         <Menu
           mode="horizontal"
           selectedKeys={[activeCategory]}
-          items={mainCategories}
+          items={mainCategories.map(category => ({
+            key: category.key,
+            icon: category.icon,
+            label: category.label,
+          }))}
           onClick={handleMenuClick}
           style={{
             border: 'none',

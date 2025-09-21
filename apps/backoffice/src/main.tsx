@@ -5,6 +5,7 @@ import { BrowserRouter } from 'react-router-dom';
 import { ConfigProvider } from 'antd';
 import koKR from 'antd/locale/ko_KR';
 import App from './App';
+import { ThemeProvider } from './shared/theme';
 import { appConfig } from './config/app.config';
 import { QueryError, isQueryError } from '@crypto-exchange/shared';
 import './index.css';
@@ -39,9 +40,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <ConfigProvider locale={koKR}>
-          <App />
-        </ConfigProvider>
+        <ThemeProvider defaultMode="light">
+          <ConfigProvider locale={koKR}>
+            <App />
+          </ConfigProvider>
+        </ThemeProvider>
       </BrowserRouter>
     </QueryClientProvider>
   </React.StrictMode>,

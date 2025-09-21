@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout, Menu, theme } from 'antd';
+import { Layout, Menu, theme, Tooltip } from 'antd';
 import {
   MenuFoldOutlined,
   MenuUnfoldOutlined,
@@ -10,6 +10,7 @@ import {
 } from '@ant-design/icons';
 import { MainCategory } from './TopNavigation';
 import { ROUTES, Resource, Permission, AdminUserRole } from '@crypto-exchange/shared';
+import { useTheme } from '../../theme';
 
 const { Sider } = Layout;
 
@@ -35,6 +36,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
   permissions,
 }) => {
   const { token } = theme.useToken();
+  const { theme: appTheme } = useTheme();
 
   // 지갑관리 메뉴
   const walletMenuItems = [
@@ -155,9 +157,12 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
       trigger={null}
       collapsible
       collapsed={collapsed}
+      width={240}
+      collapsedWidth={64}
       style={{
         background: token.colorBgContainer,
         boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)',
+        borderRight: `1px solid ${token.colorBorder}`,
       }}
     >
       <div
@@ -168,6 +173,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
           justifyContent: 'center',
           borderBottom: `1px solid ${token.colorBorder}`,
           padding: '0 16px',
+          background: `linear-gradient(135deg, ${token.colorPrimary}15 0%, ${token.colorPrimary}05 100%)`,
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -176,21 +182,27 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
             <span style={{
               color: token.colorPrimary,
               fontWeight: 600,
-              fontSize: '14px'
+              fontSize: '14px',
+              letterSpacing: '-0.025em',
             }}>
               {getCategoryTitle()}
             </span>
           )}
         </div>
       </div>
+      
       <Menu
         theme="light"
         mode="inline"
         selectedKeys={selectedKeys}
         items={menuItems}
         onClick={({ key }) => onMenuClick(key)}
-        style={{ border: 'none' }}
+        style={{ 
+          border: 'none',
+          padding: '8px 0',
+        }}
       />
+      
       <div
         style={{
           position: 'absolute',
@@ -202,30 +214,36 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
           alignItems: 'center',
           justifyContent: 'center',
           borderTop: `1px solid ${token.colorBorder}`,
+          background: token.colorBgContainer,
         }}
       >
-        <div
-          onClick={() => onCollapse(!collapsed)}
-          style={{
-            cursor: 'pointer',
-            padding: '8px',
-            borderRadius: '4px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: '32px',
-            height: '32px',
-            transition: 'background-color 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = token.colorFillSecondary;
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          }}
-        >
-          {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-        </div>
+        <Tooltip title={collapsed ? '메뉴 펼치기' : '메뉴 접기'} placement="right">
+          <div
+            onClick={() => onCollapse(!collapsed)}
+            style={{
+              cursor: 'pointer',
+              padding: '8px',
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '32px',
+              height: '32px',
+              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              color: token.colorTextSecondary,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = token.colorFillSecondary;
+              e.currentTarget.style.color = token.colorPrimary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = 'transparent';
+              e.currentTarget.style.color = token.colorTextSecondary;
+            }}
+          >
+            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+          </div>
+        </Tooltip>
       </div>
     </Sider>
   );
