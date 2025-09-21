@@ -1,0 +1,156 @@
+@startuml State Management
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title State Management Architecture
+
+package "Presentation Layer" as Presentation {
+  class "React Component" as Component {
+    - localState: useState
+    - formState: useForm
+    + render()
+  }
+
+  class "Custom Hooks" as Hooks {
+    + useUsers()
+    + useUserApproval()
+    + useUserValidation()
+  }
+}
+
+package "Application Layer" as Application {
+  package "Zustand Stores" as ZustandStores {
+    class "AuthStore" as AuthStore {
+      - user: AdminUser | null
+      - permissions: Permission[]
+      - isAuthenticated: boolean
+      + login(credentials): Promise<void>
+      + logout(): void
+      + refreshTokens(): void
+    }
+
+    class "UserStore" as UserStore {
+      - users: AdminUser[]
+      - selectedUsers: string[]
+      - filters: UserFilters
+      + setUsers(users): void
+      + addUser(user): void
+      + updateUser(user): void
+    }
+
+    class "PermissionStore" as PermissionStore {
+      - permissions: Permission[]
+      - roles: Role[]
+      + fetchPermissions(): Promise<void>
+      + checkPermission(resource, action): boolean
+    }
+  }
+
+  package "TanStack Query" as TanStackQuery {
+    class "useQuery" as UseQuery {
+      + data: Any
+      + isLoading: boolean
+      + error: Error
+      + refetch(): void
+    }
+
+    class "useMutation" as UseMutation {
+      + mutate(data): void
+      + isLoading: boolean
+      + error: Error
+      + onSuccess: callback
+    }
+  }
+}
+
+package "Infrastructure Layer" as Infrastructure {
+  package "API Services" as APIServices {
+    class "AdminUserService" as UserService {
+      + getAllUsers(filters): Promise<AdminUser[]>
+      + approveUser(userId, data): Promise<AdminUser>
+    }
+
+    class "AuthService" as AuthService {
+      + login(credentials): Promise<AuthResponse>
+      + refreshToken(token): Promise<RefreshResponse>
+    }
+  }
+
+  class "Local Storage" as LocalStorage {
+    + getItem(key): string
+    + setItem(key, value): void
+    + removeItem(key): void
+  }
+}
+
+package "State Flow" as StateFlow {
+  note "1. User Action" as UserAction
+  note "2. Component State Update" as ComponentUpdate
+  note "3. Hook State Update" as HookUpdate
+  note "4. Store State Update" as StoreUpdate
+  note "5. API Call" as APICall
+  note "6. Server Response" as ServerResponse
+  note "7. Cache Update" as CacheUpdate
+  note "8. UI Re-render" as UIRerender
+}
+
+' Relationships
+Component --> Hooks : uses
+Hooks --> ZustandStores : subscribes to
+Hooks --> TanStackQuery : uses
+TanStackQuery --> APIServices : calls
+ZustandStores --> LocalStorage : persists to
+
+' State flow
+UserAction --> ComponentUpdate
+ComponentUpdate --> HookUpdate
+HookUpdate --> StoreUpdate
+StoreUpdate --> APICall
+APICall --> ServerResponse
+ServerResponse --> CacheUpdate
+CacheUpdate --> UIRerender
+
+' Store relationships
+AuthStore --> AuthService : calls
+UserStore --> UserService : calls
+PermissionStore --> AuthService : calls
+
+' Query relationships
+UseQuery --> UserService : calls
+UseMutation --> UserService : calls
+
+note right of Presentation
+  Local State:
+  - Component state (useState)
+  - Form state (useForm)
+  - UI state (modals, loading)
+end note
+
+note right of Application
+  Global State:
+  - Zustand stores
+  - TanStack Query cache
+  - State synchronization
+end note
+
+note right of Infrastructure
+  Data Sources:
+  - API services
+  - Local storage
+  - External services
+end note
+
+note right of StateFlow
+  State Flow:
+  1. User interaction
+  2. Component updates
+  3. Hook processes
+  4. Store updates
+  5. API calls
+  6. Server responses
+  7. Cache updates
+  8. UI re-renders
+end note
+
+@enduml

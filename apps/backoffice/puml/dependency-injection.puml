@@ -1,0 +1,110 @@
+@startuml Dependency Injection
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Dependency Injection Pattern
+
+package "Current Implementation (Factory Pattern)" as Current {
+  class "UseCaseFactory" as Factory {
+    - static userService: AdminUserService
+    - static userManagementUseCase: UserManagementUseCase
+    + static setUserService(service: AdminUserService): void
+    + static getUserManagementUseCase(): UserManagementUseCase
+    + static initialize(service: AdminUserService): void
+  }
+  
+  class "UserManagementUseCaseImpl" as UseCaseImpl {
+    - userService: AdminUserService
+    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+  }
+  
+  class "AdminUserService" as UserService {
+    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+  }
+  
+  Factory --> UseCaseImpl : creates
+  Factory --> UserService : manages
+  UseCaseImpl --> UserService : depends on
+}
+
+package "Improved Implementation (DI Container)" as Improved {
+  class "DIContainer" as Container {
+    - services: Map<string, any>
+    - factories: Map<string, () => any>
+    + register<T>(token: string, implementation: T): void
+    + registerFactory<T>(token: string, factory: () => T): void
+    + resolve<T>(token: string): T
+  }
+  
+  interface "IUserService" as IUserService {
+    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+  }
+  
+  class "UserManagementUseCaseImpl" as ImprovedUseCaseImpl {
+    - userService: IUserService
+    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+  }
+  
+  class "ApiUserService" as ApiUserService {
+    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+  }
+  
+  class "MockUserService" as MockUserService {
+    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+  }
+  
+  Container --> ImprovedUseCaseImpl : creates
+  Container --> ApiUserService : manages
+  Container --> MockUserService : manages
+  ImprovedUseCaseImpl --> IUserService : depends on
+  ApiUserService ..|> IUserService : implements
+  MockUserService ..|> IUserService : implements
+}
+
+package "React Context DI" as ReactDI {
+  class "DIProvider" as DIProvider {
+    + container: DIContainer
+  }
+  
+  class "useDI Hook" as UseDIHook {
+    + useDI(): DIContainer
+  }
+  
+  class "useUsers Hook" as UseUsersHook {
+    + useUsers(filters?: UserFilters): UseQueryResult<AdminUser[]>
+  }
+  
+  DIProvider --> UseDIHook : provides
+  UseDIHook --> UseUsersHook : uses
+  UseUsersHook --> Container : resolves dependencies
+}
+
+' Benefits
+note right of Current
+  Current Factory Pattern:
+  ✅ Simple implementation
+  ✅ Clear dependencies
+  ❌ Static dependencies
+  ❌ Hard to test
+  ❌ Limited flexibility
+end note
+
+note right of Improved
+  Improved DI Container:
+  ✅ Dynamic dependencies
+  ✅ Easy testing
+  ✅ High flexibility
+  ✅ Interface-based
+  ✅ Lifecycle management
+end note
+
+note right of ReactDI
+  React Context DI:
+  ✅ React integration
+  ✅ Component-level DI
+  ✅ Hook-based usage
+  ✅ Provider pattern
+end note
+
+@enduml

@@ -1,0 +1,106 @@
+@startuml Data Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Data Flow Architecture
+
+actor "User" as User
+participant "Component" as Component
+participant "Hook" as Hook
+participant "Use Case" as UseCase
+participant "Service" as Service
+participant "API" as API
+participant "Database" as DB
+
+== User Action Flow ==
+
+User -> Component : User clicks "Approve User"
+activate Component
+
+Component -> Hook : calls useUserApproval()
+activate Hook
+
+Hook -> UseCase : calls approveUser(userId, data)
+activate UseCase
+
+UseCase -> UseCase : validateApprovalData(data)
+UseCase -> UseCase : business logic validation
+
+UseCase -> Service : calls approveUser(userId, data)
+activate Service
+
+Service -> API : PUT /admin/users/:userId/approve
+activate API
+
+API -> DB : UPDATE users SET status='APPROVED'
+activate DB
+DB --> API : success response
+deactivate DB
+
+API --> Service : HTTP 200 + user data
+deactivate API
+
+Service --> UseCase : returns AdminUser
+deactivate Service
+
+UseCase --> Hook : returns AdminUser
+deactivate UseCase
+
+Hook -> Hook : update React Query cache
+Hook -> Hook : invalidate related queries
+Hook --> Component : mutation success
+deactivate Hook
+
+Component -> Component : update UI state
+Component --> User : show success message
+deactivate Component
+
+== Error Handling Flow ==
+
+User -> Component : User clicks "Approve User"
+activate Component
+
+Component -> Hook : calls useUserApproval()
+activate Hook
+
+Hook -> UseCase : calls approveUser(userId, data)
+activate UseCase
+
+UseCase -> UseCase : validateApprovalData(data)
+UseCase --> Hook : throws ValidationError
+deactivate UseCase
+
+Hook -> Hook : handle error
+Hook --> Component : mutation error
+deactivate Hook
+
+Component -> Component : show error message
+Component --> User : display error
+deactivate Component
+
+== Cache Invalidation Flow ==
+
+note over Hook, UseCase
+  After successful mutation:
+  1. Update optimistic cache
+  2. Invalidate related queries
+  3. Trigger refetch
+end note
+
+Hook -> Hook : queryClient.invalidateQueries(['users'])
+Hook -> Hook : queryClient.setQueryData(['users'], updatedData)
+
+== State Synchronization ==
+
+note over Component, Hook
+  State synchronization:
+  - Local state (useState)
+  - Global state (Zustand)
+  - Server state (TanStack Query)
+end note
+
+Component -> Hook : subscribes to state changes
+Hook -> Component : notifies state updates
+
+@enduml

@@ -1,0 +1,183 @@
+@startuml Feature Modules
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Feature Modules Architecture
+
+package "Features" as Features {
+  package "Auth Feature" as AuthFeature {
+    package "Domain" as AuthDomain {
+      interface "AuthUseCase" as IAuthUseCase {
+        + login(email, password): Promise<AuthResponse>
+        + logout(): Promise<void>
+        + refreshToken(token): Promise<RefreshResponse>
+      }
+      
+      interface "PermissionUseCase" as IPermissionUseCase {
+        + getMyPermissions(): Promise<Permission[]>
+        + checkPermission(resource, action): Promise<boolean>
+      }
+    }
+    
+    package "Application" as AuthApplication {
+      class "AuthUseCaseImpl" as AuthUseCaseImpl {
+        - authService: AuthService
+        + login(email, password): Promise<AuthResponse>
+        + logout(): Promise<void>
+      }
+      
+      class "PermissionUseCaseImpl" as PermissionUseCaseImpl {
+        - permissionService: PermissionService
+        + getMyPermissions(): Promise<Permission[]>
+        + checkPermission(resource, action): Promise<boolean>
+      }
+      
+      class "AuthStore" as AuthStore {
+        - user: AdminUser | null
+        - permissions: Permission[]
+        + login(credentials): Promise<void>
+        + logout(): void
+      }
+      
+      class "useAuth" as UseAuth {
+        + useAuth(): AuthState
+      }
+    }
+    
+    package "Presentation" as AuthPresentation {
+      class "LoginPage" as LoginPage
+      class "PermissionGuard" as PermissionGuard
+      class "AuthProvider" as AuthProvider
+    }
+  }
+  
+  package "Users Feature" as UsersFeature {
+    package "Domain" as UsersDomain {
+      interface "UserManagementUseCase" as IUserManagement {
+        + getAllUsers(filters): Promise<AdminUser[]>
+        + approveUser(userId, data): Promise<AdminUser>
+        + updateUser(userId, data): Promise<AdminUser>
+      }
+    }
+    
+    package "Application" as UsersApplication {
+      class "UserManagementUseCaseImpl" as UserManagementImpl {
+        - userService: UserService
+        + getAllUsers(filters): Promise<AdminUser[]>
+        + approveUser(userId, data): Promise<AdminUser>
+      }
+      
+      class "UserStore" as UserStore {
+        - users: AdminUser[]
+        - selectedUsers: string[]
+        + setUsers(users): void
+        + addUser(user): void
+      }
+      
+      class "useUsers" as UseUsers {
+        + useUsers(filters): UseQueryResult<AdminUser[]>
+      }
+    }
+    
+    package "Presentation" as UsersPresentation {
+      class "UserManagementPage" as UserManagementPage
+      class "UserTable" as UserTable
+      class "UserApprovalModal" as UserApprovalModal
+    }
+  }
+  
+  package "Dashboard Feature" as DashboardFeature {
+    package "Domain" as DashboardDomain {
+      interface "DashboardUseCase" as IDashboardUseCase {
+        + getStats(): Promise<DashboardStats>
+        + getRecentActivities(): Promise<Activity[]>
+      }
+    }
+    
+    package "Application" as DashboardApplication {
+      class "DashboardUseCaseImpl" as DashboardUseCaseImpl {
+        - dashboardService: DashboardService
+        + getStats(): Promise<DashboardStats>
+        + getRecentActivities(): Promise<Activity[]>
+      }
+      
+      class "useDashboard" as UseDashboard {
+        + useDashboardStats(): UseQueryResult<DashboardStats>
+      }
+    }
+    
+    package "Presentation" as DashboardPresentation {
+      class "DashboardPage" as DashboardPage
+      class "StatsCard" as StatsCard
+      class "ActivityFeed" as ActivityFeed
+    }
+  }
+}
+
+package "Shared" as Shared {
+  package "Domain" as SharedDomain {
+    interface "BaseUseCase" as IBaseUseCase
+    class "UseCaseContext" as UseCaseContext
+    class "UseCaseResult" as UseCaseResult
+  }
+  
+  package "Application" as SharedApplication {
+    class "UseCaseExecutor" as UseCaseExecutor
+    class "ApiService" as ApiService
+    class "ErrorHandler" as ErrorHandler
+  }
+  
+  package "Components" as SharedComponents {
+    class "LoadingSpinner" as LoadingSpinner
+    class "ConfirmModal" as ConfirmModal
+    class "PageHeader" as PageHeader
+  }
+}
+
+' Feature dependencies
+AuthFeature --> Shared : uses
+UsersFeature --> Shared : uses
+DashboardFeature --> Shared : uses
+
+' Internal dependencies
+AuthApplication --> AuthDomain : implements
+AuthPresentation --> AuthApplication : uses
+UsersApplication --> UsersDomain : implements
+UsersPresentation --> UsersApplication : uses
+DashboardApplication --> DashboardDomain : implements
+DashboardPresentation --> DashboardApplication : uses
+
+' Cross-feature dependencies
+UsersFeature --> AuthFeature : depends on (permissions)
+DashboardFeature --> AuthFeature : depends on (authentication)
+
+note right of AuthFeature
+  Authentication & Authorization
+  - Login/Logout
+  - Permission management
+  - Role-based access control
+end note
+
+note right of UsersFeature
+  User Management
+  - User CRUD operations
+  - User approval workflow
+  - Bulk operations
+end note
+
+note right of DashboardFeature
+  Dashboard & Analytics
+  - Statistics display
+  - Activity monitoring
+  - Real-time updates
+end note
+
+note right of Shared
+  Common functionality
+  - Base interfaces
+  - Utility services
+  - Reusable components
+end note
+
+@enduml

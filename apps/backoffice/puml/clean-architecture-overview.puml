@@ -1,0 +1,76 @@
+@startuml Clean Architecture Overview
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Crypto Exchange Backoffice - Clean Architecture Overview
+
+package "Presentation Layer" as Presentation {
+  [Pages] as Pages
+  [Components] as Components
+  [Hooks] as Hooks
+}
+
+package "Application Layer" as Application {
+  [Use Cases] as UseCases
+  [Services] as Services
+  [Stores] as Stores
+}
+
+package "Domain Layer" as Domain {
+  [Interfaces] as Interfaces
+  [Entities] as Entities
+  [Value Objects] as ValueObjects
+}
+
+package "Infrastructure Layer" as Infrastructure {
+  [API Services] as APIServices
+  [Storage Services] as StorageServices
+  [External Services] as ExternalServices
+}
+
+' Dependencies
+Presentation --> Application : depends on
+Application --> Domain : depends on
+Application --> Infrastructure : depends on
+
+' Internal dependencies
+Pages --> Components
+Components --> Hooks
+Hooks --> UseCases
+Hooks --> Stores
+UseCases --> Services
+UseCases --> Interfaces
+Services --> APIServices
+Services --> StorageServices
+Services --> ExternalServices
+
+note right of Presentation
+  React Components
+  - Pages
+  - UI Components
+  - Custom Hooks
+end note
+
+note right of Application
+  Business Logic
+  - Use Case Implementations
+  - Application Services
+  - State Management
+end note
+
+note right of Domain
+  Core Business Rules
+  - Use Case Interfaces
+  - Domain Entities
+  - Business Rules
+end note
+
+note right of Infrastructure
+  External Concerns
+  - API Communication
+  - Data Persistence
+  - Third-party Services
+end note
+
+@enduml

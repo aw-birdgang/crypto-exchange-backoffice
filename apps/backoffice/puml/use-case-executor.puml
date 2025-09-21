@@ -1,0 +1,138 @@
+@startuml Use Case Executor
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam componentStyle rectangle
+
+title Use Case Executor Pattern
+
+package "Use Case Executor" as Executor {
+  interface "UseCaseExecutor" as IExecutor {
+    + execute(useCase, context) : UseCaseResult
+  }
+
+  class "UseCaseExecutorImpl" as ExecutorImpl {
+    - middlewares : UseCaseMiddleware[]
+    + execute(useCase, context) : UseCaseResult
+    + addMiddleware(middleware) : void
+  }
+
+  class "UseCaseContext" as Context {
+    + requestId : String
+    + timestamp : Date
+    + metadata : Map
+  }
+
+  class "UseCaseResult" as Result {
+    + success : boolean
+    + data : Any
+    + error : UseCaseError
+    + metadata : ExecutionMetadata
+  }
+}
+
+package "Middlewares" as Middlewares {
+  interface "UseCaseMiddleware" as IMiddleware {
+    + before(context) : UseCaseContext
+    + after(result, context) : UseCaseResult
+    + onError(error, context) : void
+  }
+
+  class "LoggingMiddleware" as LoggingMiddleware {
+    - logger : Function
+    + before(context) : UseCaseContext
+    + after(result, context) : UseCaseResult
+    + onError(error, context) : void
+  }
+
+  class "PerformanceMiddleware" as PerformanceMiddleware {
+    - performanceData : Map
+    + before(context) : UseCaseContext
+    + after(result, context) : UseCaseResult
+    + getPerformanceStats(useCaseName) : PerformanceStats
+  }
+
+  class "CachingMiddleware" as CachingMiddleware {
+    - cache : Map
+    - defaultTtl : int
+    + before(context) : UseCaseContext
+    + after(result, context) : UseCaseResult
+    + invalidateCache(pattern) : void
+  }
+
+  class "ValidationMiddleware" as ValidationMiddleware {
+    - validators : Map
+    + before(context) : UseCaseContext
+    + after(result, context) : UseCaseResult
+    + onError(error, context) : void
+  }
+}
+
+package "Factory" as Factory {
+  class "UseCaseExecutorFactory" as ExecutorFactory {
+    + createDefault() : UseCaseExecutorImpl
+    + createWithMiddlewares(middlewares) : UseCaseExecutorImpl
+  }
+}
+
+package "Usage Example" as Usage {
+  class "useUsers Hook" as UseUsersHook {
+    + useUsers(filters) : UseQueryResult
+  }
+
+  class "executeUseCase Helper" as ExecuteHelper {
+    + executeUseCase(useCaseName, useCaseFn, params) : Any
+  }
+}
+
+' Relationships
+ExecutorImpl ..|> IExecutor : implements
+LoggingMiddleware ..|> IMiddleware : implements
+PerformanceMiddleware ..|> IMiddleware : implements
+CachingMiddleware ..|> IMiddleware : implements
+ValidationMiddleware ..|> IMiddleware : implements
+
+ExecutorImpl --> IMiddleware : uses
+ExecutorFactory --> ExecutorImpl : creates
+UseUsersHook --> ExecuteHelper : uses
+ExecuteHelper --> ExecutorImpl : uses
+
+' Execution flow note (use a standalone note and link it)
+note as N_ExecFlow
+  Execution Flow:
+  1. Before middlewares (logging, validation, caching)
+  2. Use case execution
+  3. After middlewares (caching, performance, logging)
+  4. Error handling (if needed)
+end note
+ExecutorImpl .. N_ExecFlow
+Middlewares .. N_ExecFlow
+
+note right of LoggingMiddleware
+  Logging Middleware:
+  - Request/response logging
+  - Error logging
+  - Performance logging
+end note
+
+note right of PerformanceMiddleware
+  Performance Middleware:
+  - Execution time measurement
+  - Performance statistics
+  - Performance monitoring
+end note
+
+note right of CachingMiddleware
+  Caching Middleware:
+  - Cache key generation
+  - Cache hit/miss handling
+  - Cache invalidation
+end note
+
+note right of ValidationMiddleware
+  Validation Middleware:
+  - Input validation
+  - Business rule validation
+  - Error handling
+end note
+
+@enduml
