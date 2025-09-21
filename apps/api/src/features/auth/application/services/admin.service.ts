@@ -10,8 +10,9 @@ import {
   AdminDashboardDto,
   AdminBulkActionDto 
 } from '../dto/admin.dto';
+import { AdminUserResponseDto } from '../dto/permission.dto';
 import { AdminUserRole, Resource, Permission } from '@crypto-exchange/shared';
-import { PermissionMappingUtil } from '../utils/permission-mapping.util';
+import { IAdminMapper, IUserMapper, MAPPER_TOKENS } from '../providers/mapper.providers';
 
 @Injectable()
 export class AdminService {
@@ -19,6 +20,10 @@ export class AdminService {
     @Inject('AdminUserRepositoryInterface')
     private readonly adminUserRepository: AdminUserRepositoryInterface,
     private readonly permissionService: PermissionService,
+    @Inject(MAPPER_TOKENS.ADMIN_MAPPER)
+    private readonly adminMapper: IAdminMapper,
+    @Inject(MAPPER_TOKENS.USER_MAPPER)
+    private readonly userMapper: IUserMapper,
   ) {}
 
   /**
@@ -38,7 +43,7 @@ export class AdminService {
       password: hashedPassword,
       username: adminData.email.split('@')[0], // 이메일에서 사용자명 생성
       adminRole: adminData.role === AdminUserRole.SUPER_ADMIN ? AdminUserRole.SUPER_ADMIN : AdminUserRole.ADMIN,
-      permissions: this.getDefaultPermissions(adminData.role)
+      permissions: (this.adminMapper as any).getDefaultPermissions(adminData.role)
     };
     
     return this.adminUserRepository.create(adminWithHashedPassword);
@@ -47,7 +52,7 @@ export class AdminService {
   /**
    * 관리자 정보 수정
    */
-  async updateAdmin(id: string, adminData: UpdateAdminDto): Promise<AdminUser> {
+  async updateAdmin(id: string, adminData: UpdateAdminDto): Promise<AdminUserResponseDto> {
     const admin = await this.adminUserRepository.findById(id);
     if (!admin) {
       throw new NotFoundException('관리자를 찾을 수 없습니다.');
@@ -59,7 +64,8 @@ export class AdminService {
       adminData.password = hashedPassword;
     }
 
-    return this.adminUserRepository.update(id, adminData);
+    const updatedAdmin = await this.adminUserRepository.update(id, adminData);
+    return this.userMapper.toUserResponseDto(updatedAdmin);
   }
 
   /**
@@ -249,7 +255,7 @@ export class AdminService {
       isActive: approvalData.isActive,
       approvedBy,
       approvedAt: new Date(),
-      permissions: this.getDefaultPermissions(approvalData.role)
+      permissions: (this.adminMapper as any).getDefaultPermissions(approvalData.role)
     };
 
     return this.adminUserRepository.update(userId, updateData);
@@ -284,11 +290,5 @@ export class AdminService {
     return this.adminUserRepository.findByStatus(status);
   }
 
-  /**
-   * 역할별 기본 권한 설정
-   */
-  private getDefaultPermissions(role: AdminUserRole): string[] {
-    return PermissionMappingUtil.getDefaultPermissions(role);
-  }
 
 }

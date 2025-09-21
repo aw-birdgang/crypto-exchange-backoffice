@@ -3,6 +3,8 @@ import { AdminUserRole, Resource, Permission, UserPermissions, Role } from '@cry
 import { PermissionRepositoryInterface } from '../../domain/repositories/permission.repository.interface';
 import { RoleRepositoryInterface } from '../../domain/repositories/role.repository.interface';
 import { RolePermission } from '../../domain/entities/role-permission.entity';
+import { IRoleMapper, MAPPER_TOKENS } from '../providers/mapper.providers';
+import { RoleListResponseDto } from '../dto/permission.dto';
 
 @Injectable()
 export class PermissionService {
@@ -11,6 +13,8 @@ export class PermissionService {
     private permissionRepository: PermissionRepositoryInterface,
     @Inject('RoleRepositoryInterface')
     private roleRepository: RoleRepositoryInterface,
+    @Inject(MAPPER_TOKENS.ROLE_MAPPER)
+    private roleMapper: IRoleMapper,
   ) {}
 
   async getUserPermissions(userId: string): Promise<UserPermissions> {
@@ -115,19 +119,14 @@ export class PermissionService {
   }
 
   // Role 관리 메서드들
-  async getAllRoles(): Promise<Role[]> {
+  async getAllRoles(): Promise<RoleListResponseDto> {
     try {
       console.log('🔍 PermissionService: Getting all roles from repository...');
       const roles = await this.roleRepository.findAll();
       console.log('✅ PermissionService: Found roles:', roles.length);
       
-      const mappedRoles = roles.map(role => {
-        console.log('🔍 PermissionService: Mapping role:', role.name);
-        return role.toRoleType();
-      });
-      
-      console.log('✅ PermissionService: Mapped roles successfully:', mappedRoles.length);
-      return mappedRoles;
+      console.log('✅ PermissionService: Mapped roles successfully:', roles.length);
+      return this.roleMapper.toRoleListResponseDto(roles, roles.length);
     } catch (error) {
       console.error('❌ PermissionService: Error in getAllRoles:', error);
       throw error;

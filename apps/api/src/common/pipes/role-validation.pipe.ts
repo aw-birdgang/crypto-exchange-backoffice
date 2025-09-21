@@ -1,5 +1,5 @@
 import { PipeTransform, Injectable, BadRequestException } from '@nestjs/common';
-import { RoleMappingUtil } from '../../features/auth/application/utils/role-mapping.util';
+import { RoleMapper } from '../../features/auth/domain/mappers/implementations/role.mapper';
 
 /**
  * 역할 검증 파이프
@@ -11,18 +11,20 @@ export class RoleValidationPipe implements PipeTransform<string, string> {
       throw new BadRequestException('Role is required');
     }
 
+    const roleMapper = new RoleMapper();
+    
     // AdminUserRole 검증
-    if (RoleMappingUtil.isValidAdminRole(value)) {
+    if (roleMapper.isValidAdminRole(value)) {
       return value;
     }
 
     // 역할 이름 검증
-    if (RoleMappingUtil.isValidRoleName(value)) {
+    if (roleMapper.isValidRoleName(value)) {
       return value;
     }
 
     throw new BadRequestException(
-      `Invalid role: "${value}". Valid roles are: ${Object.values(RoleMappingUtil.mapAdminRoleToRoleName).join(', ')}`
+      `Invalid role: "${value}". Valid roles are: super_admin, admin, moderator, support, auditor`
     );
   }
 }

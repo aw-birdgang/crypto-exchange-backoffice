@@ -11,8 +11,9 @@ import {AdminUserRole} from '@crypto-exchange/shared';
 import {AuthResponseDto, LoginDto, RefreshResponseDto, RefreshTokenDto, RegisterDto} from '../dto/auth.dto';
 import {JwtPayload, RefreshTokenPayload} from '@crypto-exchange/shared';
 import {ValidationUtil} from '../../../../common/utils/validation.util';
-import {RoleMappingUtil} from '../utils/role-mapping.util';
 import {PermissionService} from './permission.service';
+import {IRoleMapper, IAuthMapper, MAPPER_TOKENS} from '../providers/mapper.providers';
+import {Inject} from '@nestjs/common';
 
 @Injectable()
 export class AuthService {
@@ -22,6 +23,10 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private permissionService: PermissionService,
+    @Inject(MAPPER_TOKENS.ROLE_MAPPER)
+    private roleMapper: IRoleMapper,
+    @Inject(MAPPER_TOKENS.AUTH_MAPPER)
+    private authMapper: IAuthMapper,
   ) {}
 
   async register(registerDto: RegisterDto): Promise<{ message: string; userId: string }> {
@@ -228,7 +233,7 @@ export class AuthService {
     adminRole: AdminUserRole;
   }> {
     // AdminRole을 역할 이름으로 변환
-    const roleName = RoleMappingUtil.mapAdminRoleToRoleName(user.adminRole);
+    const roleName = this.roleMapper.mapAdminRoleToRoleName(user.adminRole);
     
     // 역할 이름으로 역할 조회하여 ID 반환
     const role = await this.permissionService.getRoleByName(roleName);
@@ -245,11 +250,23 @@ export class AuthService {
    */
   async getMyRole(user: AdminUser) {
     // AdminRole을 역할 이름으로 변환
-    const roleName = RoleMappingUtil.mapAdminRoleToRoleName(user.adminRole);
+    const roleName = this.roleMapper.mapAdminRoleToRoleName(user.adminRole);
     
     // 역할 이름으로 역할 조회
     const role = await this.permissionService.getRoleByName(roleName);
     
     return role;
+  }
+
+  /**
+   * 사용자 프로필 조회 (mapper 사용)
+   */
+  async getUserProfile(userId: string) {
+    const user = await this.adminUserRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
+
+    return this.authMapper.toUserProfile(user);
   }
 }

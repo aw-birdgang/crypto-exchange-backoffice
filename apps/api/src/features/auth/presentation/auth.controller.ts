@@ -9,7 +9,6 @@ import {PermissionService} from '../application/services/permission.service';
 import {CurrentUser, RequestId} from '../../../common/decorators';
 import {AdminUser} from '../domain/entities/admin-user.entity';
 import {ParseBooleanPipe, ParseIntPipe, ParseUuidPipe, TrimPipe} from '../../../common/pipes';
-import {AuthMapper} from '../application/utils';
 import {AuthSwagger} from './swagger/auth.swagger';
 
 @ApiTags('Authentication')
@@ -17,7 +16,7 @@ import {AuthSwagger} from './swagger/auth.swagger';
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
-    private readonly permissionService: PermissionService
+    private readonly permissionService: PermissionService,
   ) {}
 
   @Post('register')
@@ -69,7 +68,8 @@ export class AuthController {
     console.log('🔍 AuthController: getProfile called with requestId:', requestId);
     console.log('🔍 AuthController: Current user:', user);
 
-    const profile = AuthMapper.toUserProfile(user);
+    // Service에서 이미 매핑된 결과를 받아옴
+    const profile = await this.authService.getUserProfile(user.id);
 
     console.log('✅ AuthController: Profile data:', profile);
     return profile;
@@ -99,27 +99,6 @@ export class AuthController {
     const result = await this.authService.getUserRoleId(user);
     console.log('✅ AuthController: Role ID result:', result);
     return result;
-  }
-
-  @Get('test-auth')
-  @Public()
-  @AuthSwagger.testAuth()
-  async testAuth(@Request() req: any, @RequestId() requestId: string) {
-    console.log('🔍 AuthController: testAuth called with requestId:', requestId);
-    console.log('🔍 AuthController: All headers:', req.headers);
-
-    return {
-      message: 'Test endpoint working',
-      requestId,
-      headers: {
-        authorization: req.headers.authorization || req.headers.Authorization || 'No authorization header',
-        'user-agent': req.headers['user-agent'],
-        'content-type': req.headers['content-type'],
-        'referer': req.headers['referer'],
-        allHeaders: Object.keys(req.headers)
-      },
-      timestamp: new Date().toISOString()
-    };
   }
 
   @Get('test-pipes/:id')

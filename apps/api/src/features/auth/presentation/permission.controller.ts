@@ -16,7 +16,6 @@ import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {PermissionGuard, RequirePermissions,} from '../application/guards/permission.guard';
 import {RolePermission} from '../domain/entities/role-permission.entity';
 import {ApiBodyHelpers} from './constants/api-body.constants';
-import {PermissionMapper, RoleMapper} from '../application/utils';
 import {PermissionSwagger} from './swagger/permission.swagger';
 
 @ApiTags('Permissions')
@@ -26,7 +25,7 @@ import {PermissionSwagger} from './swagger/permission.swagger';
 export class PermissionController {
   constructor(
     @Inject(PermissionService)
-    private permissionService: PermissionService
+    private permissionService: PermissionService,
   ) {}
 
   @Get('user/:userId')
@@ -99,7 +98,7 @@ export class PermissionController {
       body.resource,
       body.permission
     );
-    return PermissionMapper.toPermissionCheckResponse(hasPermission);
+    return { hasPermission };
   }
 
   @Get('menu-access/:menuKey')
@@ -112,7 +111,7 @@ export class PermissionController {
       req.user.id,
       menuKey
     );
-    return PermissionMapper.toMenuAccessResponse(hasAccess);
+    return { hasAccess };
   }
 
   @Post('role-permissions')
@@ -181,10 +180,10 @@ export class PermissionController {
     try {
       console.log('🔍 Getting all roles...');
       const roles = await this.permissionService.getAllRoles();
-      console.log('✅ Roles fetched successfully:', roles.length);
+      console.log('✅ Roles fetched successfully:', roles.roles.length);
 
-      console.log('✅ Mapped roles:', roles.length);
-      return RoleMapper.toRoleListResponseDtoFromType(roles, roles.length);
+      console.log('✅ Mapped roles:', roles.roles.length);
+    return roles;
     } catch (error) {
       console.error('❌ Error in getAllRoles:', error);
       throw error;
@@ -199,7 +198,7 @@ export class PermissionController {
     const role = await this.permissionService.getRoleById(id);
     if (!role) return null;
 
-    return RoleMapper.toRoleResponseDtoFromType(role);
+    return role;
   }
 
   @Post('roles')
@@ -216,7 +215,7 @@ export class PermissionController {
       const createdRole = await this.permissionService.createRole(role);
       console.log('✅ CreateRole - Successfully created role:', JSON.stringify(createdRole, null, 2));
 
-      return RoleMapper.toRoleResponseDtoFromType(createdRole);
+    return createdRole;
     } catch (error) {
       console.error('❌ CreateRole - Error creating role:', error);
       throw error;
@@ -233,7 +232,7 @@ export class PermissionController {
     @Body() role: UpdateRoleDto
   ): Promise<RoleResponseDto> {
     const updatedRole = await this.permissionService.updateRole(id, role);
-    return RoleMapper.toRoleResponseDtoFromType(updatedRole);
+    return updatedRole;
   }
 
   @Delete('roles/:id')

@@ -18,6 +18,7 @@ import { PermissionRepositoryInterface } from '../domain/repositories/permission
 import { AdminUserRepositoryInterface } from '../domain/repositories/admin-user.repository.interface';
 import { RoleRepositoryInterface } from '../domain/repositories/role.repository.interface';
 import { JwtStrategy } from '../application/strategies/jwt.strategy';
+import { mapperProviders } from '../application/providers/mapper.providers';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { JwtStrategy } from '../application/strategies/jwt.strategy';
     PermissionService,
     AdminService,
     JwtStrategy,
+    ...mapperProviders,
     {
       provide: 'PermissionRepositoryInterface',
       useClass: PermissionRepository,

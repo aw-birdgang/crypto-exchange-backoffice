@@ -1,8 +1,5 @@
-import {Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards,} from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiTags,
-} from '@nestjs/swagger';
+import {Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards} from '@nestjs/common';
+import {ApiBearerAuth, ApiTags,} from '@nestjs/swagger';
 import {AdminService} from '../application/services/admin.service';
 import {
   AdminBulkActionDto,
@@ -11,13 +8,12 @@ import {
   CreateAdminDto,
   UpdateAdminDto,
 } from '../application/dto/admin.dto';
-import {UserResponseDto,} from '../application/dto/permission.dto';
+import {AdminUserResponseDto,} from '../application/dto/permission.dto';
 import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {PermissionGuard, RequirePermissions} from '../application/guards/permission.guard';
 import {AdminUserRole, Permission, Resource} from '@crypto-exchange/shared';
 import {AdminUser} from '@/features/auth/domain/entities/admin-user.entity';
 import {ApiBodyHelpers} from './constants/api-body.constants';
-import {UserMapper} from '../application/utils';
 import {AdminSwagger} from './swagger/admin.swagger';
 
 @ApiTags('Admin')
@@ -25,7 +21,9 @@ import {AdminSwagger} from './swagger/admin.swagger';
 @Controller('admin')
 @UseGuards(JwtAuthGuard)
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+  ) {}
 
 
   @Get('dashboard')
@@ -69,7 +67,7 @@ export class AdminController {
   async updateAdmin(
     @Param('id') id: string,
     @Body() adminData: UpdateAdminDto,
-  ): Promise<AdminUser> {
+  ): Promise<AdminUserResponseDto> {
     return this.adminService.updateAdmin(id, adminData);
   }
 
@@ -120,9 +118,8 @@ export class AdminController {
     @Param('id') id: string,
     @Body() adminData: UpdateAdminDto,
     @Request() req: any,
-  ): Promise<UserResponseDto> {
-    const updatedUser = await this.adminService.updateAdmin(id, adminData);
-    return UserMapper.toUserResponseDto(updatedUser);
+  ): Promise<AdminUserResponseDto> {
+    return this.adminService.updateAdmin(id, adminData);
   }
 
   @Delete('users/:id')

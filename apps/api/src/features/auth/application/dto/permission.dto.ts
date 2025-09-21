@@ -367,7 +367,7 @@ export class UpdateUserDto {
   isActive?: boolean;
 }
 
-export class UserResponseDto {
+export class AdminUserResponseDto {
   @ApiProperty({
     description: '사용자 ID',
     example: '123e4567-e89b-12d3-a456-426614174000',
@@ -445,9 +445,9 @@ export class RoleListResponseDto {
 export class UserListResponseDto {
   @ApiProperty({
     description: '사용자 목록',
-    type: [UserResponseDto]
+    type: [AdminUserResponseDto]
   })
-  users: UserResponseDto[];
+  users: AdminUserResponseDto[];
 
   @ApiProperty({
     description: '총 개수',
