@@ -8,7 +8,7 @@ import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {PermissionService} from '../application/services/permission.service';
 import {CurrentUser, RequestId} from '../../../common/decorators';
 import {AdminUser} from '../domain/entities/admin-user.entity';
-import {ParseBooleanPipe, ParseIntPipe, ParseUuidPipe, TrimPipe} from '../../../common/pipes';
+import {ParseBooleanPipe, ParseIntPipe, ParseUuidPipe, TrimPipe, CustomValidationPipe} from '../../../common/pipes';
 import {AuthSwagger} from './swagger/auth.swagger';
 
 @ApiTags('Authentication')
@@ -23,7 +23,7 @@ export class AuthController {
   @Public()
   @ApiBodyHelpers.register()
   @AuthSwagger.register()
-  async register(@Body() registerDto: RegisterDto): Promise<{ message: string; userId: string }> {
+  async register(@Body(TrimPipe, CustomValidationPipe) registerDto: RegisterDto): Promise<{ message: string; userId: string }> {
     return this.authService.register(registerDto);
   }
 
@@ -32,7 +32,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBodyHelpers.login()
   @AuthSwagger.login()
-  async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
+  async login(@Body(TrimPipe, CustomValidationPipe) loginDto: LoginDto): Promise<AuthResponseDto> {
     const result = await this.authService.login(loginDto);
     return result;
   }
@@ -42,7 +42,7 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBodyHelpers.refreshToken()
   @AuthSwagger.refresh()
-  async refresh(@Body() refreshTokenDto: RefreshTokenDto): Promise<RefreshResponseDto> {
+  async refresh(@Body(TrimPipe, CustomValidationPipe) refreshTokenDto: RefreshTokenDto): Promise<RefreshResponseDto> {
     return this.authService.refreshToken(refreshTokenDto);
   }
 

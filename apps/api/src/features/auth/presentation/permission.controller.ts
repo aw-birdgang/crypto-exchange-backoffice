@@ -17,6 +17,7 @@ import {PermissionGuard, RequirePermissions,} from '../application/guards/permis
 import {RolePermission} from '../domain/entities/role-permission.entity';
 import {ApiBodyHelpers} from './constants/api-body.constants';
 import {PermissionSwagger} from './swagger/permission.swagger';
+import {ParseUuidPipe, RoleValidationPipe, TrimPipe, CustomValidationPipe} from '../../../common/pipes';
 
 @ApiTags('Permissions')
 @ApiBearerAuth('JWT-auth')
@@ -33,7 +34,7 @@ export class PermissionController {
   @RequirePermissions(Resource.SETTINGS, [Permission.READ])
   @PermissionSwagger.getUserPermissions()
   async getUserPermissions(
-    @Param('userId') userId: string
+    @Param('userId', ParseUuidPipe) userId: string
   ): Promise<UserPermissions> {
     return this.permissionService.getUserPermissions(userId);
   }
@@ -91,7 +92,7 @@ export class PermissionController {
   @PermissionSwagger.checkPermission()
   async checkPermission(
     @Request() req: any,
-    @Body() body: PermissionCheckDto
+    @Body(TrimPipe, CustomValidationPipe) body: PermissionCheckDto
   ): Promise<PermissionCheckResponseDto> {
     const hasPermission = await this.permissionService.hasPermission(
       req.user.id,
@@ -105,7 +106,7 @@ export class PermissionController {
   @PermissionSwagger.checkMenuAccess()
   async checkMenuAccess(
     @Request() req: any,
-    @Param('menuKey') menuKey: string
+    @Param('menuKey', TrimPipe) menuKey: string
   ): Promise<MenuAccessResponseDto> {
     const hasAccess = await this.permissionService.hasMenuAccess(
       req.user.id,
@@ -120,7 +121,7 @@ export class PermissionController {
   @ApiBodyHelpers.createRolePermission()
   @PermissionSwagger.createRolePermission()
   async createRolePermission(
-    @Body() rolePermission: CreateRolePermissionDto
+    @Body(TrimPipe, CustomValidationPipe) rolePermission: CreateRolePermissionDto
   ): Promise<RolePermission> {
     return this.permissionService.createRolePermission(rolePermission);
   }
@@ -131,8 +132,8 @@ export class PermissionController {
   @ApiBodyHelpers.createRolePermission()
   @PermissionSwagger.updateRolePermission()
   async updateRolePermission(
-    @Param('id') id: string,
-    @Body() rolePermission: CreateRolePermissionDto
+    @Param('id', ParseUuidPipe) id: string,
+    @Body(TrimPipe, CustomValidationPipe) rolePermission: CreateRolePermissionDto
   ): Promise<RolePermission> {
     return this.permissionService.updateRolePermission(id, rolePermission);
   }
@@ -141,7 +142,7 @@ export class PermissionController {
   @UseGuards(PermissionGuard)
   @RequirePermissions(Resource.SETTINGS, [Permission.DELETE])
   @PermissionSwagger.deleteRolePermission()
-  async deleteRolePermission(@Param('id') id: string): Promise<void> {
+  async deleteRolePermission(@Param('id', ParseUuidPipe) id: string): Promise<void> {
     return this.permissionService.deleteRolePermission(id);
   }
 
@@ -150,7 +151,7 @@ export class PermissionController {
   @RequirePermissions(Resource.SETTINGS, [Permission.READ])
   @PermissionSwagger.getRolePermissions()
   async getRolePermissions(
-    @Param('role') role: AdminUserRole
+    @Param('role', RoleValidationPipe) role: AdminUserRole
   ): Promise<RolePermission[]> {
     return this.permissionService.getRolePermissions(role);
   }
@@ -194,7 +195,7 @@ export class PermissionController {
   @UseGuards(PermissionGuard)
   @RequirePermissions(Resource.SETTINGS, [Permission.READ])
   @PermissionSwagger.getRoleById()
-  async getRoleById(@Param('id') id: string): Promise<RoleResponseDto | null> {
+  async getRoleById(@Param('id', ParseUuidPipe) id: string): Promise<RoleResponseDto | null> {
     const role = await this.permissionService.getRoleById(id);
     if (!role) return null;
 
@@ -206,7 +207,7 @@ export class PermissionController {
   @RequirePermissions(Resource.SETTINGS, [Permission.CREATE])
   @ApiBodyHelpers.createRole()
   @PermissionSwagger.createRole()
-  async createRole(@Body() role: CreateRoleDto): Promise<RoleResponseDto> {
+  async createRole(@Body(TrimPipe, CustomValidationPipe) role: CreateRoleDto): Promise<RoleResponseDto> {
     console.log('🔍 CreateRole - Raw body received:', JSON.stringify(role, null, 2));
     console.log('🔍 CreateRole - Body type:', typeof role);
     console.log('🔍 CreateRole - Body keys:', Object.keys(role));
@@ -228,8 +229,8 @@ export class PermissionController {
   @ApiBodyHelpers.updateRole()
   @PermissionSwagger.updateRole()
   async updateRole(
-    @Param('id') id: string,
-    @Body() role: UpdateRoleDto
+    @Param('id', ParseUuidPipe) id: string,
+    @Body(TrimPipe, CustomValidationPipe) role: UpdateRoleDto
   ): Promise<RoleResponseDto> {
     const updatedRole = await this.permissionService.updateRole(id, role);
     return updatedRole;
@@ -239,7 +240,7 @@ export class PermissionController {
   @UseGuards(PermissionGuard)
   @RequirePermissions(Resource.SETTINGS, [Permission.DELETE])
   @PermissionSwagger.deleteRole()
-  async deleteRole(@Param('id') id: string): Promise<void> {
+  async deleteRole(@Param('id', ParseUuidPipe) id: string): Promise<void> {
     return this.permissionService.deleteRole(id);
   }
 }

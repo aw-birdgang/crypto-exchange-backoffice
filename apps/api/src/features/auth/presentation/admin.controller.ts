@@ -15,6 +15,7 @@ import {AdminUserRole, Permission, Resource} from '@crypto-exchange/shared';
 import {AdminUser} from '@/features/auth/domain/entities/admin-user.entity';
 import {ApiBodyHelpers} from './constants/api-body.constants';
 import {AdminSwagger} from './swagger/admin.swagger';
+import {ParseUuidPipe, ParseBooleanPipe, TrimPipe, CustomValidationPipe} from '../../../common/pipes';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
@@ -55,7 +56,7 @@ export class AdminController {
   @RequirePermissions(Resource.SETTINGS, [Permission.CREATE])
   @ApiBodyHelpers.createAdmin()
   @AdminSwagger.createAdmin()
-  async createAdmin(@Body() adminData: CreateAdminDto): Promise<AdminUser> {
+  async createAdmin(@Body(TrimPipe, CustomValidationPipe) adminData: CreateAdminDto): Promise<AdminUser> {
     return this.adminService.createAdmin(adminData);
   }
 
@@ -65,8 +66,8 @@ export class AdminController {
   @ApiBodyHelpers.updateAdmin()
   @AdminSwagger.updateAdmin()
   async updateAdmin(
-    @Param('id') id: string,
-    @Body() adminData: UpdateAdminDto,
+    @Param('id', ParseUuidPipe) id: string,
+    @Body(TrimPipe, CustomValidationPipe) adminData: UpdateAdminDto,
   ): Promise<AdminUserResponseDto> {
     return this.adminService.updateAdmin(id, adminData);
   }
@@ -75,7 +76,7 @@ export class AdminController {
   @UseGuards(PermissionGuard)
   @RequirePermissions(Resource.SETTINGS, [Permission.DELETE])
   @AdminSwagger.deleteAdmin()
-  async deleteAdmin(@Param('id') id: string): Promise<{ message: string }> {
+  async deleteAdmin(@Param('id', ParseUuidPipe) id: string): Promise<{ message: string }> {
     await this.adminService.deleteAdmin(id);
     return { message: '관리자가 삭제되었습니다.' };
   }
@@ -85,7 +86,7 @@ export class AdminController {
   @RequirePermissions(Resource.SETTINGS, [Permission.MANAGE])
   @ApiBodyHelpers.bulkAction()
   @AdminSwagger.bulkUserAction()
-  async bulkUserAction(@Body() actionData: AdminBulkActionDto): Promise<{
+  async bulkUserAction(@Body(TrimPipe, CustomValidationPipe) actionData: AdminBulkActionDto): Promise<{
     success: number;
     failed: number;
     errors: string[];
@@ -97,8 +98,8 @@ export class AdminController {
   @AdminSwagger.checkPermission()
   async checkPermission(
     @Request() req: any,
-    @Query('resource') resource: Resource,
-    @Query('permission') permission: Permission,
+    @Query('resource', TrimPipe) resource: Resource,
+    @Query('permission', TrimPipe) permission: Permission,
   ): Promise<{ hasPermission: boolean }> {
     const hasPermission = await this.adminService.checkAdminPermission(
       req.user.id,
@@ -115,8 +116,8 @@ export class AdminController {
   @ApiBodyHelpers.updateAdmin()
   @AdminSwagger.updateUserAsAdmin()
   async updateUserAsAdmin(
-    @Param('id') id: string,
-    @Body() adminData: UpdateAdminDto,
+    @Param('id', ParseUuidPipe) id: string,
+    @Body(TrimPipe, CustomValidationPipe) adminData: UpdateAdminDto,
     @Request() req: any,
   ): Promise<AdminUserResponseDto> {
     return this.adminService.updateAdmin(id, adminData);
@@ -127,7 +128,7 @@ export class AdminController {
   @RequirePermissions(Resource.SETTINGS, [Permission.DELETE])
   @AdminSwagger.deleteUser()
   async deleteUserAsAdmin(
-    @Param('id') id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Request() req: any,
   ): Promise<{ message: string }> {
     await this.adminService.deleteAdmin(id);
@@ -147,8 +148,8 @@ export class AdminController {
   @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
   @AdminSwagger.approveUser()
   async approveUser(
-    @Param('id') id: string,
-    @Body() approvalData: { role: AdminUserRole; isActive: boolean },
+    @Param('id', ParseUuidPipe) id: string,
+    @Body(TrimPipe, CustomValidationPipe) approvalData: { role: AdminUserRole; isActive: boolean },
     @Request() req: any,
   ): Promise<AdminUser> {
     return this.adminService.approveUser(id, approvalData, req.user.id);
@@ -159,7 +160,7 @@ export class AdminController {
   @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
   @AdminSwagger.rejectUser()
   async rejectUser(
-    @Param('id') id: string,
+    @Param('id', ParseUuidPipe) id: string,
     @Request() req: any,
   ): Promise<AdminUser> {
     return this.adminService.rejectUser(id, req.user.id);
@@ -170,7 +171,7 @@ export class AdminController {
   @RequirePermissions(Resource.SETTINGS, [Permission.READ])
   @AdminSwagger.getPendingUsers()
   async getUsersByStatus(
-    @Param('status') status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED',
+    @Param('status', TrimPipe) status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED',
   ): Promise<AdminUser[]> {
     return this.adminService.getUsersByStatus(status);
   }
