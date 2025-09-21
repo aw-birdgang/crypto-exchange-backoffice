@@ -2,6 +2,8 @@ import React, {useState} from 'react';
 import {TransactionHeader} from '../components/TransactionHeader';
 import {TransactionFilters} from '../components/TransactionFilters';
 import {TransactionTable} from '../components/TransactionTable';
+import {ResponsiveContainer} from '../../../../shared/components/layout/ResponsiveGrid';
+import {useResponsive} from '../../../../shared/hooks';
 
 export const WalletTransactionsPage: React.FC = () => {
   const [filters, setFilters] = useState({
@@ -10,6 +12,7 @@ export const WalletTransactionsPage: React.FC = () => {
     status: '',
     dateRange: null,
   });
+  const { isMobile } = useResponsive();
 
   // 임시 데이터
   const transactions = [
@@ -69,8 +72,8 @@ export const WalletTransactionsPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <ResponsiveContainer maxWidth="2xl" padding="md">
+      <div>
         <TransactionHeader
           onExport={() => console.log('Export transactions')}
           onRefresh={() => window.location.reload()}
@@ -82,8 +85,10 @@ export const WalletTransactionsPage: React.FC = () => {
           onReset={handleResetFilters}
         />
 
-        <TransactionTable transactions={transactions} />
+        <TransactionTable 
+          transactions={transactions}
+        />
       </div>
-    </div>
+    </ResponsiveContainer>
   );
 };

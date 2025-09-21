@@ -7,6 +7,8 @@ import {UserFilters} from '../components/UserFilters';
 import {UserStatsCards} from '../components/UserStatsCards';
 import {UserApprovalModal} from '../components/UserApprovalModal';
 import {BulkActionModal} from '../components/BulkActionModal';
+import {ResponsiveContainer} from '../../../../shared/components/layout/ResponsiveGrid';
+import {useResponsive} from '../../../../shared/hooks';
 import {
   useBulkAdminUserAction,
   usePendingAdminUsers,
@@ -182,6 +184,7 @@ export const AdminUserManagementPage: React.FC = () => {
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [activeTab, setActiveTab] = useState('all');
+  const { isMobile, isTablet } = useResponsive();
 
   const { filters, updateFilter, resetFilters } = useAdminUserFilters();
   
@@ -483,20 +486,20 @@ export const AdminUserManagementPage: React.FC = () => {
   const tabConfig = getTabConfig();
 
   return (
-    <div style={{ padding: '24px', backgroundColor: '#f5f5f5', minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <ResponsiveContainer maxWidth="2xl" padding="md">
+      <div>
         {/* 헤더 */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '32px',
+          marginBottom: isMobile ? '24px' : '32px',
           flexWrap: 'wrap',
           gap: '16px'
         }}>
           <div style={{ flex: 1, minWidth: 0 }}>
             <h2 style={{ 
-              fontSize: '28px', 
+              fontSize: isMobile ? '24px' : '28px', 
               fontWeight: 700, 
               color: '#262626', 
               margin: 0,
@@ -506,28 +509,30 @@ export const AdminUserManagementPage: React.FC = () => {
             </h2>
             <p style={{ 
               marginTop: '8px', 
-              fontSize: '14px', 
+              fontSize: isMobile ? '13px' : '14px', 
               color: '#8c8c8c',
               margin: 0
             }}>
               어드민 사용자 가입 승인 및 상태 관리를 수행할 수 있습니다.
             </p>
           </div>
-          <Space>
+          <Space wrap>
             {selectedAdminUsers.length > 0 && (
               <Button
                 type="primary"
                 onClick={handleBulkActionClick}
                 icon={<SettingOutlined />}
+                size={isMobile ? 'small' : 'middle'}
               >
-                대량 작업 ({selectedAdminUsers.length})
+                {isMobile ? `대량 작업 (${selectedAdminUsers.length})` : `대량 작업 (${selectedAdminUsers.length})`}
               </Button>
             )}
             <Button
               onClick={() => window.location.reload()}
               icon={<ReloadOutlined />}
+              size={isMobile ? 'small' : 'middle'}
             >
-              새로고침
+              {!isMobile && '새로고침'}
             </Button>
           </Space>
         </div>
@@ -563,6 +568,8 @@ export const AdminUserManagementPage: React.FC = () => {
           <Tabs
             activeKey={activeTab}
             onChange={setActiveTab}
+            tabPosition={isMobile ? 'top' : 'top'}
+            size={isMobile ? 'small' : 'middle'}
             items={[
               {
                 key: 'all',
@@ -711,6 +718,6 @@ export const AdminUserManagementPage: React.FC = () => {
           isLoading={bulkActionMutation.isPending}
         />
       </div>
-    </div>
+    </ResponsiveContainer>
   );
 };

@@ -14,9 +14,11 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../../features/auth/application/stores/auth.store';
 import { usePermissions } from '../../../features/auth/application/hooks/usePermissions';
 import { useTheme } from '../../../shared/theme';
+import { useResponsive } from '../../../shared/hooks';
 import { ROUTES, AdminUserRole } from '@crypto-exchange/shared';
 import { TopNavigation, MainCategory } from './TopNavigation';
 import { CategorySidebar } from './CategorySidebar';
+import { MobileNavigationDrawer, MobileDrawerTrigger } from './MobileDrawer';
 
 const { Header, Content } = Layout;
 
@@ -34,6 +36,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { hasPermission, loading: permissionsLoading, permissions } = usePermissions();
   const { theme: appTheme, toggleTheme } = useTheme();
   const { token } = theme.useToken();
+  const { isMobile, isTablet, getSidebarMode } = useResponsive();
 
   // 현재 경로에 따라 활성 카테고리 결정
   const getCategoryFromPath = (pathname: string): MainCategory => {
@@ -98,32 +101,41 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     }
   };
 
+  // 사이드바 모드에 따른 렌더링 결정
+  const sidebarMode = getSidebarMode();
+  const showSidebar = sidebarMode === 'fixed' || sidebarMode === 'collapsible';
+  const showMobileDrawer = sidebarMode === 'drawer';
+
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      {/* 상단 메인 카테고리 네비게이션 */}
-      <TopNavigation
-        activeCategory={activeCategory}
-        onCategoryChange={handleCategoryChange}
-      />
+      {/* 상단 메인 카테고리 네비게이션 (데스크톱에서만 표시) */}
+      {!isMobile && (
+        <TopNavigation
+          activeCategory={activeCategory}
+          onCategoryChange={handleCategoryChange}
+        />
+      )}
       
       <Layout>
-        {/* 왼쪽 사이드바 */}
-        <CategorySidebar
-          collapsed={collapsed}
-          onCollapse={setCollapsed}
-          activeCategory={activeCategory}
-          selectedKeys={[location.pathname]}
-          onMenuClick={handleMenuClick}
-          hasPermission={hasPermission}
-          permissionsLoading={permissionsLoading}
-          permissions={permissions}
-        />
+        {/* 왼쪽 사이드바 (데스크톱/태블릿) */}
+        {showSidebar && (
+          <CategorySidebar
+            collapsed={collapsed}
+            onCollapse={setCollapsed}
+            activeCategory={activeCategory}
+            selectedKeys={[location.pathname]}
+            onMenuClick={handleMenuClick}
+            hasPermission={hasPermission}
+            permissionsLoading={permissionsLoading}
+            permissions={permissions}
+          />
+        )}
         
         <Layout>
           {/* 상단 헤더 */}
           <Header
             style={{
-              padding: '0 24px',
+              padding: isMobile ? '0 16px' : '0 24px',
               background: token.colorBgContainer,
               display: 'flex',
               alignItems: 'center',
@@ -134,32 +146,40 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
               borderBottom: `1px solid ${token.colorBorder}`,
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <Button
-                type="text"
-                icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-                onClick={() => setCollapsed(!collapsed)}
-                style={{
-                  fontSize: '16px',
-                  width: 40,
-                  height: 40,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '8px' : '16px' }}>
+              {/* 모바일 메뉴 버튼 또는 사이드바 토글 버튼 */}
+              {showMobileDrawer ? (
+                <MobileDrawerTrigger
+                  onClick={() => setMobileMenuOpen(true)}
+                />
+              ) : showSidebar ? (
+                <Button
+                  type="text"
+                  icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                  onClick={() => setCollapsed(!collapsed)}
+                  style={{
+                    fontSize: '16px',
+                    width: 40,
+                    height: 40,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                />
+              ) : null}
+              
               <h2 style={{ 
                 color: token.colorPrimary, 
                 margin: 0,
-                fontSize: '20px',
+                fontSize: isMobile ? '18px' : '20px',
                 fontWeight: 700,
                 letterSpacing: '-0.025em',
               }}>
-                Crypto Exchange
+                {isMobile ? 'Crypto' : 'Crypto Exchange'}
               </h2>
             </div>
             
-            <Space size="middle">
+            <Space size={isMobile ? 'small' : 'middle'}>
               {/* 알림 버튼 */}
               <Tooltip title="알림">
                 <Badge count={3} size="small">
@@ -167,8 +187,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     type="text"
                     icon={<BellOutlined />}
                     style={{
-                      width: 40,
-                      height: 40,
+                      width: isMobile ? 36 : 40,
+                      height: isMobile ? 36 : 40,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
@@ -184,8 +204,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   icon={appTheme.mode === 'light' ? <MoonOutlined /> : <SunOutlined />}
                   onClick={toggleTheme}
                   style={{
-                    width: 40,
-                    height: 40,
+                    width: isMobile ? 36 : 40,
+                    height: isMobile ? 36 : 40,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -207,11 +227,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     display: 'flex',
                     alignItems: 'center',
                     cursor: 'pointer',
-                    padding: '8px 12px',
+                    padding: isMobile ? '6px 8px' : '8px 12px',
                     borderRadius: '8px',
                     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                    minWidth: '120px',
-                    maxWidth: '200px',
+                    minWidth: isMobile ? '80px' : '120px',
+                    maxWidth: isMobile ? '120px' : '200px',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     border: `1px solid ${token.colorBorder}`,
@@ -226,49 +246,129 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                   }}
                 >
                   <Avatar
+                    size={isMobile ? 'small' : 'default'}
                     style={{
                       backgroundColor: token.colorPrimary,
-                      marginRight: 8,
-                      fontSize: '14px',
+                      marginRight: isMobile ? 4 : 8,
+                      fontSize: isMobile ? '12px' : '14px',
                       fontWeight: 600,
                     }}
                   >
                     {user?.firstName?.[0]?.toUpperCase() || 'U'}
                   </Avatar>
-                  <div style={{ 
-                    minWidth: 0,
-                    flex: 1,
-                    overflow: 'hidden',
-                  }}>
+                  {!isMobile && (
                     <div style={{ 
-                      fontWeight: 500,
-                      fontSize: '14px',
-                      lineHeight: '1.2',
+                      minWidth: 0,
+                      flex: 1,
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      color: token.colorText,
                     }}>
-                      {user ? `${user.firstName} ${user.lastName}` : '사용자'}
+                      <div style={{ 
+                        fontWeight: 500,
+                        fontSize: '14px',
+                        lineHeight: '1.2',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        color: token.colorText,
+                      }}>
+                        {user ? `${user.firstName} ${user.lastName}` : '사용자'}
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: token.colorTextSecondary,
+                        lineHeight: '1.2',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {user?.adminRole || AdminUserRole.SUPPORT}
+                      </div>
                     </div>
-                    <div style={{ 
-                      fontSize: '12px', 
-                      color: token.colorTextSecondary,
-                      lineHeight: '1.2',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}>
-                      {user?.adminRole || AdminUserRole.SUPPORT}
-                    </div>
-                  </div>
+                  )}
                 </div>
               </Dropdown>
             </Space>
           </Header>
           
           {/* 메인 콘텐츠 */}
-          <Content className="fade-in">{children}</Content>
+          <Content 
+            className="fade-in"
+            style={{
+              padding: isMobile ? '16px' : '24px',
+              background: '#f8fafc',
+              minHeight: 'calc(100vh - 64px)',
+            }}
+          >
+            {children}
+          </Content>
         </Layout>
       </Layout>
+
+      {/* 모바일 네비게이션 드로어 */}
+      {showMobileDrawer && (
+        <MobileNavigationDrawer
+          isOpen={mobileMenuOpen}
+          onClose={() => setMobileMenuOpen(false)}
+          title="메뉴"
+        >
+          {/* 모바일용 카테고리 네비게이션 */}
+          <div style={{ marginBottom: '24px' }}>
+            <div style={{ 
+              fontSize: '14px', 
+              fontWeight: 600, 
+              color: '#8c8c8c',
+              marginBottom: '12px',
+              padding: '0 16px'
+            }}>
+              카테고리
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {[
+                { key: 'wallet', label: '지갑관리', icon: '💳' },
+                { key: 'customer', label: '고객관리', icon: '👥' },
+                { key: 'admin', label: '관리자 계정 관리', icon: '⚙️' },
+              ].map((category) => (
+                <Button
+                  key={category.key}
+                  type={activeCategory === category.key ? 'primary' : 'text'}
+                  block
+                  style={{
+                    height: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    padding: '0 16px',
+                    fontSize: '16px',
+                    fontWeight: activeCategory === category.key ? 600 : 400,
+                  }}
+                  onClick={() => {
+                    handleCategoryChange(category.key as MainCategory);
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <span style={{ marginRight: '12px', fontSize: '18px' }}>
+                    {category.icon}
+                  </span>
+                  {category.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* 모바일용 사이드바 메뉴 */}
+          <CategorySidebar
+            collapsed={false}
+            onCollapse={() => {}}
+            activeCategory={activeCategory}
+            selectedKeys={[location.pathname]}
+            onMenuClick={(key) => {
+              handleMenuClick(key);
+              setMobileMenuOpen(false);
+            }}
+            hasPermission={hasPermission}
+            permissionsLoading={permissionsLoading}
+            permissions={permissions}
+          />
+        </MobileNavigationDrawer>
+      )}
     </Layout>
   );
 };

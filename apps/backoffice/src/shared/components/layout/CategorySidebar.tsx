@@ -11,6 +11,7 @@ import {
 import { MainCategory } from './TopNavigation';
 import { ROUTES, Resource, Permission, AdminUserRole } from '@crypto-exchange/shared';
 import { useTheme } from '../../theme';
+import { useResponsive } from '../../hooks';
 
 const { Sider } = Layout;
 
@@ -37,6 +38,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
 }) => {
   const { token } = theme.useToken();
   const { theme: appTheme } = useTheme();
+  const { isMobile, isTablet } = useResponsive();
 
   // 지갑관리 메뉴
   const walletMenuItems = [
@@ -152,13 +154,59 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
 
   const menuItems = filterMenuItems(getMenuItems());
 
+  // 모바일에서는 사이드바 대신 일반 div로 렌더링
+  if (isMobile) {
+    return (
+      <div style={{ width: '100%' }}>
+        {/* 모바일용 카테고리 헤더 */}
+        <div
+          style={{
+            height: 48,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderBottom: `1px solid ${token.colorBorder}`,
+            padding: '0 16px',
+            background: `linear-gradient(135deg, ${token.colorPrimary}15 0%, ${token.colorPrimary}05 100%)`,
+            marginBottom: '16px',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {getCategoryIcon()}
+            <span style={{
+              color: token.colorPrimary,
+              fontWeight: 600,
+              fontSize: '16px',
+              letterSpacing: '-0.025em',
+            }}>
+              {getCategoryTitle()}
+            </span>
+          </div>
+        </div>
+        
+        <Menu
+          theme="light"
+          mode="inline"
+          selectedKeys={selectedKeys}
+          items={menuItems}
+          onClick={({ key }) => onMenuClick(key)}
+          style={{ 
+            border: 'none',
+            padding: '0',
+            background: 'transparent',
+          }}
+        />
+      </div>
+    );
+  }
+
   return (
     <Sider
       trigger={null}
       collapsible
       collapsed={collapsed}
-      width={240}
-      collapsedWidth={64}
+      width={isTablet ? 200 : 240}
+      collapsedWidth={isTablet ? 56 : 64}
       style={{
         background: token.colorBgContainer,
         boxShadow: '2px 0 8px rgba(0, 0, 0, 0.1)',
@@ -182,7 +230,7 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
             <span style={{
               color: token.colorPrimary,
               fontWeight: 600,
-              fontSize: '14px',
+              fontSize: isTablet ? '13px' : '14px',
               letterSpacing: '-0.025em',
             }}>
               {getCategoryTitle()}
@@ -203,48 +251,51 @@ export const CategorySidebar: React.FC<CategorySidebarProps> = ({
         }}
       />
       
-      <div
-        style={{
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          height: 48,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderTop: `1px solid ${token.colorBorder}`,
-          background: token.colorBgContainer,
-        }}
-      >
-        <Tooltip title={collapsed ? '메뉴 펼치기' : '메뉴 접기'} placement="right">
-          <div
-            onClick={() => onCollapse(!collapsed)}
-            style={{
-              cursor: 'pointer',
-              padding: '8px',
-              borderRadius: '6px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '32px',
-              height: '32px',
-              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-              color: token.colorTextSecondary,
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.backgroundColor = token.colorFillSecondary;
-              e.currentTarget.style.color = token.colorPrimary;
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.backgroundColor = 'transparent';
-              e.currentTarget.style.color = token.colorTextSecondary;
-            }}
-          >
-            {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          </div>
-        </Tooltip>
-      </div>
+      {/* 태블릿에서는 접기 버튼 숨김 */}
+      {!isTablet && (
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: 48,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderTop: `1px solid ${token.colorBorder}`,
+            background: token.colorBgContainer,
+          }}
+        >
+          <Tooltip title={collapsed ? '메뉴 펼치기' : '메뉴 접기'} placement="right">
+            <div
+              onClick={() => onCollapse(!collapsed)}
+              style={{
+                cursor: 'pointer',
+                padding: '8px',
+                borderRadius: '6px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px',
+                transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                color: token.colorTextSecondary,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.backgroundColor = token.colorFillSecondary;
+                e.currentTarget.style.color = token.colorPrimary;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.backgroundColor = 'transparent';
+                e.currentTarget.style.color = token.colorTextSecondary;
+              }}
+            >
+              {collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+            </div>
+          </Tooltip>
+        </div>
+      )}
     </Sider>
   );
 };

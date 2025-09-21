@@ -212,6 +212,119 @@ export const designTokens = {
     '2xl': '1536px',
   },
   
+  // 반응형 미디어 쿼리
+  mediaQueries: {
+    xs: '(max-width: 479px)',
+    sm: '(min-width: 480px) and (max-width: 639px)',
+    md: '(min-width: 640px) and (max-width: 767px)',
+    lg: '(min-width: 768px) and (max-width: 1023px)',
+    xl: '(min-width: 1024px) and (max-width: 1279px)',
+    '2xl': '(min-width: 1280px)',
+    mobile: '(max-width: 767px)',
+    tablet: '(min-width: 768px) and (max-width: 1023px)',
+    desktop: '(min-width: 1024px)',
+    smallScreen: '(max-width: 1023px)',
+    largeScreen: '(min-width: 1024px)',
+  },
+  
+  // 반응형 간격
+  responsiveSpacing: {
+    xs: {
+      padding: '8px',
+      margin: '8px',
+      gap: '8px',
+    },
+    sm: {
+      padding: '12px',
+      margin: '12px',
+      gap: '12px',
+    },
+    md: {
+      padding: '16px',
+      margin: '16px',
+      gap: '16px',
+    },
+    lg: {
+      padding: '20px',
+      margin: '20px',
+      gap: '20px',
+    },
+    xl: {
+      padding: '24px',
+      margin: '24px',
+      gap: '24px',
+    },
+    '2xl': {
+      padding: '32px',
+      margin: '32px',
+      gap: '32px',
+    },
+  },
+  
+  // 반응형 폰트 크기
+  responsiveFontSize: {
+    xs: {
+      h1: '1.5rem',
+      h2: '1.25rem',
+      h3: '1.125rem',
+      h4: '1rem',
+      h5: '0.875rem',
+      h6: '0.75rem',
+      body: '0.875rem',
+      small: '0.75rem',
+    },
+    sm: {
+      h1: '1.75rem',
+      h2: '1.5rem',
+      h3: '1.25rem',
+      h4: '1.125rem',
+      h5: '1rem',
+      h6: '0.875rem',
+      body: '0.875rem',
+      small: '0.75rem',
+    },
+    md: {
+      h1: '2rem',
+      h2: '1.75rem',
+      h3: '1.5rem',
+      h4: '1.25rem',
+      h5: '1.125rem',
+      h6: '1rem',
+      body: '1rem',
+      small: '0.875rem',
+    },
+    lg: {
+      h1: '2.25rem',
+      h2: '2rem',
+      h3: '1.75rem',
+      h4: '1.5rem',
+      h5: '1.25rem',
+      h6: '1.125rem',
+      body: '1rem',
+      small: '0.875rem',
+    },
+    xl: {
+      h1: '2.5rem',
+      h2: '2.25rem',
+      h3: '2rem',
+      h4: '1.75rem',
+      h5: '1.5rem',
+      h6: '1.25rem',
+      body: '1rem',
+      small: '0.875rem',
+    },
+    '2xl': {
+      h1: '3rem',
+      h2: '2.5rem',
+      h3: '2.25rem',
+      h4: '2rem',
+      h5: '1.75rem',
+      h6: '1.5rem',
+      body: '1rem',
+      small: '0.875rem',
+    },
+  },
+  
   // Z-Index
   zIndex: {
     hide: -1,
