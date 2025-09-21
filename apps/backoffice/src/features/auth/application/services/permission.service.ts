@@ -45,7 +45,7 @@ export class PermissionService {
   async getRoles(): Promise<Role[]> {
     try {
       console.log('🔄 Fetching roles from API...');
-      const response = await apiService.get<{ roles: Role[]; total: number }>('/api/v1/permissions/roles');
+      const response = await apiService.get<{ roles: Role[]; total: number }>(API_ROUTES.PERMISSIONS.ROLES);
       console.log('✅ Roles response received:', response);
       return Array.isArray(response.roles) ? response.roles : [];
     } catch (error) {
@@ -66,7 +66,7 @@ export class PermissionService {
    */
   async createRole(roleData: Omit<Role, 'id' | 'createdAt' | 'updatedAt'>): Promise<Role> {
     try {
-      const response = await apiService.post<Role>('/api/v1/permissions/roles', roleData);
+      const response = await apiService.post<Role>(API_ROUTES.PERMISSIONS.ROLES, roleData);
       return response;
     } catch (error) {
       console.error('Failed to create role:', error);
@@ -79,7 +79,7 @@ export class PermissionService {
    */
   async updateRole(roleId: string, roleData: Partial<Role>): Promise<Role> {
     try {
-      const response = await apiService.put<Role>(`/api/v1/permissions/roles/${roleId}`, roleData);
+      const response = await apiService.put<Role>(`${API_ROUTES.PERMISSIONS.ROLES}/${roleId}`, roleData);
       return response;
     } catch (error) {
       console.error('Failed to update role:', error);
@@ -92,7 +92,7 @@ export class PermissionService {
    */
   async deleteRole(roleId: string): Promise<void> {
     try {
-      await apiService.delete(`/api/v1/permissions/roles/${roleId}`);
+      await apiService.delete(`${API_ROUTES.PERMISSIONS.ROLES}/${roleId}`);
     } catch (error) {
       console.error('Failed to delete role:', error);
       throw error;
@@ -108,7 +108,7 @@ export class PermissionService {
     expiresAt?: string
   ): Promise<AdminUserRoleAssignment> {
     try {
-      const response = await apiService.post<AdminUserRoleAssignment>('/api/v1/permissions/user-roles', {
+      const response = await apiService.post<AdminUserRoleAssignment>(API_ROUTES.PERMISSIONS.USER_ROLES, {
         userId,
         roleId,
         expiresAt,
@@ -125,7 +125,7 @@ export class PermissionService {
    */
   async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
     try {
-      await apiService.delete(`/api/v1/permissions/user-roles/${userId}/${roleId}`);
+      await apiService.delete(`${API_ROUTES.PERMISSIONS.USER_ROLES}/${userId}/${roleId}`);
     } catch (error) {
       console.error('Failed to remove role from user:', error);
       throw error;
@@ -137,7 +137,7 @@ export class PermissionService {
    */
   async getUserRoles(userId: string): Promise<AdminUserRoleAssignment[]> {
     try {
-      const response = await apiService.get<AdminUserRoleAssignment[]>(`/api/v1/permissions/user-roles/${userId}`);
+      const response = await apiService.get<AdminUserRoleAssignment[]>(`${API_ROUTES.PERMISSIONS.USER_ROLES}/${userId}`);
       return response;
     } catch (error) {
       console.error('Failed to fetch user roles:', error);
@@ -150,7 +150,7 @@ export class PermissionService {
    */
   async getPermissionTemplates(): Promise<PermissionTemplate[]> {
     try {
-      const response = await apiService.get<PermissionTemplate[]>('/api/v1/permissions/templates');
+      const response = await apiService.get<PermissionTemplate[]>(API_ROUTES.PERMISSIONS.TEMPLATES);
       return response;
     } catch (error) {
       console.error('Failed to fetch permission templates:', error);
@@ -165,7 +165,7 @@ export class PermissionService {
     templateData: Omit<PermissionTemplate, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<PermissionTemplate> {
     try {
-      const response = await apiService.post<PermissionTemplate>('/api/v1/permissions/templates', templateData);
+      const response = await apiService.post<PermissionTemplate>(API_ROUTES.PERMISSIONS.TEMPLATES, templateData);
       return response;
     } catch (error) {
       console.error('Failed to create permission template:', error);

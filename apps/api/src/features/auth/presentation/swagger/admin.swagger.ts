@@ -4,6 +4,7 @@ import {
   ApiResponse,
   ApiParam,
   ApiQuery,
+  ApiBody,
 } from '@nestjs/swagger';
 import { ApiAuthEndpoint, ApiSuccessResponse } from '../../../../common/decorators/swagger.decorator';
 import { SwaggerExamples } from '../../../../common/constants/swagger-examples.constants';
@@ -46,23 +47,56 @@ export class AdminSwagger {
     return applyDecorators(
       ApiAuthEndpoint(
         '관리자 목록 조회',
-        '모든 관리자 목록을 조회합니다.'
+        '모든 관리자 목록을 페이지네이션과 함께 조회합니다.'
       ),
-      ApiSuccessResponse(200, '관리자 목록 조회 성공', [
-        {
-          id: 'cmfkr31v7000wcm9urdbekf4u',
-          email: 'superadmin@crypto-exchange.com',
-          username: 'superadmin',
-          firstName: 'Super',
-          lastName: 'Admin',
-          adminRole: 'SUPER_ADMIN',
-          permissions: ['users:read', 'users:create', 'users:update', 'users:delete'],
-          isActive: true,
-          lastLoginAt: '2025-09-15T09:14:56.270Z',
-          createdAt: '2025-09-15T06:36:00.692Z',
-          updatedAt: '2025-09-15T09:14:56.270Z'
-        }
-      ])
+      ApiQuery({
+        name: 'page',
+        description: '페이지 번호 (1부터 시작)',
+        required: false,
+        type: 'number',
+        example: 1
+      }),
+      ApiQuery({
+        name: 'limit',
+        description: '페이지당 항목 수 (1-100)',
+        required: false,
+        type: 'number',
+        example: 10
+      }),
+      ApiQuery({
+        name: 'sortBy',
+        description: '정렬 기준 필드',
+        required: false,
+        type: 'string',
+        example: 'createdAt'
+      }),
+      ApiQuery({
+        name: 'sortOrder',
+        description: '정렬 순서',
+        required: false,
+        enum: ['ASC', 'DESC'],
+        example: 'DESC'
+      }),
+      ApiSuccessResponse(200, '관리자 목록 조회 성공', {
+        adminUsers: [
+          {
+            id: 'cmfkr31v7000wcm9urdbekf4u',
+            email: 'superadmin@crypto-exchange.com',
+            username: 'superadmin',
+            firstName: 'Super',
+            lastName: 'Admin',
+            adminRole: 'SUPER_ADMIN',
+            permissions: ['users:read', 'users:create', 'users:update', 'users:delete'],
+            isActive: true,
+            lastLoginAt: '2025-09-15T09:14:56.270Z',
+            createdAt: '2025-09-15T06:36:00.692Z',
+            updatedAt: '2025-09-15T09:14:56.270Z'
+          }
+        ],
+        total: 1,
+        page: 1,
+        limit: 10
+      })
     );
   }
 
@@ -236,6 +270,40 @@ export class AdminSwagger {
     );
   }
 
+  static activateUser() {
+    return applyDecorators(
+      ApiAuthEndpoint(
+        '사용자 활성화',
+        '비활성화된 사용자 계정을 활성화합니다.'
+      ),
+      ApiParam({
+        name: 'id',
+        description: '사용자 ID (UUID)',
+        example: '123e4567-e89b-12d3-a456-426614174000'
+      }),
+      ApiSuccessResponse(200, '사용자 활성화 성공', {
+        message: '사용자가 활성화되었습니다.'
+      })
+    );
+  }
+
+  static deactivateUser() {
+    return applyDecorators(
+      ApiAuthEndpoint(
+        '사용자 비활성화',
+        '활성화된 사용자 계정을 비활성화합니다.'
+      ),
+      ApiParam({
+        name: 'id',
+        description: '사용자 ID (UUID)',
+        example: '123e4567-e89b-12d3-a456-426614174000'
+      }),
+      ApiSuccessResponse(200, '사용자 비활성화 성공', {
+        message: '사용자가 비활성화되었습니다.'
+      })
+    );
+  }
+
   static suspendUser() {
     return applyDecorators(
       ApiAuthEndpoint(
@@ -247,25 +315,40 @@ export class AdminSwagger {
         description: '사용자 ID (UUID)',
         example: '123e4567-e89b-12d3-a456-426614174000'
       }),
+      ApiBody({
+        description: '정지 사유',
+        schema: {
+          type: 'object',
+          properties: {
+            reason: {
+              type: 'string',
+              description: '정지 사유',
+              example: '부적절한 행동으로 인한 정지',
+              minLength: 5
+            }
+          },
+          required: ['reason']
+        }
+      }),
       ApiSuccessResponse(200, '사용자 정지 성공', {
         message: '사용자가 정지되었습니다.'
       })
     );
   }
 
-  static activateUser() {
+  static unsuspendUser() {
     return applyDecorators(
       ApiAuthEndpoint(
-        '사용자 활성화',
-        '정지된 사용자 계정을 활성화합니다.'
+        '사용자 정지 해제',
+        '정지된 사용자 계정의 정지를 해제합니다.'
       ),
       ApiParam({
         name: 'id',
         description: '사용자 ID (UUID)',
         example: '123e4567-e89b-12d3-a456-426614174000'
       }),
-      ApiSuccessResponse(200, '사용자 활성화 성공', {
-        message: '사용자가 활성화되었습니다.'
+      ApiSuccessResponse(200, '사용자 정지 해제 성공', {
+        message: '사용자의 정지가 해제되었습니다.'
       })
     );
   }

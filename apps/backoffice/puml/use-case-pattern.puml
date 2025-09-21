@@ -1,69 +1,199 @@
 @startuml Use Case Pattern
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title Use Case Pattern Implementation
 
+legend top
+  **Use Case Pattern Overview:**
+
+  🎯 **Business Logic Encapsulation**: Each use case represents a specific business operation
+  🔄 **Clean Architecture**: Use cases sit in the application layer, orchestrating domain and infrastructure
+  🧪 **Testability**: Use cases are easily testable with clear inputs and outputs
+  📦 **Single Responsibility**: Each use case has one clear purpose and responsibility
+  🔧 **Dependency Inversion**: Use cases depend on abstractions, not concrete implementations
+
+  **Key Benefits:**
+  ✅ Clear business logic organization
+  ✅ Easy testing and mocking
+  ✅ Reusable business operations
+  ✅ Clean separation of concerns
+  ✅ Framework-independent core logic
+end legend
+
 package "Domain Layer" as Domain {
   interface "UserManagementUseCase" as IUserManagement {
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
-    + approveUser(userId: string, data: UserApprovalRequest): Promise<AdminUser>
-    + rejectUser(userId: string): Promise<AdminUser>
-    + updateUser(userId: string, data: Partial<AdminUser>): Promise<AdminUser>
-    + deleteUser(userId: string): Promise<void>
+    + getAllUsers(filters) : AdminUser[]
+    + approveUser(userId, data) : AdminUser
+    + rejectUser(userId) : AdminUser
+    + updateUser(userId, data) : AdminUser
+    + deleteUser(userId) : void
   }
 }
+
+note right of Domain
+  **Domain Layer - Use Case Interface:**
+
+  🏛️ **Pure Business Logic**:
+  • Defines business operations as interfaces
+  • No implementation details or dependencies
+  • Framework-independent contracts
+  • Clear input/output specifications
+
+  📋 **Interface Responsibilities**:
+  • Define business operation contracts
+  • Specify input and output types
+  • Document business rules and constraints
+  • Enable dependency inversion
+
+  🎯 **Use Case Interface Benefits**:
+  • Clear business operation boundaries
+  • Easy to understand and maintain
+  • Enables multiple implementations
+  • Supports testing and mocking
+end note
 
 package "Application Layer" as Application {
   class "UserManagementUseCaseImpl" as UserManagementImpl {
-    - userService: IUserService
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
-    + approveUser(userId: string, data: UserApprovalRequest): Promise<AdminUser>
-    + rejectUser(userId: string): Promise<AdminUser>
-    + updateUser(userId: string, data: Partial<AdminUser>): Promise<AdminUser>
-    + deleteUser(userId: string): Promise<void>
-    - validateFilters(filters?: UserFilters): UserFilters
-    - validateApprovalData(data: UserApprovalRequest): void
+    - userService : IUserService
+    + getAllUsers(filters) : AdminUser[]
+    + approveUser(userId, data) : AdminUser
+    + rejectUser(userId) : AdminUser
+    + updateUser(userId, data) : AdminUser
+    + deleteUser(userId) : void
+    - validateFilters(filters) : Any
+    - validateApprovalData(data) : void
   }
-  
+
   class "UseCaseFactory" as Factory {
-    - static userService: IUserService
-    - static userManagementUseCase: UserManagementUseCase
-    + static setUserService(service: IUserService): void
-    + static getUserManagementUseCase(): UserManagementUseCase
-    + static initialize(service: IUserService): void
+    - static userService : IUserService
+    - static userManagementUseCase : UserManagementUseCase
+    + static setUserService(service) : void
+    + static getUserManagementUseCase() : UserManagementUseCase
+    + static initialize(service) : void
   }
 }
+
+note right of Application
+  **Application Layer - Use Case Implementation:**
+
+  🎯 **Business Logic Implementation**:
+  • Implements domain interfaces
+  • Contains business rules and validation
+  • Orchestrates domain and infrastructure layers
+  • Handles business-specific error scenarios
+
+  🔧 **Use Case Implementation Features**:
+  • Input validation and sanitization
+  • Business rule enforcement
+  • Error handling and recovery
+  • Data transformation between layers
+  • Transaction management
+
+  🏭 **Factory Pattern**:
+  • Centralized use case creation
+  • Dependency injection management
+  • Service configuration
+  • Singleton pattern for use cases
+
+  📊 **Implementation Benefits**:
+  • Clear business logic organization
+  • Easy testing with dependency injection
+  • Reusable business operations
+  • Clean separation of concerns
+end note
 
 package "Infrastructure Layer" as Infrastructure {
   interface "IUserService" as IUserService {
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
-    + approveUser(userId: string, data: UserApprovalRequest): Promise<AdminUser>
-    + rejectUser(userId: string): Promise<AdminUser>
-    + updateUser(userId: string, data: Partial<AdminUser>): Promise<AdminUser>
-    + deleteUser(userId: string): Promise<void>
+    + getAllUsers(filters) : AdminUser[]
+    + approveUser(userId, data) : AdminUser
+    + rejectUser(userId) : AdminUser
+    + updateUser(userId, data) : AdminUser
+    + deleteUser(userId) : void
   }
-  
+
   class "AdminUserService" as UserService {
-    - apiService: ApiService
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
-    + approveUser(userId: string, data: UserApprovalRequest): Promise<AdminUser>
-    + rejectUser(userId: string): Promise<AdminUser>
-    + updateUser(userId: string, data: Partial<AdminUser>): Promise<AdminUser>
-    + deleteUser(userId: string): Promise<void>
+    - apiService : ApiService
+    + getAllUsers(filters) : AdminUser[]
+    + approveUser(userId, data) : AdminUser
+    + rejectUser(userId) : AdminUser
+    + updateUser(userId, data) : AdminUser
+    + deleteUser(userId) : void
   }
 }
 
+note right of Infrastructure
+  **Infrastructure Layer - Service Implementation:**
+
+  🌐 **External Communication**:
+  • Handles API calls and data persistence
+  • Manages network requests and responses
+  • Implements caching and error handling
+  • Transforms data between API and domain models
+
+  🔌 **Service Interface**:
+  • Defines contract for external dependencies
+  • Enables dependency inversion
+  • Supports multiple implementations
+  • Facilitates testing and mocking
+
+  🏗️ **Service Implementation**:
+  • Concrete implementation of service interface
+  • Handles HTTP requests and responses
+  • Manages data transformation
+  • Implements error handling and retry logic
+
+  📊 **Infrastructure Benefits**:
+  • Clean separation from business logic
+  • Easy to swap implementations
+  • Testable with mock services
+  • Reusable across different use cases
+end note
+
 package "Presentation Layer" as Presentation {
   class "useUsers Hook" as UseUsersHook {
-    + useUsers(filters?: UserFilters): UseQueryResult<AdminUser[]>
+    + useUsers(filters) : UseQueryResult
   }
-  
+
   class "useUserApproval Hook" as UseUserApprovalHook {
-    + useUserApproval(): UseMutationResult<AdminUser>
+    + useUserApproval() : UseMutationResult
   }
 }
+
+note right of Presentation
+  **Presentation Layer - React Hooks:**
+
+  ⚛️ **React Integration**:
+  • Custom hooks that consume use cases
+  • Integrates with React Query for data fetching
+  • Handles loading and error states
+  • Provides clean interface to components
+
+  🪝 **Hook Responsibilities**:
+  • Encapsulate use case execution
+  • Manage React Query integration
+  • Handle state management
+  • Provide error handling
+
+  📊 **Hook Benefits**:
+  • Reusable business logic
+  • Clean component interface
+  • Automatic state management
+  • Easy testing and mocking
+
+  🔄 **Data Flow**:
+  • Hooks call use cases through factory
+  • Use cases execute business logic
+  • Results are cached by React Query
+  • Components receive data and state
+end note
 
 ' Relationships
 UserManagementImpl ..|> IUserManagement : implements
@@ -75,25 +205,88 @@ Factory --> UserService : manages
 UseUsersHook --> Factory : uses
 UseUserApprovalHook --> Factory : uses
 
-' Dependency flow
-note right of Domain
-  Defines contracts
-  for business operations
+note as N_ImplementationExample
+  **Use Case Pattern Implementation Example:**
+
+  <code>
+  // Domain Layer - Interface
+  interface UserManagementUseCase {
+    approveUser(userId: string, data: UserApprovalRequest): Promise&lt;AdminUser&gt;;
+  }
+
+  // Application Layer - Implementation
+  class UserManagementUseCaseImpl implements UserManagementUseCase {
+    constructor(private userService: IUserService) {}
+
+    async approveUser(userId: string, data: UserApprovalRequest): Promise&lt;AdminUser&gt; {
+      // Business logic validation
+      this.validateApprovalData(data);
+
+      // Check business rules
+      if (data.reason.length &lt; 10) {
+        throw new Error('Approval reason must be at least 10 characters');
+      }
+
+      // Execute business operation
+      const approvedUser = await this.userService.approveUser(userId, data);
+
+      // Post-processing business logic
+      this.logUserApproval(approvedUser, data);
+
+      return approvedUser;
+    }
+
+    private validateApprovalData(data: UserApprovalRequest): void {
+      if (!data.reason) {
+        throw new Error('Approval reason is required');
+      }
+    }
+
+    private logUserApproval(user: AdminUser, data: UserApprovalRequest): void {
+      console.log(`User ${user.id} approved with reason: ${data.reason}`);
+    }
+  }
+
+  // Infrastructure Layer - Service
+  class AdminUserService implements IUserService {
+    constructor(private apiService: ApiService) {}
+
+    async approveUser(userId: string, data: UserApprovalRequest): Promise&lt;AdminUser&gt; {
+      const response = await this.apiService.put(`/users/${userId}/approve`, data);
+      return this.mapToAdminUser(response.data);
+    }
+
+    private mapToAdminUser(apiData: any): AdminUser {
+      return {
+        id: apiData.id,
+        email: apiData.email,
+        status: apiData.status,
+      };
+    }
+  }
+
+  // Presentation Layer - Hook
+  const useUserApproval = () =&gt; {
+    return useMutation({
+      mutationFn: async (data: { userId: string; approvalData: UserApprovalRequest }) =&gt; {
+        const useCase = UseCaseFactory.getUserManagementUseCase();
+        return await useCase.approveUser(data.userId, data.approvalData);
+      },
+      onSuccess: (user) =&gt; {
+        queryClient.invalidateQueries(['users']);
+        toast.success(`User ${user.email} approved successfully`);
+      },
+      onError: (error) =&gt; {
+        toast.error(`Failed to approve user: ${error.message}`);
+      }
+    });
+  };
+  </code>
 end note
 
-note right of Application
-  Implements business logic
-  and validation rules
-end note
-
-note right of Infrastructure
-  Handles external
-  communication
-end note
-
-note right of Presentation
-  React hooks that
-  consume Use Cases
-end note
+Domain .. N_ImplementationExample
+Application .. N_ImplementationExample
+Infrastructure .. N_ImplementationExample
+Presentation .. N_ImplementationExample
 
 @enduml

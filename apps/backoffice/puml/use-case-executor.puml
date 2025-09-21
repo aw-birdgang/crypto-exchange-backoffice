@@ -1,9 +1,32 @@
 @startuml Use Case Executor
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title Use Case Executor Pattern
+
+legend top
+  **Use Case Executor Pattern Overview:**
+
+  🏗️ **Cross-Cutting Concerns**: Handles logging, performance monitoring, caching, and validation
+  🔄 **Middleware Pipeline**: Executes middlewares before and after use case execution
+  📊 **Observability**: Provides comprehensive monitoring and debugging capabilities
+  🛡️ **Error Handling**: Centralized error handling and recovery mechanisms
+  ⚡ **Performance**: Optimizes use case execution with caching and monitoring
+
+  **Key Benefits:**
+  ✅ Separation of concerns
+  ✅ Reusable middleware components
+  ✅ Centralized cross-cutting logic
+  ✅ Easy testing and debugging
+  ✅ Performance monitoring and optimization
+end legend
 
 package "Use Case Executor" as Executor {
   interface "UseCaseExecutor" as IExecutor {
@@ -29,6 +52,34 @@ package "Use Case Executor" as Executor {
     + metadata : ExecutionMetadata
   }
 }
+
+note right of Executor
+  **Use Case Executor Core:**
+
+  🎯 **UseCaseExecutor Interface**:
+  • Defines contract for use case execution
+  • Provides execute method for use cases
+  • Ensures consistent execution pattern
+  • Enables dependency injection
+
+  🏗️ **UseCaseExecutorImpl**:
+  • Manages middleware pipeline
+  • Executes use cases with cross-cutting concerns
+  • Handles error propagation
+  • Provides execution context
+
+  📋 **UseCaseContext**:
+  • Contains execution metadata
+  • Tracks request ID and timestamp
+  • Stores custom metadata
+  • Passes data between middlewares
+
+  📊 **UseCaseResult**:
+  • Standardized result format
+  • Success/failure indication
+  • Error information
+  • Execution metadata
+end note
 
 package "Middlewares" as Middlewares {
   interface "UseCaseMiddleware" as IMiddleware {
@@ -67,6 +118,34 @@ package "Middlewares" as Middlewares {
   }
 }
 
+note right of Middlewares
+  **Middleware Components:**
+
+  📝 **LoggingMiddleware**:
+  • Logs use case execution start/end
+  • Records input parameters and results
+  • Handles error logging
+  • Configurable log levels
+
+  ⏱️ **PerformanceMiddleware**:
+  • Measures execution time
+  • Collects performance statistics
+  • Tracks memory usage
+  • Provides performance insights
+
+  💾 **CachingMiddleware**:
+  • Implements result caching
+  • Manages cache invalidation
+  • Configurable TTL settings
+  • Cache key generation
+
+  ✅ **ValidationMiddleware**:
+  • Validates input parameters
+  • Enforces business rules
+  • Provides validation errors
+  • Custom validator support
+end note
+
 package "Factory" as Factory {
   class "UseCaseExecutorFactory" as ExecutorFactory {
     + createDefault() : UseCaseExecutorImpl
@@ -84,6 +163,38 @@ package "Usage Example" as Usage {
   }
 }
 
+note right of Factory
+  **Factory Pattern:**
+
+  🏭 **UseCaseExecutorFactory**:
+  • Creates configured executor instances
+  • Provides default middleware setup
+  • Enables custom middleware configuration
+  • Simplifies executor creation
+
+  **Factory Methods**:
+  • createDefault(): Creates executor with standard middlewares
+  • createWithMiddlewares(): Creates executor with custom middlewares
+  • createForTesting(): Creates executor for unit tests
+  • createForProduction(): Creates optimized executor for production
+end note
+
+note right of Usage
+  **Usage Examples:**
+
+  🪝 **useUsers Hook**:
+  • Integrates with React Query
+  • Uses executor for use case execution
+  • Handles loading and error states
+  • Provides cached data
+
+  🔧 **executeUseCase Helper**:
+  • Simplifies use case execution
+  • Handles executor configuration
+  • Provides error handling
+  • Enables easy testing
+end note
+
 ' Relationships
 ExecutorImpl ..|> IExecutor : implements
 LoggingMiddleware ..|> IMiddleware : implements
@@ -96,43 +207,135 @@ ExecutorFactory --> ExecutorImpl : creates
 UseUsersHook --> ExecuteHelper : uses
 ExecuteHelper --> ExecutorImpl : uses
 
-' Execution flow note (use a standalone note and link it)
+' Execution flow note (standalone note + links)
 note as N_ExecFlow
-  Execution Flow:
-  1. Before middlewares (logging, validation, caching)
-  2. Use case execution
-  3. After middlewares (caching, performance, logging)
-  4. Error handling (if needed)
+  **Execution Flow Process:**
+
+  🔄 **Middleware Pipeline**:
+  1. **Before Middlewares**: Logging, validation, caching
+  2. **Use Case Execution**: Business logic execution
+  3. **After Middlewares**: Caching, performance, logging
+  4. **Error Handling**: Error processing and recovery
+
+  📊 **Execution Steps**:
+  • Context creation and validation
+  • Middleware pre-processing
+  • Use case execution
+  • Middleware post-processing
+  • Result formatting and return
+
+  🛡️ **Error Handling**:
+  • Middleware error handling
+  • Use case error propagation
+  • Error logging and monitoring
+  • Graceful error recovery
 end note
 ExecutorImpl .. N_ExecFlow
 Middlewares .. N_ExecFlow
 
-note right of LoggingMiddleware
-  Logging Middleware:
-  - Request/response logging
-  - Error logging
-  - Performance logging
+note as N_ImplementationExample
+  **Use Case Executor Implementation Example:**
+
+  <code>
+  // UseCaseExecutor Interface
+  interface UseCaseExecutor {
+    execute&lt;T&gt;(useCase: UseCase&lt;T&gt;, context: UseCaseContext): Promise&lt;UseCaseResult&lt;T&gt;&gt;;
+  }
+
+  // UseCaseExecutorImpl
+  class UseCaseExecutorImpl implements UseCaseExecutor {
+    constructor(private middlewares: UseCaseMiddleware[] = []) {}
+
+    async execute&lt;T&gt;(useCase: UseCase&lt;T&gt;, context: UseCaseContext): Promise&lt;UseCaseResult&lt;T&gt;&gt; {
+      try {
+        // Execute before middlewares
+        for (const middleware of this.middlewares) {
+          context = await middleware.before(context);
+        }
+
+        // Execute use case
+        const result = await useCase.execute(context);
+
+        // Execute after middlewares
+        let finalResult = result;
+        for (const middleware of this.middlewares) {
+          finalResult = await middleware.after(finalResult, context);
+        }
+
+        return finalResult;
+      } catch (error) {
+        // Execute error middlewares
+        for (const middleware of this.middlewares) {
+          await middleware.onError(error as Error, context);
+        }
+        throw error;
+      }
+    }
+  }
+
+  // LoggingMiddleware
+  class LoggingMiddleware implements UseCaseMiddleware {
+    constructor(private logger: Logger) {}
+
+    async before(context: UseCaseContext): Promise&lt;UseCaseContext&gt; {
+      this.logger.info('Use case execution started', { context });
+      return context;
+    }
+
+    async after(result: UseCaseResult, context: UseCaseContext): Promise&lt;UseCaseResult&gt; {
+      this.logger.info('Use case execution completed', { result, context });
+      return result;
+    }
+
+    async onError(error: Error, context: UseCaseContext): Promise&lt;void&gt; {
+      this.logger.error('Use case execution failed', { error, context });
+    }
+  }
+
+  // PerformanceMiddleware
+  class PerformanceMiddleware implements UseCaseMiddleware {
+    private performanceData = new Map&lt;string, PerformanceStats&gt;();
+
+    async before(context: UseCaseContext): Promise&lt;UseCaseContext&gt; {
+      (context as any).startTime = Date.now();
+      return context;
+    }
+
+    async after(result: UseCaseResult, context: UseCaseContext): Promise&lt;UseCaseResult&gt; {
+      const executionTime = Date.now() - (context as any).startTime;
+      this.performanceData.set((context as any).useCaseName, {
+        executionTime,
+        timestamp: new Date(),
+        success: (result as any).success
+      });
+      return result;
+    }
+
+    getPerformanceStats(useCaseName: string): PerformanceStats | undefined {
+      return this.performanceData.get(useCaseName);
+    }
+  }
+
+  // Usage
+  const executor = new UseCaseExecutorImpl([
+    new LoggingMiddleware(logger),
+    new PerformanceMiddleware(),
+    new CachingMiddleware(),
+    new ValidationMiddleware()
+  ]);
+
+  const result = await executor.execute(userManagementUseCase, {
+    useCaseName: 'approveUser',
+    requestId: 'req-123',
+    timestamp: new Date(),
+    metadata: { userId, approvalData }
+  });
+  </code>
 end note
 
-note right of PerformanceMiddleware
-  Performance Middleware:
-  - Execution time measurement
-  - Performance statistics
-  - Performance monitoring
-end note
-
-note right of CachingMiddleware
-  Caching Middleware:
-  - Cache key generation
-  - Cache hit/miss handling
-  - Cache invalidation
-end note
-
-note right of ValidationMiddleware
-  Validation Middleware:
-  - Input validation
-  - Business rule validation
-  - Error handling
-end note
+Executor .. N_ImplementationExample
+Middlewares .. N_ImplementationExample
+Factory .. N_ImplementationExample
+Usage .. N_ImplementationExample
 
 @enduml

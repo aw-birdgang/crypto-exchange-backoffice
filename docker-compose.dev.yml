@@ -81,11 +81,15 @@ services:
       DB_USERNAME: crypto_user
       DB_PASSWORD: password
       DB_DATABASE: crypto_exchange
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       JWT_SECRET: your-super-secret-jwt-key-change-in-production
       JWT_EXPIRES_IN: 24h
     depends_on:
       mysql:
         condition: service_healthy
+      redis:
+        condition: service_started
     command: ["pnpm", "init:db"]
     volumes:
       - .:/app

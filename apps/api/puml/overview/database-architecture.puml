@@ -1,0 +1,191 @@
+@startuml database-architecture
+!theme plain
+allowmixing
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
+
+title Database Architecture - Crypto Exchange API
+
+entity "AdminUser" as AdminUser {
+  * id : UUID <<PK>>
+  --
+  * email : VARCHAR(255) <<UNIQUE>>
+  * username : VARCHAR(100)
+  * password : VARCHAR(255)
+  * firstName : VARCHAR(100)
+  * lastName : VARCHAR(100)
+  * adminRole : ENUM
+  * permissions : JSON
+  * isActive : BOOLEAN
+  * status : ENUM
+  approvedBy : VARCHAR(255)
+  approvedAt : DATETIME
+  lastLoginAt : DATETIME
+  * createdAt : DATETIME
+  * updatedAt : DATETIME
+  createdBy : VARCHAR(255)
+  updatedBy : VARCHAR(255)
+}
+
+entity "Role" as Role {
+  * id : VARCHAR(255) <<PK>>
+  --
+  * name : VARCHAR(100) <<UNIQUE>>
+  * description : TEXT
+  * isSystem : BOOLEAN
+  * createdAt : DATETIME
+  * updatedAt : DATETIME
+}
+
+entity "RolePermission" as RolePermission {
+  * id : UUID <<PK>>
+  --
+  * roleId : VARCHAR(255) <<FK>>
+  * resource : ENUM
+  * permissions : JSON
+  * createdAt : DATETIME
+  * updatedAt : DATETIME
+}
+
+entity "Permission" as Permission {
+  * id : UUID <<PK>>
+  --
+  * name : VARCHAR(100) <<UNIQUE>>
+  * description : TEXT
+  * resource : ENUM
+  * action : ENUM
+  * createdAt : DATETIME
+  * updatedAt : DATETIME
+}
+
+' Relationships
+AdminUser ||--o{ Role : "has role"
+Role ||--o{ RolePermission : "has permissions"
+RolePermission }o--|| Permission : "references"
+
+' Indexes
+note right of AdminUser
+  **AdminUser 테이블 인덱스**
+  - email (UNIQUE): 이메일 중복 방지
+  - adminRole: 역할별 조회 최적화
+  - status: 상태별 조회 최적화
+  - isActive: 활성 사용자 조회
+  - createdAt: 생성일 기준 정렬
+  - (email, status): 복합 인덱스
+end note
+
+note right of Role
+  **Role 테이블 인덱스**
+  - name (UNIQUE): 역할명 중복 방지
+  - isSystem: 시스템 역할 구분
+  - createdAt: 생성일 기준 정렬
+end note
+
+note right of RolePermission
+  **RolePermission 테이블 인덱스**
+  - roleId (FK): 역할별 권한 조회
+  - resource: 리소스별 권한 조회
+  - (roleId, resource): 복합 인덱스
+  - createdAt: 생성일 기준 정렬
+end note
+
+note right of Permission
+  **Permission 테이블 인덱스**
+  - name (UNIQUE): 권한명 중복 방지
+  - resource: 리소스별 권한 조회
+  - action: 액션별 권한 조회
+  - (resource, action): 복합 인덱스
+end note
+
+' Database Configuration
+package "Database Configuration" #F5F5F5 {
+  node "MySQL 8.0" as MySQL
+  node "TypeORM" as TypeORM
+  node "Connection Pool" as ConnectionPool
+  node "Migrations" as Migrations
+}
+
+MySQL --> TypeORM
+TypeORM --> ConnectionPool
+TypeORM --> Migrations
+
+note right of MySQL
+  **MySQL 8.0 설정**
+  - 버전: MySQL 8.0
+  - 문자셋: UTF8MB4
+  - 엔진: InnoDB
+  - 트랜잭션: ACID 지원
+  - 연결 풀: 10개 연결
+  - SSL/TLS: 암호화 통신
+  - 백업: 자동 백업 설정
+  - 읽기 복제본: 프로덕션 환경
+end note
+
+' Performance Optimization
+package "Performance Features" #E8F5E8 {
+  node "Query Optimization" as QueryOpt
+  node "Index Strategy" as IndexStrategy
+  node "Connection Pooling" as ConnPooling
+  node "Caching Layer" as CachingLayer
+}
+
+QueryOpt --> AdminUser
+IndexStrategy --> AdminUser
+ConnPooling --> MySQL
+CachingLayer --> MySQL
+
+note right of QueryOpt
+  **쿼리 최적화**
+  - EXPLAIN 분석
+  - 느린 쿼리 로그
+  - 쿼리 캐싱
+  - 인덱스 힌트
+  - 조인 최적화
+end note
+
+' Security Features
+package "Security Features" #FFEBEE {
+  node "Password Hashing" as PasswordHash
+  node "Data Encryption" as DataEncryption
+  node "Audit Logging" as AuditLog
+  node "Access Control" as AccessControl
+}
+
+PasswordHash --> AdminUser
+DataEncryption --> AdminUser
+AuditLog --> AdminUser
+AccessControl --> Role
+
+note right of PasswordHash
+  **보안 기능**
+  - bcrypt 해싱 (12 rounds)
+  - 솔트 자동 생성
+  - 비밀번호 정책
+  - 계정 잠금
+  - 로그인 시도 제한
+end note
+
+' Styling
+AdminUser -[#1976D2,thickness=2]-> Role
+Role -[#1976D2,thickness=2]-> RolePermission
+RolePermission -[#1976D2,thickness=2]-> Permission
+
+note bottom of MySQL
+  **데이터베이스 특징**
+  - MySQL 8.0 with UTF8MB4
+  - Connection Pooling (10 connections)
+  - SSL/TLS Encryption
+  - Automated Backups
+  - Read Replicas (Production)
+  - Query Optimization
+  - Index Strategy
+  - Performance Monitoring
+end note
+
+@enduml

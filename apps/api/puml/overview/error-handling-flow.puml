@@ -1,0 +1,267 @@
+@startuml error-handling-flow
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic
+title Error Handling Flow - Crypto Exchange API
+
+package "Request Flow" #E8F5E8 {
+  [Client Request] as ClientRequest
+  [API Gateway] as APIGateway
+  [Controller] as Controller
+  [Service Layer] as ServiceLayer
+  [Repository Layer] as RepositoryLayer
+  [Database] as Database
+}
+
+package "Error Detection Points" #FFF3E0 {
+  [Validation Error] as ValidationError
+  [Authentication Error] as AuthError
+  [Authorization Error] as AuthzError
+  [Business Logic Error] as BusinessError
+  [Database Error] as DBError
+  [External Service Error] as ExternalError
+}
+
+package "Exception Hierarchy" #E3F2FD {
+
+  package "Base Exception" #FFCDD2 {
+    [EnhancedBusinessException] as BaseException
+  }
+
+  package "Specific Exceptions" #F8BBD9 {
+    [AuthException] as AuthEx
+    [UserException] as UserEx
+    [PermissionException] as PermissionEx
+    [ValidationException] as ValidationEx
+    [SystemException] as SystemEx
+    [NetworkException] as NetworkEx
+    [RateLimitException] as RateLimitEx
+  }
+}
+
+package "Error Processing" #F3E5F5 {
+  [Exception Factory] as ExceptionFactory
+  [Error Mapper] as ErrorMapper
+  [Response Formatter] as ResponseFormatter
+  [Logging Service] as LoggingService
+}
+
+package "Error Response" #FFEBEE {
+  [Structured Error] as StructuredError
+  [Error Code] as ErrorCode
+  [Error Message] as ErrorMessage
+  [Error Details] as ErrorDetails
+  [Client Response] as ClientResponse
+}
+
+' Request Flow
+ClientRequest --> APIGateway
+APIGateway --> Controller
+Controller --> ServiceLayer
+ServiceLayer --> RepositoryLayer
+RepositoryLayer --> Database
+
+' Error Detection
+Controller --> ValidationError
+Controller --> AuthError
+Controller --> AuthzError
+ServiceLayer --> BusinessError
+RepositoryLayer --> DBError
+ServiceLayer --> ExternalError
+
+' Exception Creation
+ValidationError --> ExceptionFactory
+AuthError --> ExceptionFactory
+AuthzError --> ExceptionFactory
+BusinessError --> ExceptionFactory
+DBError --> ExceptionFactory
+ExternalError --> ExceptionFactory
+
+ExceptionFactory --> BaseException
+BaseException --> AuthEx
+BaseException --> UserEx
+BaseException --> PermissionEx
+BaseException --> ValidationEx
+BaseException --> SystemEx
+BaseException --> NetworkEx
+BaseException --> RateLimitEx
+
+' Error Processing
+AuthEx --> ErrorMapper
+UserEx --> ErrorMapper
+PermissionEx --> ErrorMapper
+ValidationEx --> ErrorMapper
+SystemEx --> ErrorMapper
+NetworkEx --> ErrorMapper
+RateLimitEx --> ErrorMapper
+
+ErrorMapper --> ResponseFormatter
+ResponseFormatter --> LoggingService
+ResponseFormatter --> StructuredError
+
+' Error Response Structure
+StructuredError --> ErrorCode
+StructuredError --> ErrorMessage
+StructuredError --> ErrorDetails
+StructuredError --> ClientResponse
+
+' Styling
+ClientRequest -[#4CAF50,thickness=2]-> APIGateway
+APIGateway -[#FF9800,thickness=2]-> Controller
+Controller -[#2196F3,thickness=2]-> ServiceLayer
+ServiceLayer -[#9C27B0,thickness=2]-> RepositoryLayer
+
+ValidationError -[#F44336,thickness=2]-> ExceptionFactory
+ExceptionFactory -[#E91E63,thickness=2]-> BaseException
+BaseException -[#9C27B0,thickness=2]-> ErrorMapper
+
+note top of ClientRequest
+  **Request Processing (요청 처리 흐름)**
+  
+  **처리 단계:**
+  1. Client Request: 클라이언트 요청 전송
+  2. API Gateway: API 게이트웨이 처리
+  3. Controller: 컨트롤러 요청 처리
+  4. Service Layer: 서비스 비즈니스 로직
+  5. Repository Layer: 저장소 데이터 접근
+  6. Database: 데이터베이스 쿼리 실행
+  
+  **각 계층의 역할:**
+  - Gateway: 라우팅, 인증, 레이트 리미팅
+  - Controller: 요청 검증, 응답 포맷팅
+  - Service: 비즈니스 로직, 트랜잭션
+  - Repository: 데이터 접근, 쿼리 최적화
+end note
+
+note right of ValidationError
+  **Error Detection Points (에러 탐지 지점)**
+  
+  **검증 에러:**
+  - Input Validation: 입력 데이터 검증 실패
+  - Authentication Error: 인증 실패
+  - Authorization Error: 권한 부족
+  - Business Logic Error: 비즈니스 규칙 위반
+  - Database Error: 데이터베이스 오류
+  - External Service Error: 외부 서비스 오류
+  
+  **에러 분류:**
+  - 클라이언트 에러 (4xx)
+  - 서버 에러 (5xx)
+  - 비즈니스 에러 (4xx)
+  - 시스템 에러 (5xx)
+end note
+
+note right of ExceptionFactory
+  **Exception Creation (예외 생성)**
+  
+  **에러 코드 매핑:**
+  - AUTH_AUTH_INVALID_CREDENTIALS
+  - USER_NOT_FOUND_USER_NOT_FOUND
+  - PERMISSION_NOT_FOUND_PERMISSION_NOT_FOUND
+  - VALIDATION_INVALID_INVALID_EMAIL_FORMAT
+  - SYSTEM_INTERNAL_INTERNAL_SERVER_ERROR
+  
+  **예외 처리:**
+  - Error Code Mapping: 에러 코드 매핑
+  - Severity Classification: 심각도 분류
+  - Category Assignment: 카테고리 할당
+  - Detail Enrichment: 상세 정보 보강
+  - Request ID Correlation: 요청 ID 연관
+end note
+
+note right of ErrorMapper
+  **Error Processing (에러 처리)**
+  
+  **처리 단계:**
+  1. Exception to Error Mapping: 예외를 에러로 변환
+  2. Response Formatting: 응답 포맷팅
+  3. Logging Integration: 로깅 통합
+  4. Client-friendly Messages: 클라이언트 친화적 메시지
+  5. Structured Error Format: 구조화된 에러 포맷
+  
+  **에러 응답 구성:**
+  - 성공/실패 상태
+  - 에러 코드 및 메시지
+  - HTTP 상태 코드
+  - 심각도 및 카테고리
+  - 상세 정보 및 컨텍스트
+end note
+
+note bottom of ClientResponse
+  **Error Response Format (에러 응답 포맷)**
+  
+  **구조화된 에러 응답:**
+  ```json
+  {
+    "success": false,
+    "error": {
+      "code": "AUTH_AUTH_INVALID_CREDENTIALS",
+      "message": "Invalid email or password",
+      "status": 401,
+      "severity": "error",
+      "category": "authentication",
+      "details": { "email": "user@example.com" },
+      "timestamp": "2025-01-27T10:30:00.000Z",
+      "requestId": "req-123"
+    },
+    "data": null,
+    "timestamp": "2025-01-27T10:30:00.000Z"
+  }
+  ```
+  
+  **에러 필드 설명:**
+  - code: 고유 에러 코드
+  - message: 사용자 친화적 메시지
+  - status: HTTP 상태 코드
+  - severity: 에러 심각도
+  - category: 에러 카테고리
+  - details: 추가 상세 정보
+  - requestId: 요청 추적 ID
+end note
+
+note left of BaseException
+  **Exception Hierarchy (예외 계층 구조)**
+  
+  **기본 예외:**
+  - EnhancedBusinessException: 향상된 비즈니스 예외
+  
+  **특화 예외:**
+  - AuthException: 인증 관련 예외
+  - UserException: 사용자 관리 예외
+  - PermissionException: 권한 관리 예외
+  - ValidationException: 검증 예외
+  - SystemException: 시스템 예외
+  - NetworkException: 네트워크 예외
+  - RateLimitException: 레이트 리미트 예외
+  
+  **예외 특징:**
+  - 구조화된 에러 정보
+  - 요청 ID 연관
+  - 심각도 분류
+  - 카테고리 분류
+end note
+
+' Error Categories
+package "Error Categories" #F5F5F5 {
+  [Authentication Errors] as AuthCategory
+  [Authorization Errors] as AuthzCategory
+  [Validation Errors] as ValidationCategory
+  [Business Logic Errors] as BusinessCategory
+  [System Errors] as SystemCategory
+  [Network Errors] as NetworkCategory
+}
+
+AuthEx --> AuthCategory
+UserEx --> AuthzCategory
+PermissionEx --> AuthzCategory
+ValidationEx --> ValidationCategory
+SystemEx --> SystemCategory
+NetworkEx --> NetworkCategory
+
+@enduml

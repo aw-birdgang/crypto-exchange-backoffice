@@ -67,32 +67,6 @@ services:
     networks:
       - crypto-exchange-network
 
-  # Database Initialization Service
-  db-init:
-    build:
-      context: .
-      dockerfile: Dockerfile.dev
-    container_name: crypto-exchange-db-init
-    environment:
-      NODE_ENV: development
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USERNAME: crypto_user
-      DB_PASSWORD: password
-      DB_DATABASE: crypto_exchange
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
-      JWT_EXPIRES_IN: 24h
-    depends_on:
-      mysql:
-        condition: service_healthy
-    command: ["pnpm", "init:db"]
-    volumes:
-      - .:/app
-      - /app/node_modules
-    networks:
-      - crypto-exchange-network
-
-
 volumes:
   mysql_data:
     driver: local

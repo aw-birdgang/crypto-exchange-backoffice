@@ -1,9 +1,32 @@
 @startuml Performance Optimization
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title Performance Optimization Strategy
+
+legend top
+  **Performance Optimization Strategy Overview:**
+
+  ⚡ **Multi-Layer Optimization**: Performance improvements across rendering, data, network, and bundle layers
+  📊 **Measurable Metrics**: Focus on Core Web Vitals and user experience metrics
+  🔄 **Continuous Monitoring**: Real-time performance tracking and optimization
+  🎯 **User-Centric**: Prioritize optimizations that directly impact user experience
+  🛠️ **Tool-Driven**: Leverage modern tools and techniques for optimization
+
+  **Key Performance Goals:**
+  ✅ First Contentful Paint &lt; 1.5s
+  ✅ Largest Contentful Paint &lt; 2.5s
+  ✅ Cumulative Layout Shift &lt; 0.1
+  ✅ First Input Delay &lt; 100ms
+  ✅ Bundle size &lt; 500KB gzipped
+end legend
 
 package "Rendering Optimization" as RenderingOpt {
   class "React.memo" as ReactMemo {
@@ -11,19 +34,19 @@ package "Rendering Optimization" as RenderingOpt {
     + Shallow comparison
     + Custom comparison function
   }
-  
+
   class "useMemo" as UseMemo {
     + Memoizes expensive calculations
     + Dependency array
     + Prevents recalculation
   }
-  
+
   class "useCallback" as UseCallback {
     + Memoizes functions
     + Prevents function recreation
     + Stable references
   }
-  
+
   class "Virtual Scrolling" as VirtualScrolling {
     + react-window
     + Large list optimization
@@ -32,6 +55,34 @@ package "Rendering Optimization" as RenderingOpt {
   }
 }
 
+note right of RenderingOpt
+  **Rendering Optimization Strategies:**
+
+  ⚡ **React.memo**:
+  • Prevents unnecessary component re-renders
+  • Shallow comparison by default
+  • Custom comparison functions for complex props
+  • Use for expensive components
+
+  🧮 **useMemo**:
+  • Memoizes expensive calculations
+  • Dependency array controls when to recalculate
+  • Use for derived state and computations
+  • Avoid over-memoization
+
+  🔄 **useCallback**:
+  • Memoizes function references
+  • Prevents child re-renders from function changes
+  • Use for event handlers and callbacks
+  • Stable references for dependencies
+
+  📜 **Virtual Scrolling**:
+  • Renders only visible items
+  • Handles large datasets efficiently
+  • Reduces DOM nodes and memory usage
+  • Improves scroll performance
+end note
+
 package "Data Optimization" as DataOpt {
   class "TanStack Query" as TanStackQuery {
     + Server state caching
@@ -39,21 +90,21 @@ package "Data Optimization" as DataOpt {
     + Stale-while-revalidate
     + Request deduplication
   }
-  
+
   class "Zustand" as Zustand {
     + Client state management
     + Selective subscriptions
     + Immutable updates
     + DevTools integration
   }
-  
+
   class "Pagination" as Pagination {
     + Data chunking
     + Lazy loading
     + Memory efficiency
     + Network optimization
   }
-  
+
   class "Debouncing" as Debouncing {
     + Search input optimization
     + API call reduction
@@ -62,6 +113,38 @@ package "Data Optimization" as DataOpt {
   }
 }
 
+note right of DataOpt
+  **Data Optimization Strategies:**
+
+  📊 **TanStack Query**:
+  • Intelligent server state caching
+  • Background refetching for fresh data
+  • Stale-while-revalidate pattern
+  • Automatic request deduplication
+  • Optimistic updates support
+
+  🏪 **Zustand**:
+  • Lightweight client state management
+  • Selective component subscriptions
+  • Immutable state updates
+  • DevTools integration for debugging
+  • Minimal re-render impact
+
+  📄 **Pagination**:
+  • Chunk large datasets into pages
+  • Lazy loading for better initial load
+  • Memory-efficient data handling
+  • Network optimization through batching
+  • Infinite scroll support
+
+  ⏱️ **Debouncing**:
+  • Optimize search input performance
+  • Reduce API calls during typing
+  • Improve user experience
+  • Prevent excessive network requests
+  • Configurable delay timing
+end note
+
 package "Network Optimization" as NetworkOpt {
   class "Request Deduplication" as RequestDedup {
     + Duplicate request prevention
@@ -69,21 +152,21 @@ package "Network Optimization" as NetworkOpt {
     + Network efficiency
     + Resource optimization
   }
-  
+
   class "API Caching" as APICaching {
     + Response caching
     + Cache invalidation
     + Stale data handling
     + Performance boost
   }
-  
+
   class "Compression" as Compression {
     + Gzip compression
     + Brotli compression
     + Asset optimization
     + Transfer size reduction
   }
-  
+
   class "CDN" as CDN {
     + Static asset delivery
     + Geographic distribution
@@ -92,6 +175,34 @@ package "Network Optimization" as NetworkOpt {
   }
 }
 
+note right of NetworkOpt
+  **Network Optimization Strategies:**
+
+  🔄 **Request Deduplication**:
+  • Prevents duplicate API calls
+  • Shares cache between components
+  • Improves network efficiency
+  • Reduces server load
+
+  💾 **API Caching**:
+  • Caches API responses intelligently
+  • Implements cache invalidation strategies
+  • Handles stale data gracefully
+  • Provides significant performance boost
+
+  📦 **Compression**:
+  • Gzip compression for text assets
+  • Brotli compression for better ratios
+  • Asset optimization and minification
+  • Reduces transfer size by 60-80%
+
+  🌐 **CDN**:
+  • Delivers static assets from edge locations
+  • Geographic distribution for faster access
+  • Optimized caching strategies
+  • Reduces load times globally
+end note
+
 package "Bundle Optimization" as BundleOpt {
   class "Code Splitting" as CodeSplitting {
     + Lazy loading
@@ -99,21 +210,21 @@ package "Bundle Optimization" as BundleOpt {
     + Component-based splitting
     + Bundle size reduction
   }
-  
+
   class "Tree Shaking" as TreeShaking {
     + Dead code elimination
     + Unused import removal
     + Bundle size optimization
     + Performance improvement
   }
-  
+
   class "Dynamic Imports" as DynamicImports {
     + On-demand loading
     + Component lazy loading
     + Route lazy loading
     + Memory efficiency
   }
-  
+
   class "Bundle Analysis" as BundleAnalysis {
     + webpack-bundle-analyzer
     + Bundle size monitoring
@@ -122,6 +233,34 @@ package "Bundle Optimization" as BundleOpt {
   }
 }
 
+note right of BundleOpt
+  **Bundle Optimization Strategies:**
+
+  📦 **Code Splitting**:
+  • Lazy loading for better initial load
+  • Route-based splitting for navigation
+  • Component-based splitting for features
+  • Reduces initial bundle size by 40-60%
+
+  🌳 **Tree Shaking**:
+  • Eliminates dead code automatically
+  • Removes unused imports and exports
+  • Optimizes bundle size significantly
+  • Improves runtime performance
+
+  ⚡ **Dynamic Imports**:
+  • On-demand loading of modules
+  • Component lazy loading with React.lazy
+  • Route lazy loading for better UX
+  • Memory efficiency through selective loading
+
+  📊 **Bundle Analysis**:
+  • webpack-bundle-analyzer for visualization
+  • Continuous bundle size monitoring
+  • Identifies optimization opportunities
+  • Tracks performance improvements over time
+end note
+
 package "Caching Strategy" as CachingStrategy {
   class "Browser Caching" as BrowserCaching {
     + HTTP cache headers
@@ -129,21 +268,21 @@ package "Caching Strategy" as CachingStrategy {
     + API response caching
     + Cache policies
   }
-  
+
   class "Memory Caching" as MemoryCaching {
     + In-memory cache
     + LRU cache
     + Cache eviction
     + Memory management
   }
-  
+
   class "Service Worker" as ServiceWorker {
     + Offline caching
     + Background sync
     + Push notifications
     + Progressive enhancement
   }
-  
+
   class "IndexedDB" as IndexedDB {
     + Client-side storage
     + Large data storage
@@ -152,6 +291,34 @@ package "Caching Strategy" as CachingStrategy {
   }
 }
 
+note right of CachingStrategy
+  **Caching Strategy Implementation:**
+
+  🌐 **Browser Caching**:
+  • HTTP cache headers for static assets
+  • API response caching strategies
+  • Cache policies and TTL management
+  • Leverages browser cache effectively
+
+  💾 **Memory Caching**:
+  • In-memory cache for frequently accessed data
+  • LRU (Least Recently Used) eviction policy
+  • Intelligent cache eviction strategies
+  • Memory management and cleanup
+
+  🔧 **Service Worker**:
+  • Offline caching for better UX
+  • Background sync for data updates
+  • Push notifications for real-time updates
+  • Progressive enhancement approach
+
+  🗄️ **IndexedDB**:
+  • Client-side storage for large datasets
+  • Offline data access capabilities
+  • Data persistence across sessions
+  • Structured data storage
+end note
+
 package "Performance Monitoring" as PerfMonitoring {
   class "Use Case Executor" as UseCaseExecutor {
     + Execution time measurement
@@ -159,21 +326,21 @@ package "Performance Monitoring" as PerfMonitoring {
     + Middleware integration
     + Real-time monitoring
   }
-  
+
   class "Performance Middleware" as PerfMiddleware {
     + Timing measurement
     + Statistics collection
     + Performance alerts
     + Optimization insights
   }
-  
+
   class "Bundle Analyzer" as BundleAnalyzer {
     + Bundle size analysis
     + Dependency analysis
     + Optimization recommendations
     + Performance tracking
   }
-  
+
   class "Real User Monitoring" as RUM {
     + User experience metrics
     + Performance tracking
@@ -181,6 +348,34 @@ package "Performance Monitoring" as PerfMonitoring {
     + Usage analytics
   }
 }
+
+note right of PerfMonitoring
+  **Performance Monitoring & Analytics:**
+
+  ⏱️ **Use Case Executor**:
+  • Measures execution time of business logic
+  • Collects performance metrics automatically
+  • Integrates with middleware for monitoring
+  • Provides real-time performance insights
+
+  📊 **Performance Middleware**:
+  • Timing measurement for all operations
+  • Statistics collection and aggregation
+  • Performance alerts and thresholds
+  • Optimization insights and recommendations
+
+  📦 **Bundle Analyzer**:
+  • Analyzes bundle size and composition
+  • Dependency analysis and optimization
+  • Provides optimization recommendations
+  • Tracks performance improvements over time
+
+  👥 **Real User Monitoring (RUM)**:
+  • User experience metrics collection
+  • Real-world performance tracking
+  • Error monitoring and reporting
+  • Usage analytics and insights
+end note
 
 ' Optimization relationships
 RenderingOpt --> DataOpt : supports
@@ -195,35 +390,97 @@ BundleAnalyzer --> BundleOpt : analyzes
 
 ' Implementation examples
 note right of ReactMemo
-  React.memo Example:
-  const UserRow = React.memo(({ user, onSelect }) => {
-    return <div onClick={() => onSelect(user)}>{user.name}</div>;
+  **React.memo Example:**
+  <code>
+  const UserRow = React.memo(({ user, onSelect }) =&gt; {
+    return (
+      &lt;div onClick={() =&gt; onSelect(user)}&gt;
+        {user.name}
+      &lt;/div&gt;
+    );
+  }, (prevProps, nextProps) =&gt; {
+    return prevProps.user.id === nextProps.user.id;
   });
+  </code>
 end note
 
 note right of TanStackQuery
-  TanStack Query Example:
+  **TanStack Query Example:**
+  <code>
   const { data, isLoading } = useQuery({
     queryKey: ['users', filters],
-    queryFn: () => fetchUsers(filters),
-    staleTime: 5 * 60 * 1000,
-    cacheTime: 10 * 60 * 1000,
+    queryFn: () =&gt; fetchUsers(filters),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    cacheTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false,
+    retry: 3,
   });
+  </code>
 end note
 
 note right of CodeSplitting
-  Code Splitting Example:
-  const UserManagementPage = lazy(() => 
+  **Code Splitting Example:**
+  <code>
+  const UserManagementPage = lazy(() =&gt;
     import('./UserManagementPage')
   );
+
+  // Route-based splitting
+  const routes = [
+    {
+      path: '/users',
+      component: lazy(() =&gt; import('./UserManagementPage'))
+    }
+  ];
+  </code>
 end note
 
 note right of UseCaseExecutor
-  Performance Monitoring:
+  **Performance Monitoring:**
+  <code>
   const executor = UseCaseExecutorFactory.createWithMiddlewares([
     new PerformanceMiddleware(),
     new LoggingMiddleware(console.log),
+    new CachingMiddleware(),
   ]);
+
+  // Usage
+  const result = await executor.execute(
+    userManagementUseCase.approveUser,
+    { userId, data }
+  );
+  </code>
 end note
+
+note as N_PerformanceMetrics
+  **Key Performance Metrics:**
+
+  📊 **Core Web Vitals**:
+  • FCP (First Contentful Paint) &lt; 1.5s
+  • LCP (Largest Contentful Paint) &lt; 2.5s
+  • CLS (Cumulative Layout Shift) &lt; 0.1
+  • FID (First Input Delay) &lt; 100ms
+  • TTFB (Time to First Byte) &lt; 600ms
+
+  📈 **Application Metrics**:
+  • Bundle size &lt; 500KB gzipped
+  • Initial load time &lt; 3s
+  • Time to interactive &lt; 5s
+  • Memory usage &lt; 50MB
+  • API response time &lt; 200ms
+
+  🎯 **User Experience**:
+  • Page load success rate &gt; 99%
+  • Error rate &lt; 0.1%
+  • User satisfaction score &gt; 4.5/5
+  • Bounce rate &lt; 30%
+end note
+
+RenderingOpt .. N_PerformanceMetrics
+DataOpt .. N_PerformanceMetrics
+NetworkOpt .. N_PerformanceMetrics
+BundleOpt .. N_PerformanceMetrics
+CachingStrategy .. N_PerformanceMetrics
+PerfMonitoring .. N_PerformanceMetrics
 
 @enduml

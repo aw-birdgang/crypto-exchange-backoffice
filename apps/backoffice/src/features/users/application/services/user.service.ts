@@ -33,7 +33,15 @@ export class AdminUserService {
     if (filters?.sortBy) params.append('sortBy', filters.sortBy);
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-    return await this.apiService.get<AdminUser[]>(ApiPathBuilder.buildWithParams(API_ROUTES.ADMIN.ADMINS, Object.fromEntries(params.entries())));
+    const response = await this.apiService.get<{ adminUsers: AdminUser[]; total: number; page: number; limit: number }>(
+      ApiPathBuilder.buildWithParams(API_ROUTES.ADMIN.ADMINS, Object.fromEntries(params.entries()))
+    );
+    
+    console.log('🔍 AdminUserService.getAllUsers - API Response:', response);
+    console.log('🔍 AdminUserService.getAllUsers - AdminUsers count:', response.adminUsers?.length || 0);
+    
+    // API 응답에서 adminUsers 배열만 반환
+    return response.adminUsers || [];
   }
 
   /**
@@ -104,7 +112,58 @@ export class AdminUserService {
    * 사용자 통계 조회
    */
   async getUserStats(): Promise<UserStats> {
-    return await this.apiService.get<UserStats>(ApiPathBuilder.admin('STATS'));
+    try {
+      // 기본 통계 조회
+      const response = await this.apiService.get<{
+        totalUsers: number;
+        activeUsers: number;
+        adminCount: number;
+        todayRegistrations: number;
+        weeklyRegistrations: number;
+        monthlyRegistrations: number;
+        roleStats: Record<string, number>;
+      }>(ApiPathBuilder.admin('STATS'));
+      
+      // 상태별 사용자 수를 실제로 조회
+      const [pendingUsers, approvedUsers, rejectedUsers, suspendedUsers] = await Promise.all([
+        this.getUsersByStatus(UserStatus.PENDING),
+        this.getUsersByStatus(UserStatus.APPROVED),
+        this.getUsersByStatus(UserStatus.REJECTED),
+        this.getUsersByStatus(UserStatus.SUSPENDED),
+      ]);
+      
+      // API 응답을 UserStats 형태로 매핑
+      const stats = {
+        totalUsers: response.totalUsers || 0, // API에서 반환하는 totalUsers 사용
+        activeUsers: response.activeUsers || 0, // API에서 계산된 활성 관리자 수 사용
+        pendingUsers: pendingUsers.length,
+        approvedUsers: approvedUsers.length,
+        rejectedUsers: rejectedUsers.length,
+        suspendedUsers: suspendedUsers.length,
+        todayRegistrations: response.todayRegistrations || 0,
+        weeklyRegistrations: response.weeklyRegistrations || 0,
+        monthlyRegistrations: response.monthlyRegistrations || 0,
+        roleStats: response.roleStats || {},
+      };
+      
+      console.log('🔍 AdminUserService.getUserStats - Mapped stats:', stats);
+      return stats;
+    } catch (error) {
+      console.error('Failed to get user stats:', error);
+      // 에러 시 기본값 반환
+      return {
+        totalUsers: 0,
+        activeUsers: 0,
+        pendingUsers: 0,
+        approvedUsers: 0,
+        rejectedUsers: 0,
+        suspendedUsers: 0,
+        todayRegistrations: 0,
+        weeklyRegistrations: 0,
+        monthlyRegistrations: 0,
+        roleStats: {},
+      };
+    }
   }
 
   /**
@@ -135,6 +194,34 @@ export class AdminUserService {
   async toggleUserActive(userId: string, isActive: boolean): Promise<AdminUser> {
     const updateData = { isActive };
     return this.updateUser(userId, updateData);
+  }
+
+  /**
+   * 사용자 활성화 (API 직접 호출)
+   */
+  async activateUser(userId: string): Promise<AdminUser> {
+    return await this.apiService.put<AdminUser>(`/admin/users/${userId}/activate`);
+  }
+
+  /**
+   * 사용자 비활성화 (API 직접 호출)
+   */
+  async deactivateUser(userId: string): Promise<AdminUser> {
+    return await this.apiService.put<AdminUser>(`/admin/users/${userId}/deactivate`);
+  }
+
+  /**
+   * 사용자 정지 (API 직접 호출)
+   */
+  async suspendUser(userId: string, reason: string): Promise<AdminUser> {
+    return await this.apiService.put<AdminUser>(`/admin/users/${userId}/suspend`, { reason });
+  }
+
+  /**
+   * 사용자 정지 해제 (API 직접 호출)
+   */
+  async unsuspendUser(userId: string): Promise<AdminUser> {
+    return await this.apiService.put<AdminUser>(`/admin/users/${userId}/unsuspend`);
   }
 
   /**

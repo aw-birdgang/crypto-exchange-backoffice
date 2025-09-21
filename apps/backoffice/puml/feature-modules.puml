@@ -1,118 +1,226 @@
 @startuml Feature Modules
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title Feature Modules Architecture
+
+legend top
+  **Feature Module Architecture Overview:**
+
+  🏗️ **Modular Design**: Each feature is self-contained with its own domain, application, and presentation layers
+  🔄 **Separation of Concerns**: Clear boundaries between different business domains
+  📦 **Reusability**: Shared components and utilities are centralized
+  🧪 **Testability**: Each feature can be tested independently
+  🔧 **Maintainability**: Changes to one feature don't affect others
+
+  **Key Principles:**
+  ✅ Feature-based organization
+  ✅ Clean architecture within features
+  ✅ Shared component library
+  ✅ Cross-feature communication patterns
+  ✅ Consistent naming conventions
+end legend
 
 package "Features" as Features {
   package "Auth Feature" as AuthFeature {
     package "Domain" as AuthDomain {
       interface "AuthUseCase" as IAuthUseCase {
-        + login(email, password): Promise<AuthResponse>
-        + logout(): Promise<void>
-        + refreshToken(token): Promise<RefreshResponse>
+        + login(email, password) : AuthResponse
+        + logout() : void
+        + refreshToken(token) : RefreshResponse
       }
-      
+
       interface "PermissionUseCase" as IPermissionUseCase {
-        + getMyPermissions(): Promise<Permission[]>
-        + checkPermission(resource, action): Promise<boolean>
+        + getMyPermissions() : Permission[]
+        + checkPermission(resource, action) : boolean
       }
     }
-    
+
     package "Application" as AuthApplication {
       class "AuthUseCaseImpl" as AuthUseCaseImpl {
-        - authService: AuthService
-        + login(email, password): Promise<AuthResponse>
-        + logout(): Promise<void>
+        - authService : AuthService
+        + login(email, password) : AuthResponse
+        + logout() : void
       }
-      
+
       class "PermissionUseCaseImpl" as PermissionUseCaseImpl {
-        - permissionService: PermissionService
-        + getMyPermissions(): Promise<Permission[]>
-        + checkPermission(resource, action): Promise<boolean>
+        - permissionService : PermissionService
+        + getMyPermissions() : Permission[]
+        + checkPermission(resource, action) : boolean
       }
-      
+
       class "AuthStore" as AuthStore {
-        - user: AdminUser | null
-        - permissions: Permission[]
-        + login(credentials): Promise<void>
-        + logout(): void
+        - user : AdminUser (nullable)
+        - permissions : Permission[]
+        + login(credentials) : void
+        + logout() : void
       }
-      
+
       class "useAuth" as UseAuth {
-        + useAuth(): AuthState
+        + useAuth() : AuthState
       }
     }
-    
+
     package "Presentation" as AuthPresentation {
       class "LoginPage" as LoginPage
       class "PermissionGuard" as PermissionGuard
       class "AuthProvider" as AuthProvider
     }
   }
-  
+
+note right of AuthFeature
+  **Authentication & Authorization Feature:**
+
+  🔐 **Core Responsibilities**:
+  • User authentication (login/logout)
+  • Token management and refresh
+  • Permission-based access control
+  • Role-based authorization
+  • Session management
+
+  🏗️ **Architecture Layers**:
+  • **Domain**: Auth and permission interfaces
+  • **Application**: Business logic implementation
+  • **Presentation**: Login UI and permission guards
+
+  📊 **Key Components**:
+  • Login/logout functionality
+  • Permission checking system
+  • Auth state management
+  • Route protection guards
+  • Token refresh mechanism
+
+  🔗 **Cross-Feature Dependencies**:
+  • Required by all other features
+  • Provides user context and permissions
+  • Enables feature-level access control
+end note
+
   package "Users Feature" as UsersFeature {
     package "Domain" as UsersDomain {
       interface "UserManagementUseCase" as IUserManagement {
-        + getAllUsers(filters): Promise<AdminUser[]>
-        + approveUser(userId, data): Promise<AdminUser>
-        + updateUser(userId, data): Promise<AdminUser>
+        + getAllUsers(filters) : AdminUser[]
+        + approveUser(userId, data) : AdminUser
+        + updateUser(userId, data) : AdminUser
       }
     }
-    
+
     package "Application" as UsersApplication {
       class "UserManagementUseCaseImpl" as UserManagementImpl {
-        - userService: UserService
-        + getAllUsers(filters): Promise<AdminUser[]>
-        + approveUser(userId, data): Promise<AdminUser>
+        - userService : UserService
+        + getAllUsers(filters) : AdminUser[]
+        + approveUser(userId, data) : AdminUser
       }
-      
+
       class "UserStore" as UserStore {
-        - users: AdminUser[]
-        - selectedUsers: string[]
-        + setUsers(users): void
-        + addUser(user): void
+        - users : AdminUser[]
+        - selectedUsers : string[]
+        + setUsers(users) : void
+        + addUser(user) : void
       }
-      
+
       class "useUsers" as UseUsers {
-        + useUsers(filters): UseQueryResult<AdminUser[]>
+        + useUsers(filters) : UseQueryResult
       }
     }
-    
+
     package "Presentation" as UsersPresentation {
       class "UserManagementPage" as UserManagementPage
       class "UserTable" as UserTable
       class "UserApprovalModal" as UserApprovalModal
     }
   }
-  
+
+note right of UsersFeature
+  **User Management Feature:**
+
+  👥 **Core Responsibilities**:
+  • Admin user CRUD operations
+  • User approval workflow
+  • Bulk user operations
+  • User filtering and search
+  • User status management
+
+  🏗️ **Architecture Layers**:
+  • **Domain**: User management interfaces
+  • **Application**: Business logic and state management
+  • **Presentation**: User management UI components
+
+  📊 **Key Components**:
+  • User list and table views
+  • User approval modals
+  • Bulk action functionality
+  • Advanced filtering system
+  • User detail management
+
+  🔗 **Cross-Feature Dependencies**:
+  • Depends on Auth feature for permissions
+  • Integrates with Dashboard for user statistics
+  • May interact with Wallet feature for user transactions
+end note
+
   package "Dashboard Feature" as DashboardFeature {
     package "Domain" as DashboardDomain {
       interface "DashboardUseCase" as IDashboardUseCase {
-        + getStats(): Promise<DashboardStats>
-        + getRecentActivities(): Promise<Activity[]>
+        + getStats() : DashboardStats
+        + getRecentActivities() : Activity[]
       }
     }
-    
+
     package "Application" as DashboardApplication {
       class "DashboardUseCaseImpl" as DashboardUseCaseImpl {
-        - dashboardService: DashboardService
-        + getStats(): Promise<DashboardStats>
-        + getRecentActivities(): Promise<Activity[]>
+        - dashboardService : DashboardService
+        + getStats() : DashboardStats
+        + getRecentActivities() : Activity[]
       }
-      
+
       class "useDashboard" as UseDashboard {
-        + useDashboardStats(): UseQueryResult<DashboardStats>
+        + useDashboardStats() : UseQueryResult
       }
     }
-    
+
     package "Presentation" as DashboardPresentation {
       class "DashboardPage" as DashboardPage
       class "StatsCard" as StatsCard
       class "ActivityFeed" as ActivityFeed
     }
   }
+
+note right of DashboardFeature
+  **Dashboard & Analytics Feature:**
+
+  📊 **Core Responsibilities**:
+  • System statistics and metrics
+  • Recent activity monitoring
+  • Real-time data updates
+  • Performance indicators
+  • Business intelligence
+
+  🏗️ **Architecture Layers**:
+  • **Domain**: Dashboard interfaces
+  • **Application**: Data aggregation logic
+  • **Presentation**: Dashboard UI components
+
+  📊 **Key Components**:
+  • Statistics cards and widgets
+  • Activity feed and timeline
+  • Real-time data updates
+  • Performance charts
+  • System health indicators
+
+  🔗 **Cross-Feature Dependencies**:
+  • Depends on Auth for user context
+  • Aggregates data from Users feature
+  • May integrate with Wallet for transaction stats
+  • Provides overview of all system activities
+end note
 }
 
 package "Shared" as Shared {
@@ -121,19 +229,48 @@ package "Shared" as Shared {
     class "UseCaseContext" as UseCaseContext
     class "UseCaseResult" as UseCaseResult
   }
-  
+
   package "Application" as SharedApplication {
     class "UseCaseExecutor" as UseCaseExecutor
     class "ApiService" as ApiService
     class "ErrorHandler" as ErrorHandler
   }
-  
+
   package "Components" as SharedComponents {
     class "LoadingSpinner" as LoadingSpinner
     class "ConfirmModal" as ConfirmModal
     class "PageHeader" as PageHeader
   }
 }
+
+note right of Shared
+  **Shared Module:**
+
+  🔧 **Core Responsibilities**:
+  • Common interfaces and base classes
+  • Reusable utility services
+  • Shared UI components
+  • Cross-cutting concerns
+  • Infrastructure services
+
+  🏗️ **Architecture Layers**:
+  • **Domain**: Base interfaces and common types
+  • **Application**: Shared services and utilities
+  • **Components**: Reusable UI components
+
+  📊 **Key Components**:
+  • Base use case interfaces
+  • API service and error handling
+  • Common UI components (modals, spinners)
+  • Utility functions and helpers
+  • Cross-cutting middleware
+
+  🔗 **Usage Pattern**:
+  • Imported by all feature modules
+  • Provides foundation for feature development
+  • Ensures consistency across features
+  • Reduces code duplication
+end note
 
 ' Feature dependencies
 AuthFeature --> Shared : uses
@@ -152,32 +289,73 @@ DashboardPresentation --> DashboardApplication : uses
 UsersFeature --> AuthFeature : depends on (permissions)
 DashboardFeature --> AuthFeature : depends on (authentication)
 
-note right of AuthFeature
-  Authentication & Authorization
-  - Login/Logout
-  - Permission management
-  - Role-based access control
+note as N_CrossFeatureCommunication
+  **Cross-Feature Communication Patterns:**
+
+  🔗 **Dependency Types**:
+  • **Direct Dependencies**: Features directly import from other features
+  • **Event-Based**: Features communicate through events
+  • **Shared State**: Features share state through global stores
+  • **Service Layer**: Features communicate through shared services
+
+  📊 **Communication Examples**:
+  • Auth → All Features: User context and permissions
+  • Users → Dashboard: User statistics and metrics
+  • Dashboard → All Features: System-wide notifications
+
+  🛡️ **Best Practices**:
+  • Minimize cross-feature dependencies
+  • Use interfaces for feature boundaries
+  • Implement event-driven communication
+  • Keep shared state minimal
+  • Document feature interfaces clearly
 end note
 
-note right of UsersFeature
-  User Management
-  - User CRUD operations
-  - User approval workflow
-  - Bulk operations
+AuthFeature .. N_CrossFeatureCommunication
+UsersFeature .. N_CrossFeatureCommunication
+DashboardFeature .. N_CrossFeatureCommunication
+
+note as N_ImplementationExample
+  **Feature Module Implementation Example:**
+
+  <code>
+  // Feature Structure
+  features/
+    auth/
+      domain/
+        use-cases/
+          auth.use-case.interface.ts
+      application/
+        use-cases/
+          auth.use-case.ts
+        hooks/
+          useAuth.ts
+        stores/
+          auth.store.ts
+      presentation/
+        pages/
+          LoginPage.tsx
+        components/
+          PermissionGuard.tsx
+
+  // Cross-Feature Usage
+  // In Users feature
+  import { useAuth } from '@/features/auth/application/hooks/useAuth';
+  import { PermissionGuard } from '@/features/auth/presentation/components/PermissionGuard';
+
+  // In Dashboard feature
+  import { useAuth } from '@/features/auth/application/hooks/useAuth';
+  import { useUsers } from '@/features/users/application/hooks/useUsers';
+
+  // Shared Module Usage
+  import { ApiService } from '@/shared/application/services/api.service';
+  import { LoadingSpinner } from '@/shared/components/common/LoadingSpinner';
+  </code>
 end note
 
-note right of DashboardFeature
-  Dashboard & Analytics
-  - Statistics display
-  - Activity monitoring
-  - Real-time updates
-end note
-
-note right of Shared
-  Common functionality
-  - Base interfaces
-  - Utility services
-  - Reusable components
-end note
+AuthFeature .. N_ImplementationExample
+UsersFeature .. N_ImplementationExample
+DashboardFeature .. N_ImplementationExample
+Shared .. N_ImplementationExample
 
 @enduml

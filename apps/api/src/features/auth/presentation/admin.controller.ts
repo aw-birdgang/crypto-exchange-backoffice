@@ -1,4 +1,4 @@
-import {Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards} from '@nestjs/common';
+import {Body, Controller, Delete, Get, Param, Post, Put, Query, Request, UseGuards, BadRequestException} from '@nestjs/common';
 import {ApiBearerAuth, ApiTags,} from '@nestjs/swagger';
 import {AdminService} from '../application/services/admin.service';
 import {
@@ -15,7 +15,7 @@ import {AdminUserRole, Permission, Resource} from '@crypto-exchange/shared';
 import {AdminUser} from '@/features/auth/domain/entities/admin-user.entity';
 import {ApiBodyHelpers} from './constants/api-body.constants';
 import {AdminSwagger} from './swagger/admin.swagger';
-import {ParseUuidPipe, ParseBooleanPipe, TrimPipe, CustomValidationPipe} from '../../../common/pipes';
+import {ParseUuidPipe, ParseBooleanPipe, ParseIntPipe, TrimPipe, CustomValidationPipe} from '../../../common/pipes';
 
 @ApiTags('Admin')
 @ApiBearerAuth('JWT-auth')
@@ -47,8 +47,28 @@ export class AdminController {
   @UseGuards(PermissionGuard)
   @RequirePermissions(Resource.SETTINGS, [Permission.READ])
   @AdminSwagger.getAllAdmins()
-  async getAllAdmins(): Promise<AdminUser[]> {
-    return this.adminService.getAllAdmins();
+  async getAllAdmins(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('sortBy') sortBy?: string,
+    @Query('sortOrder') sortOrder?: 'ASC' | 'DESC'
+  ): Promise<{ adminUsers: AdminUser[]; total: number; page: number; limit: number }> {
+    // 파라미터가 없거나 빈 문자열인 경우 기본값 사용
+    const pageNum = (page && page !== '') ? parseInt(page, 10) : 1;
+    const limitNum = (limit && limit !== '') ? parseInt(limit, 10) : 10;
+    const sortByValue = sortBy || 'createdAt';
+    const sortOrderValue = sortOrder || 'DESC';
+    
+    // 유효성 검사 (NaN 체크 제거하고 기본값 사용)
+    const finalPageNum = isNaN(pageNum) ? 1 : Math.max(1, pageNum);
+    const finalLimitNum = isNaN(limitNum) ? 10 : Math.min(100, Math.max(1, limitNum));
+    
+    const result = await this.adminService.getAllAdminsWithPagination(finalPageNum, finalLimitNum, sortByValue, sortOrderValue);
+    return {
+      ...result,
+      page: finalPageNum,
+      limit: finalLimitNum
+    };
   }
 
   @Post('admins')
@@ -174,5 +194,50 @@ export class AdminController {
     @Param('status', TrimPipe) status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'SUSPENDED',
   ): Promise<AdminUser[]> {
     return this.adminService.getUsersByStatus(status);
+  }
+
+  @Put('users/:id/activate')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
+  @AdminSwagger.activateUser()
+  async activateUser(
+    @Param('id', ParseUuidPipe) id: string,
+    @Request() req: any,
+  ): Promise<AdminUser> {
+    return this.adminService.activateUser(id, req.user.id);
+  }
+
+  @Put('users/:id/deactivate')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
+  @AdminSwagger.deactivateUser()
+  async deactivateUser(
+    @Param('id', ParseUuidPipe) id: string,
+    @Request() req: any,
+  ): Promise<AdminUser> {
+    return this.adminService.deactivateUser(id, req.user.id);
+  }
+
+  @Put('users/:id/suspend')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
+  @AdminSwagger.suspendUser()
+  async suspendUser(
+    @Param('id', ParseUuidPipe) id: string,
+    @Body(TrimPipe, CustomValidationPipe) suspendData: { reason: string },
+    @Request() req: any,
+  ): Promise<AdminUser> {
+    return this.adminService.suspendUser(id, suspendData.reason, req.user.id);
+  }
+
+  @Put('users/:id/unsuspend')
+  @UseGuards(PermissionGuard)
+  @RequirePermissions(Resource.SETTINGS, [Permission.UPDATE])
+  @AdminSwagger.unsuspendUser()
+  async unsuspendUser(
+    @Param('id', ParseUuidPipe) id: string,
+    @Request() req: any,
+  ): Promise<AdminUser> {
+    return this.adminService.unsuspendUser(id, req.user.id);
   }
 }

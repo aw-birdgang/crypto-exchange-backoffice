@@ -1,9 +1,32 @@
 @startuml Data Flow
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title Data Flow Architecture
+
+note top
+  **Data Flow Architecture Overview:**
+  
+  🔄 **Unidirectional Data Flow**: Data flows in one direction through the application
+  🎯 **Single Source of Truth**: Each piece of data has one authoritative source
+  🔄 **Predictable State Updates**: State changes follow a clear, traceable pattern
+  🧪 **Testable Flow**: Each step can be tested independently
+  📊 **Performance Optimized**: Efficient data flow with minimal re-renders
+  
+  **Key Principles:**
+  ✅ User actions trigger data flow
+  ✅ Business logic validates and processes data
+  ✅ External services handle data persistence
+  ✅ UI updates reflect current state
+  ✅ Error handling provides user feedback
+end note
 
 actor "User" as User
 participant "Component" as Component
@@ -13,7 +36,199 @@ participant "Service" as Service
 participant "API" as API
 participant "Database" as DB
 
-== User Action Flow ==
+note right of User
+  **User Interaction Layer:**
+  
+  👤 **User Actions**: Clicks, form submissions, navigation
+  🎯 **Intent**: User wants to perform specific operations
+  📱 **UI Feedback**: Loading states, success/error messages
+  🔄 **State Changes**: UI updates based on operation results
+end note
+
+note right of Component
+  **React Component Layer:**
+  
+  🎨 **UI Rendering**: Displays data and handles user interactions
+  🪝 **Hook Integration**: Uses custom hooks for business logic
+  📊 **State Management**: Local state for UI-specific data
+  🔄 **Re-rendering**: Updates UI when data changes
+  🎯 **Event Handling**: Processes user interactions
+end note
+
+note right of Hook
+  **Custom Hook Layer:**
+  
+  🔗 **Business Logic Bridge**: Connects UI to business logic
+  📊 **State Orchestration**: Manages complex state interactions
+  🔄 **Data Synchronization**: Keeps UI and server state in sync
+  🧪 **Reusable Logic**: Encapsulates business logic for reuse
+  📡 **API Integration**: Handles data fetching and mutations
+end note
+
+note right of UseCase
+  **Use Case Layer:**
+  
+  🎯 **Business Logic**: Implements specific business operations
+  ✅ **Validation**: Validates input data and business rules
+  🔄 **Orchestration**: Coordinates between different services
+  📊 **Data Transformation**: Converts data between layers
+  🛡️ **Error Handling**: Manages business logic errors
+end note
+
+note right of Service
+  **Service Layer:**
+  
+  🌐 **API Communication**: Handles HTTP requests and responses
+  🔄 **Data Transformation**: Converts between API and domain models
+  🛡️ **Error Handling**: Manages network and API errors
+  📊 **Caching**: Implements caching strategies
+  🔧 **Configuration**: Manages API endpoints and settings
+end note
+
+note right of API
+  **API Gateway Layer:**
+  
+  🌐 **HTTP Server**: Handles incoming requests
+  🔐 **Authentication**: Validates user credentials and permissions
+  📊 **Business Logic**: Server-side business rule enforcement
+  💾 **Data Access**: Coordinates with database operations
+  📡 **Response Formatting**: Returns standardized API responses
+end note
+
+note right of DB
+  **Database Layer:**
+  
+  💾 **Data Persistence**: Stores and retrieves application data
+  🔒 **Data Integrity**: Enforces data constraints and relationships
+  📊 **Query Optimization**: Efficient data retrieval
+  🔄 **Transactions**: Ensures data consistency
+  📈 **Performance**: Handles concurrent access and scaling
+end note
+
+== User Action Flow (Success Path) ==
+
+note over User, DB
+  **Success Flow Steps:**
+  
+  1️⃣ **User Interaction**: User initiates action
+  2️⃣ **Component Handling**: UI processes user input
+  3️⃣ **Hook Orchestration**: Custom hook manages state
+  4️⃣ **Use Case Execution**: Business logic validation
+  5️⃣ **Service Communication**: API call preparation
+  6️⃣ **API Processing**: Server-side business logic
+  7️⃣ **Database Update**: Data persistence
+  8️⃣ **Response Chain**: Data flows back through layers
+  9️⃣ **UI Update**: User sees success feedback
+end note
+
+User -> Component : User clicks "Approve User"
+activate Component
+note right : User initiates approval action
+
+Component -> Hook : calls useUserApproval()
+activate Hook
+note right : Component delegates to custom hook
+
+Hook -> UseCase : calls approveUser(userId, data)
+activate UseCase
+note right : Hook calls business logic
+
+UseCase -> UseCase : validateApprovalData(data)
+note right : Input validation
+UseCase -> UseCase : business logic validation
+note right : Business rule validation
+
+UseCase -> Service : calls approveUser(userId, data)
+activate Service
+note right : Use case delegates to service
+
+Service -> API : PUT /admin/users/:userId/approve
+activate API
+note right : HTTP request to API
+
+API -> DB : UPDATE users SET status='APPROVED'
+activate DB
+note right : Database update
+DB --> API : success response
+deactivate DB
+
+API --> Service : HTTP 200 + user data
+deactivate API
+note right : API returns success response
+
+Service --> UseCase : returns AdminUser
+deactivate Service
+note right : Service returns domain object
+
+UseCase --> Hook : returns AdminUser
+deactivate UseCase
+note right : Use case returns result
+
+Hook -> Hook : update React Query cache
+note right : Update client cache
+Hook -> Hook : invalidate related queries
+note right : Trigger refetch of related data
+Hook --> Component : mutation success
+deactivate Hook
+note right : Hook notifies success
+
+Component -> Component : update UI state
+note right : Update local state
+Component --> User : show success message
+deactivate Component
+note right : User sees success feedback
+
+== Error Handling Flow ==
+
+note over User, DB
+  **Error Handling Flow:**
+  
+  🚨 **Error Types**:
+  • Validation Errors (client-side)
+  • Business Logic Errors (use case)
+  • Network Errors (service layer)
+  • Server Errors (API layer)
+  • Database Errors (persistence layer)
+  
+  🛡️ **Error Handling Strategy**:
+  • Graceful degradation
+  • User-friendly error messages
+  • Error logging and monitoring
+  • Retry mechanisms where appropriate
+  • Fallback UI states
+end note
+
+User -> Component : User clicks "Approve User"
+activate Component
+note right : User initiates action
+
+Component -> Hook : calls useUserApproval()
+activate Hook
+note right : Component delegates to hook
+
+Hook -> UseCase : calls approveUser(userId, data)
+activate UseCase
+note right : Hook calls business logic
+
+UseCase -> UseCase : validateApprovalData(data)
+note right : Input validation fails
+UseCase --> Hook : throws ValidationError
+deactivate UseCase
+note right : Business validation error
+
+Hook -> Hook : handle error
+note right : Error processing and logging
+Hook --> Component : mutation error
+deactivate Hook
+note right : Hook returns error state
+
+Component -> Component : show error message
+note right : Update UI with error state
+Component --> User : display error
+deactivate Component
+note right : User sees error feedback
+
+== Network Error Flow ==
 
 User -> Component : User clicks "Approve User"
 activate Component
@@ -23,9 +238,6 @@ activate Hook
 
 Hook -> UseCase : calls approveUser(userId, data)
 activate UseCase
-
-UseCase -> UseCase : validateApprovalData(data)
-UseCase -> UseCase : business logic validation
 
 UseCase -> Service : calls approveUser(userId, data)
 activate Service
@@ -33,74 +245,110 @@ activate Service
 Service -> API : PUT /admin/users/:userId/approve
 activate API
 
-API -> DB : UPDATE users SET status='APPROVED'
-activate DB
-DB --> API : success response
-deactivate DB
-
-API --> Service : HTTP 200 + user data
+API --> Service : HTTP 500 Internal Server Error
 deactivate API
+note right : Server error response
 
-Service --> UseCase : returns AdminUser
+Service --> UseCase : throws NetworkError
 deactivate Service
+note right : Service throws network error
 
-UseCase --> Hook : returns AdminUser
+UseCase --> Hook : throws NetworkError
 deactivate UseCase
-
-Hook -> Hook : update React Query cache
-Hook -> Hook : invalidate related queries
-Hook --> Component : mutation success
-deactivate Hook
-
-Component -> Component : update UI state
-Component --> User : show success message
-deactivate Component
-
-== Error Handling Flow ==
-
-User -> Component : User clicks "Approve User"
-activate Component
-
-Component -> Hook : calls useUserApproval()
-activate Hook
-
-Hook -> UseCase : calls approveUser(userId, data)
-activate UseCase
-
-UseCase -> UseCase : validateApprovalData(data)
-UseCase --> Hook : throws ValidationError
-deactivate UseCase
+note right : Use case propagates error
 
 Hook -> Hook : handle error
+note right : Error handling and retry logic
 Hook --> Component : mutation error
 deactivate Hook
+note right : Hook returns error state
 
 Component -> Component : show error message
+note right : Display network error message
 Component --> User : display error
 deactivate Component
+note right : User sees error feedback
 
 == Cache Invalidation Flow ==
 
 note over Hook, UseCase
-  After successful mutation:
-  1. Update optimistic cache
-  2. Invalidate related queries
-  3. Trigger refetch
+  **Cache Management Strategy:**
+  
+  🔄 **After Successful Mutation**:
+  1. Update optimistic cache with new data
+  2. Invalidate related queries to trigger refetch
+  3. Update dependent queries with fresh data
+  4. Maintain cache consistency across components
+  
+  📊 **Cache Invalidation Patterns**:
+  • Exact key invalidation
+  • Pattern-based invalidation
+  • Dependent query updates
+  • Optimistic updates
 end note
 
 Hook -> Hook : queryClient.invalidateQueries(['users'])
+note right : Invalidate user list queries
 Hook -> Hook : queryClient.setQueryData(['users'], updatedData)
+note right : Update cache with new data
+Hook -> Hook : queryClient.invalidateQueries(['user', userId])
+note right : Invalidate specific user queries
 
 == State Synchronization ==
 
 note over Component, Hook
-  State synchronization:
-  - Local state (useState)
-  - Global state (Zustand)
-  - Server state (TanStack Query)
+  **State Synchronization Strategy:**
+  
+  🔄 **Multi-Layer State Management**:
+  • **Local State** (useState): Component-specific UI state
+  • **Global State** (Zustand): Application-wide shared state
+  • **Server State** (TanStack Query): Cached server data
+  
+  📊 **State Synchronization Patterns**:
+  • Reactive updates across components
+  • Optimistic updates for better UX
+  • Conflict resolution strategies
+  • State persistence and hydration
 end note
 
 Component -> Hook : subscribes to state changes
+note right : Component subscribes to state updates
 Hook -> Component : notifies state updates
+note right : Hook notifies component of changes
+
+== Performance Optimization Flow ==
+
+note over Component, DB
+  **Performance Optimization Strategies:**
+  
+  ⚡ **Rendering Optimization**:
+  • React.memo for component memoization
+  • useMemo for expensive calculations
+  • useCallback for stable function references
+  • Virtual scrolling for large lists
+  
+  📊 **Data Optimization**:
+  • Pagination for large datasets
+  • Debouncing for search inputs
+  • Request deduplication
+  • Background refetching
+  
+  🚀 **Network Optimization**:
+  • Request batching
+  • Response caching
+  • Compression
+  • CDN utilization
+end note
+
+Component -> Hook : debounced search input
+note right : Debounced user input
+Hook -> Hook : debounce search query
+note right : Debounce implementation
+Hook -> UseCase : calls searchUsers(query)
+note right : Optimized search call
+UseCase -> Service : calls searchUsers(query)
+note right : Service call with caching
+Service -> API : GET /users/search?q=query
+note right : Cached API request
 
 @enduml

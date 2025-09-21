@@ -1,59 +1,114 @@
 @startuml Dependency Injection
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title Dependency Injection Pattern
+
+legend top
+  **Dependency Injection (DI) Pattern Overview:**
+
+  🏗️ **Core Principle**: Dependencies are provided from outside rather than created internally
+  🔄 **Inversion of Control**: High-level modules don't depend on low-level modules
+  🧪 **Testability**: Easy to mock dependencies for unit testing
+  🔧 **Flexibility**: Can swap implementations without changing business logic
+  📦 **Modularity**: Promotes loose coupling and high cohesion
+
+  **Benefits:**
+  ✅ Easier testing and mocking
+  ✅ Better separation of concerns
+  ✅ Increased code reusability
+  ✅ Simplified configuration management
+  ✅ Improved maintainability
+end legend
 
 package "Current Implementation (Factory Pattern)" as Current {
   class "UseCaseFactory" as Factory {
     - static userService: AdminUserService
     - static userManagementUseCase: UserManagementUseCase
-    + static setUserService(service: AdminUserService): void
+    + static setUserService(service): void
     + static getUserManagementUseCase(): UserManagementUseCase
-    + static initialize(service: AdminUserService): void
+    + static initialize(service): void
   }
-  
+
   class "UserManagementUseCaseImpl" as UseCaseImpl {
     - userService: AdminUserService
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+    + getAllUsers(filters): AdminUser[]
   }
-  
+
   class "AdminUserService" as UserService {
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+    + getAllUsers(filters): AdminUser[]
   }
-  
+
   Factory --> UseCaseImpl : creates
   Factory --> UserService : manages
   UseCaseImpl --> UserService : depends on
 }
 
+note right of Current
+  **Current Factory Pattern Implementation:**
+
+  🏭 **Factory Pattern Benefits**:
+  • Centralized object creation
+  • Simple dependency management
+  • Clear service instantiation
+  • Easy to understand and implement
+
+  ⚠️ **Current Limitations**:
+  • Static dependencies (hard to test)
+  • Global state management
+  • Limited flexibility for different environments
+  • No lifecycle management
+  • Difficult to mock for testing
+
+  **Code Example**:
+  <code>
+  class UseCaseFactory {
+    private static userService: AdminUserService;
+
+    static initialize(service: AdminUserService) {
+      this.userService = service;
+    }
+
+    static getUserManagementUseCase() {
+      return new UserManagementUseCaseImpl(this.userService);
+    }
+  }
+  </code>
+end note
+
 package "Improved Implementation (DI Container)" as Improved {
   class "DIContainer" as Container {
-    - services: Map<string, any>
-    - factories: Map<string, () => any>
-    + register<T>(token: string, implementation: T): void
-    + registerFactory<T>(token: string, factory: () => T): void
-    + resolve<T>(token: string): T
+    - services: Map
+    - factories: Map
+    + register(token, implementation): void
+    + registerFactory(token, factory): void
+    + resolve(token)
   }
-  
+
   interface "IUserService" as IUserService {
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+    + getAllUsers(filters): AdminUser[]
   }
-  
+
   class "UserManagementUseCaseImpl" as ImprovedUseCaseImpl {
     - userService: IUserService
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+    + getAllUsers(filters): AdminUser[]
   }
-  
+
   class "ApiUserService" as ApiUserService {
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+    + getAllUsers(filters): AdminUser[]
   }
-  
+
   class "MockUserService" as MockUserService {
-    + getAllUsers(filters?: UserFilters): Promise<AdminUser[]>
+    + getAllUsers(filters): AdminUser[]
   }
-  
+
   Container --> ImprovedUseCaseImpl : creates
   Container --> ApiUserService : manages
   Container --> MockUserService : manages
@@ -62,49 +117,192 @@ package "Improved Implementation (DI Container)" as Improved {
   MockUserService ..|> IUserService : implements
 }
 
+note right of Improved
+  **Improved DI Container Implementation:**
+
+  🏗️ **DI Container Benefits**:
+  • Dynamic dependency resolution
+  • Interface-based programming
+  • Easy testing with mock implementations
+  • Lifecycle management
+  • Environment-specific configurations
+
+  🔧 **Key Features**:
+  • Service registration and resolution
+  • Factory pattern support
+  • Singleton and transient scopes
+  • Circular dependency detection
+  • Type-safe resolution
+
+  **Code Example**:
+  <code>
+  class DIContainer {
+    private services = new Map&lt;string, any&gt;();
+
+    register(token: string, implementation: any) {
+      this.services.set(token, implementation);
+    }
+
+    resolve(token: string): any {
+      return this.services.get(token);
+    }
+  }
+
+  // Usage
+  container.register('IUserService', new ApiUserService());
+  const useCase = new UserManagementUseCaseImpl(
+    container.resolve('IUserService') as IUserService
+  );
+  </code>
+end note
+
 package "React Context DI" as ReactDI {
   class "DIProvider" as DIProvider {
     + container: DIContainer
   }
-  
+
   class "useDI Hook" as UseDIHook {
     + useDI(): DIContainer
   }
-  
+
   class "useUsers Hook" as UseUsersHook {
-    + useUsers(filters?: UserFilters): UseQueryResult<AdminUser[]>
+    + useUsers(filters): UseQueryResult
   }
-  
+
   DIProvider --> UseDIHook : provides
   UseDIHook --> UseUsersHook : uses
   UseUsersHook --> Container : resolves dependencies
 }
 
-' Benefits
+note right of ReactDI
+  **React Context DI Implementation:**
+
+  ⚛️ **React Integration Benefits**:
+  • Component-level dependency injection
+  • Hook-based service access
+  • Provider pattern for DI container
+  • Context-based service sharing
+  • Type-safe service resolution
+
+  🔧 **Implementation Pattern**:
+  • DIProvider wraps the application
+  • useDI hook provides container access
+  • Custom hooks resolve dependencies
+  • Services are injected at hook level
+
+  **Code Example**:
+  <code>
+  const DIContext = createContext&lt;DIContainer | null&gt;(null);
+
+  export const DIProvider = ({ children }) =&gt; {
+    const container = useMemo(() =&gt; new DIContainer(), []);
+    return (
+      &lt;DIContext.Provider value={container}&gt;
+        {children}
+      &lt;/DIContext.Provider&gt;
+    );
+  };
+
+  export const useDI = () =&gt; {
+    const container = useContext(DIContext);
+    if (!container) throw new Error('useDI must be used within DIProvider');
+    return container;
+  };
+
+  export const useUsers = (filters) =&gt; {
+    const container = useDI();
+    const userService = container.resolve('IUserService') as IUserService;
+    return useQuery(['users', filters], () =&gt; userService.getAllUsers(filters));
+  };
+  </code>
+end note
+
+' Migration Strategy
+note as N_MigrationStrategy
+  **Migration Strategy from Factory to DI Container:**
+
+  🚀 **Phase 1: Interface Extraction**
+  • Extract interfaces from concrete implementations
+  • Define service contracts
+  • Create abstraction layer
+
+  🔧 **Phase 2: DI Container Implementation**
+  • Implement basic DI container
+  • Add service registration
+  • Create factory methods
+
+  ⚛️ **Phase 3: React Integration**
+  • Create DIProvider component
+  • Implement useDI hook
+  • Update custom hooks to use DI
+
+  🧪 **Phase 4: Testing & Validation**
+  • Add mock implementations
+  • Update unit tests
+  • Validate functionality
+
+  📊 **Phase 5: Performance Optimization**
+  • Add service caching
+  • Implement lazy loading
+  • Monitor performance impact
+end note
+
+Current .. N_MigrationStrategy
+Improved .. N_MigrationStrategy
+ReactDI .. N_MigrationStrategy
+
+' Benefits Comparison
 note right of Current
-  Current Factory Pattern:
-  ✅ Simple implementation
-  ✅ Clear dependencies
-  ❌ Static dependencies
-  ❌ Hard to test
-  ❌ Limited flexibility
+  **Current Factory Pattern:**
+
+  ✅ **Pros**:
+  • Simple implementation
+  • Clear dependencies
+  • Easy to understand
+  • Minimal setup required
+
+  ❌ **Cons**:
+  • Static dependencies
+  • Hard to test
+  • Limited flexibility
+  • Global state issues
+  • No lifecycle management
 end note
 
 note right of Improved
-  Improved DI Container:
-  ✅ Dynamic dependencies
-  ✅ Easy testing
-  ✅ High flexibility
-  ✅ Interface-based
-  ✅ Lifecycle management
+  **Improved DI Container:**
+
+  ✅ **Pros**:
+  • Dynamic dependencies
+  • Easy testing with mocks
+  • High flexibility
+  • Interface-based design
+  • Lifecycle management
+  • Environment-specific configs
+
+  ❌ **Cons**:
+  • More complex setup
+  • Learning curve
+  • Potential over-engineering
+  • Runtime dependency resolution
 end note
 
 note right of ReactDI
-  React Context DI:
-  ✅ React integration
-  ✅ Component-level DI
-  ✅ Hook-based usage
-  ✅ Provider pattern
+  **React Context DI:**
+
+  ✅ **Pros**:
+  • React integration
+  • Component-level DI
+  • Hook-based usage
+  • Provider pattern
+  • Type-safe resolution
+  • Context-based sharing
+
+  ❌ **Cons**:
+  • React-specific
+  • Context re-render issues
+  • Provider nesting complexity
+  • Hook dependency on context
 end note
 
 @enduml

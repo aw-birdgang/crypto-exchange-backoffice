@@ -1,0 +1,176 @@
+@startuml architecture-overview
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
+title Crypto Exchange API - Architecture Overview
+
+package "Presentation Layer" {
+  [Controllers] as Controllers
+  [DTOs] as DTOs
+  [Guards] as Guards
+  [Interceptors] as Interceptors
+  [Middleware] as Middleware
+  [Swagger] as Swagger
+}
+
+package "Application Layer" {
+  [Services] as Services
+  [Use Cases] as UseCases
+  [Mappers] as Mappers
+  [Strategies] as Strategies
+  [Providers] as Providers
+}
+
+package "Domain Layer" {
+  [Entities] as Entities
+  [Interfaces] as Interfaces
+  [Business Logic] as BusinessLogic
+  [Value Objects] as ValueObjects
+}
+
+package "Infrastructure Layer" {
+  [Repositories] as Repositories
+  [Database] as Database
+  [External Services] as ExternalServices
+  [Cache] as Cache
+}
+
+package "External Systems" {
+  [MySQL Database] as MySQL
+  [Redis Cache] as Redis
+  [Client Applications] as Clients
+}
+
+' Layer connections
+Controllers --> Services
+Controllers --> DTOs
+Controllers --> Guards
+Controllers --> Interceptors
+Controllers --> Middleware
+Controllers --> Swagger
+
+Services --> UseCases
+Services --> Mappers
+Services --> Strategies
+Services --> Providers
+
+UseCases --> Entities
+UseCases --> Interfaces
+UseCases --> BusinessLogic
+UseCases --> ValueObjects
+
+Services --> Repositories
+Repositories --> Database
+Repositories --> Cache
+Services --> ExternalServices
+
+Database --> MySQL
+Cache --> Redis
+Controllers --> Clients
+
+' Styling
+Controllers -[#blue]-> Services
+Services -[#green]-> Entities
+Repositories -[#orange]-> MySQL
+Repositories -[#purple]-> Redis
+
+note right of Controllers
+  **Presentation Layer (표현 계층)**
+  
+  **주요 구성요소:**
+  - Controllers: REST API 엔드포인트 처리
+  - DTOs: 요청/응답 데이터 전송 객체
+  - Guards: 인증/인가 미들웨어
+  - Interceptors: 요청/응답 가로채기
+  - Middleware: 요청 처리 파이프라인
+  - Swagger: API 문서화
+  
+  **책임:**
+  - HTTP 요청/응답 처리
+  - 입력 데이터 검증
+  - 인증 및 권한 확인
+  - API 버전 관리
+  - 에러 응답 포맷팅
+end note
+
+note right of Services
+  **Application Layer (애플리케이션 계층)**
+  
+  **주요 구성요소:**
+  - Services: 비즈니스 로직 서비스
+  - Use Cases: 사용 사례 구현
+  - Mappers: 데이터 변환 매퍼
+  - Strategies: 전략 패턴 구현
+  - Providers: 의존성 주입 프로바이더
+  
+  **책임:**
+  - 비즈니스 로직 실행
+  - 사용 사례 조율
+  - 데이터 변환 및 매핑
+  - 외부 서비스 통합
+  - 트랜잭션 관리
+end note
+
+note right of Entities
+  **Domain Layer (도메인 계층)**
+  
+  **주요 구성요소:**
+  - Entities: 핵심 비즈니스 객체
+  - Interfaces: 저장소 인터페이스
+  - Business Logic: 도메인 규칙
+  - Value Objects: 값 객체
+  
+  **책임:**
+  - 핵심 비즈니스 규칙
+  - 도메인 모델 정의
+  - 비즈니스 불변식 보장
+  - 도메인 서비스 제공
+  - 저장소 계약 정의
+end note
+
+note right of Repositories
+  **Infrastructure Layer (인프라 계층)**
+  
+  **주요 구성요소:**
+  - Repositories: 데이터 접근 구현
+  - Database: 데이터베이스 연결
+  - External Services: 외부 서비스 통합
+  - Cache: 캐싱 구현
+  
+  **책임:**
+  - 데이터 영속성 관리
+  - 외부 시스템 통합
+  - 데이터베이스 최적화
+  - 캐싱 전략 구현
+  - 기술적 세부사항 처리
+end note
+
+note bottom of MySQL
+  **External Systems (외부 시스템)**
+  
+  **MySQL Database:**
+  - 메인 데이터 저장소
+  - 트랜잭션 지원
+  - ACID 속성 보장
+  - 인덱싱 및 쿼리 최적화
+  
+  **Redis Cache:**
+  - 세션 저장소
+  - 쿼리 결과 캐싱
+  - 레이트 리미팅
+  - 실시간 데이터 저장
+  
+  **Client Applications:**
+  - 웹 브라우저
+  - 모바일 앱
+  - 관리자 대시보드
+  - API 클라이언트
+end note
+
+@enduml

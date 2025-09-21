@@ -43,7 +43,7 @@ export class AdminService {
       password: hashedPassword,
       username: adminData.email.split('@')[0], // 이메일에서 사용자명 생성
       adminRole: adminData.role === AdminUserRole.SUPER_ADMIN ? AdminUserRole.SUPER_ADMIN : AdminUserRole.ADMIN,
-      permissions: (this.adminMapper as any).getDefaultPermissions(adminData.role)
+      permissions: this.adminMapper.getDefaultPermissions(adminData.role)
     };
     
     return this.adminUserRepository.create(adminWithHashedPassword);
@@ -83,6 +83,18 @@ export class AdminService {
   }
 
   /**
+   * 페이지네이션을 포함한 관리자 조회
+   */
+  async getAllAdminsWithPagination(
+    page: number = 1, 
+    limit: number = 10, 
+    sortBy: string = 'createdAt', 
+    sortOrder: 'ASC' | 'DESC' = 'DESC'
+  ): Promise<{ adminUsers: AdminUser[]; total: number }> {
+    return this.adminUserRepository.findAllWithPagination(page, limit);
+  }
+
+  /**
    * 관리자 통계 조회
    */
   async getAdminStats(): Promise<AdminStatsDto> {
@@ -116,8 +128,8 @@ export class AdminService {
     });
 
     return {
-      totalUsers: 0,
-      activeUsers: 0,
+      totalUsers: adminCount, // 전체 관리자 수를 totalUsers로 사용
+      activeUsers: activeAdmins, // 계산된 활성 관리자 수 사용
       adminCount,
       todayRegistrations,
       weeklyRegistrations,
@@ -252,10 +264,10 @@ export class AdminService {
     const updateData = {
       status: 'APPROVED' as const,
       adminRole: approvalData.role,
-      isActive: approvalData.isActive,
+      isActive: approvalData.isActive ?? true, // 기본값을 true로 설정
       approvedBy,
       approvedAt: new Date(),
-      permissions: (this.adminMapper as any).getDefaultPermissions(approvalData.role)
+      permissions: this.adminMapper.getDefaultPermissions(approvalData.role)
     };
 
     return this.adminUserRepository.update(userId, updateData);
@@ -290,5 +302,95 @@ export class AdminService {
     return this.adminUserRepository.findByStatus(status);
   }
 
+  /**
+   * 사용자 활성화
+   */
+  async activateUser(userId: string, activatedBy: string): Promise<AdminUser> {
+    const user = await this.adminUserRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+    
+    if (user.status !== 'APPROVED') {
+      throw new BadRequestException('승인된 사용자만 활성화할 수 있습니다.');
+    }
+
+    if (user.isActive) {
+      throw new BadRequestException('이미 활성화된 사용자입니다.');
+    }
+
+    return this.adminUserRepository.update(userId, { 
+      isActive: true,
+      updatedBy: activatedBy
+    });
+  }
+
+  /**
+   * 사용자 비활성화
+   */
+  async deactivateUser(userId: string, deactivatedBy: string): Promise<AdminUser> {
+    const user = await this.adminUserRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (!user.isActive) {
+      throw new BadRequestException('이미 비활성화된 사용자입니다.');
+    }
+
+    return this.adminUserRepository.update(userId, { 
+      isActive: false,
+      updatedBy: deactivatedBy
+    });
+  }
+
+  /**
+   * 사용자 정지
+   */
+  async suspendUser(userId: string, reason: string, suspendedBy: string): Promise<AdminUser> {
+    const user = await this.adminUserRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (user.status === 'SUSPENDED') {
+      throw new BadRequestException('이미 정지된 사용자입니다.');
+    }
+
+    if (user.status !== 'APPROVED') {
+      throw new BadRequestException('승인된 사용자만 정지할 수 있습니다.');
+    }
+
+    if (!reason || reason.trim().length < 5) {
+      throw new BadRequestException('정지 사유는 최소 5자 이상이어야 합니다.');
+    }
+
+    return this.adminUserRepository.update(userId, {
+      status: 'SUSPENDED' as const,
+      isActive: false,
+      updatedBy: suspendedBy
+      // TODO: reason 필드가 있다면 추가
+    });
+  }
+
+  /**
+   * 사용자 정지 해제
+   */
+  async unsuspendUser(userId: string, unsuspendedBy: string): Promise<AdminUser> {
+    const user = await this.adminUserRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    }
+
+    if (user.status !== 'SUSPENDED') {
+      throw new BadRequestException('정지된 사용자만 정지 해제할 수 있습니다.');
+    }
+
+    return this.adminUserRepository.update(userId, {
+      status: 'APPROVED' as const,
+      isActive: true,
+      updatedBy: unsuspendedBy
+    });
+  }
 
 }

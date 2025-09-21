@@ -1,0 +1,192 @@
+@startuml api-versioning-strategy
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
+title API Versioning Strategy - Crypto Exchange API
+
+skinparam backgroundColor #FFFFFF
+skinparam packageStyle rectangle
+
+package "Client Applications" #E8F5E8 {
+  [Web Frontend v1] as WebV1
+  [Web Frontend v2] as WebV2
+  [Mobile App v1] as MobileV1
+  [Mobile App v2] as MobileV2
+  [Admin Panel] as AdminPanel
+}
+
+package "API Gateway" #FFF3E0 {
+  [Load Balancer] as LoadBalancer
+  [Rate Limiter] as RateLimiter
+  [CORS Handler] as CORS
+  [Request Router] as Router
+}
+
+package "Version Detection" #E3F2FD {
+  [URL Parser] as URLParser
+  [Header Parser] as HeaderParser
+  [Version Middleware] as VersionMiddleware
+  [Version Guard] as VersionGuard
+}
+
+package "API Versions" #F3E5F5 {
+
+  package "API v1" #E1F5FE {
+    [Auth Controller v1] as AuthV1
+    [User Controller v1] as UserV1
+    [Permission Controller v1] as PermissionV1
+    [Legacy Services] as LegacyServices
+  }
+
+  package "API v2" #F1F8E9 {
+    [Auth Controller v2] as AuthV2
+    [User Controller v2] as UserV2
+    [Permission Controller v2] as PermissionV2
+    [Enhanced Services] as EnhancedServices
+  }
+
+  package "API v3 (Future)" #FFF8E1 {
+    [Auth Controller v3] as AuthV3
+    [User Controller v3] as UserV3
+    [Permission Controller v3] as PermissionV3
+    [Next Gen Services] as NextGenServices
+  }
+}
+
+package "Shared Services" #FFEBEE {
+  [Database Layer] as Database
+  [Cache Layer] as Cache
+  [External APIs] as ExternalAPIs
+  [Common Utilities] as CommonUtils
+}
+
+' Client to API Gateway
+WebV1 --> LoadBalancer
+WebV2 --> LoadBalancer
+MobileV1 --> LoadBalancer
+MobileV2 --> LoadBalancer
+AdminPanel --> LoadBalancer
+
+LoadBalancer --> RateLimiter
+RateLimiter --> CORS
+CORS --> Router
+
+' Version Detection
+Router --> URLParser
+Router --> HeaderParser
+URLParser --> VersionMiddleware
+HeaderParser --> VersionMiddleware
+VersionMiddleware --> VersionGuard
+
+' Version Routing
+VersionGuard --> AuthV1
+VersionGuard --> UserV1
+VersionGuard --> PermissionV1
+VersionGuard --> AuthV2
+VersionGuard --> UserV2
+VersionGuard --> PermissionV2
+VersionGuard --> AuthV3
+VersionGuard --> UserV3
+VersionGuard --> PermissionV3
+
+' Service Dependencies
+AuthV1 --> LegacyServices
+UserV1 --> LegacyServices
+PermissionV1 --> LegacyServices
+
+AuthV2 --> EnhancedServices
+UserV2 --> EnhancedServices
+PermissionV2 --> EnhancedServices
+
+AuthV3 --> NextGenServices
+UserV3 --> NextGenServices
+PermissionV3 --> NextGenServices
+
+' Shared Dependencies
+LegacyServices --> Database
+EnhancedServices --> Database
+NextGenServices --> Database
+
+LegacyServices --> Cache
+EnhancedServices --> Cache
+NextGenServices --> Cache
+
+LegacyServices --> ExternalAPIs
+EnhancedServices --> ExternalAPIs
+NextGenServices --> ExternalAPIs
+
+LegacyServices --> CommonUtils
+EnhancedServices --> CommonUtils
+NextGenServices --> CommonUtils
+
+' Styling
+WebV1 -[#4CAF50,thickness=2]-> LoadBalancer
+LoadBalancer -[#FF9800,thickness=2]-> VersionGuard
+VersionGuard -[#2196F3,thickness=2]-> AuthV2
+AuthV2 -[#9C27B0,thickness=2]-> Database
+
+note top of WebV1
+  **Client Applications**
+  - Multiple frontend versions
+  - Mobile applications
+  - Admin dashboard
+  - Third-party integrations
+end note
+
+note right of VersionMiddleware
+  **Version Detection**
+  - URL-based: /api/v1/, /api/v2/
+  - Header-based: api-version, accept-version
+  - Default version: v1
+  - Version validation
+end note
+
+note right of AuthV2
+  **API Versioning**
+  - Backward compatibility
+  - Gradual migration
+  - Feature deprecation
+  - Version-specific documentation
+end note
+
+note bottom of Database
+  **Shared Infrastructure**
+  - Common database layer
+  - Shared caching strategy
+  - External API integration
+  - Common utility functions
+end note
+
+' Version Lifecycle
+package "Version Lifecycle" #F5F5F5 {
+  [Development] as Dev
+  [Testing] as Test
+  [Staging] as Staging
+  [Production] as Prod
+  [Deprecation] as Deprecation
+  [Retirement] as Retirement
+}
+
+Dev --> Test
+Test --> Staging
+Staging --> Prod
+Prod --> Deprecation
+Deprecation --> Retirement
+
+note right of Dev
+  **Version Lifecycle**
+  1. Development
+  2. Testing
+  3. Staging
+  4. Production
+  5. Deprecation Notice
+  6. Retirement
+end note
+
+@enduml

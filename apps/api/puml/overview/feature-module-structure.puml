@@ -1,0 +1,86 @@
+@startuml feature-module-structure
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
+
+title Auth Module Structure
+
+package "Presentation Layer" {
+  [AuthController] as AuthCtrl
+  [PermissionController] as PermissionCtrl
+  [AdminController] as AdminCtrl
+}
+
+package "Application Layer" {
+  [AuthService] as AuthSvc
+  [PermissionService] as PermissionSvc
+  [AdminService] as AdminSvc
+}
+
+package "Domain Layer" {
+  [AdminUser] as AdminUser
+  [Role] as Role
+  [RolePermission] as RolePermission
+}
+
+package "Infrastructure Layer" {
+  [AdminUserRepository] as AdminUserRepo
+  [RoleRepository] as RoleRepo
+  [PermissionRepository] as PermissionRepo
+}
+
+package "External" {
+  [MySQL] as MySQL
+  [Redis] as Redis
+}
+
+' Connections
+AuthCtrl --> AuthSvc
+PermissionCtrl --> PermissionSvc
+AdminCtrl --> AdminSvc
+
+AuthSvc --> AdminUser
+PermissionSvc --> Role
+AdminSvc --> AdminUser
+
+AdminUserRepo --> MySQL
+RoleRepo --> MySQL
+PermissionRepo --> MySQL
+
+AuthSvc --> Redis
+
+note right of AuthCtrl
+  **Controllers**
+  - REST API 엔드포인트
+  - 요청/응답 처리
+  - 인증/인가 가드
+end note
+
+note right of AuthSvc
+  **Services**
+  - 비즈니스 로직
+  - JWT 토큰 관리
+  - 사용자 인증/인가
+end note
+
+note right of AdminUser
+  **Entities**
+  - 도메인 모델
+  - 비즈니스 규칙
+  - 데이터 구조
+end note
+
+note right of AdminUserRepo
+  **Repositories**
+  - 데이터 접근
+  - CRUD 작업
+  - 쿼리 최적화
+end note
+
+@enduml

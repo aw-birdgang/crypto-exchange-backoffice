@@ -25,6 +25,9 @@ export const API_ROUTES = {
     MENU_ACCESS: '/permissions/menu-access',
     ROLE_PERMISSIONS: '/permissions/role-permissions',
     INITIALIZE: '/permissions/initialize',
+    ROLES: '/permissions/roles',
+    USER_ROLES: '/permissions/user-roles',
+    TEMPLATES: '/permissions/templates',
   },
   ADMIN: {
     ADMINS: '/admin/admins',

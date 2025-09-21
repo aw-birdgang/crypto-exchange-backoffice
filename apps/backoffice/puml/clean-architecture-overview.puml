@@ -1,9 +1,32 @@
 @startuml Clean Architecture Overview
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title Crypto Exchange Backoffice - Clean Architecture Overview
+
+legend top
+  **Clean Architecture Principles:**
+
+  🏗️ **Dependency Rule**: Dependencies point inward only
+  🔄 **Separation of Concerns**: Each layer has distinct responsibilities
+  🧪 **Testability**: Business logic is independent of frameworks
+  🔧 **Maintainability**: Changes in one layer don't affect others
+  📦 **Modularity**: Features are self-contained and reusable
+
+  **Architecture Benefits:**
+  ✅ Framework independence
+  ✅ Easy testing and mocking
+  ✅ Clear separation of business logic
+  ✅ Scalable and maintainable codebase
+  ✅ Technology-agnostic core
+end legend
 
 package "Presentation Layer" as Presentation {
   [Pages] as Pages
@@ -11,11 +34,50 @@ package "Presentation Layer" as Presentation {
   [Hooks] as Hooks
 }
 
+note right of Presentation
+  **Presentation Layer Responsibilities:**
+
+  🎨 **UI Components**: React components for user interface
+  📄 **Pages**: Route-level components and page layouts
+  🪝 **Custom Hooks**: Business logic integration with UI
+  🔄 **State Management**: Local component state and form handling
+  🎯 **User Interactions**: Event handling and user input processing
+
+  **Key Technologies:**
+  • React 18 with TypeScript
+  • React Router for navigation
+  • React Hook Form for form management
+  • Custom hooks for business logic integration
+  • Zustand for global state management
+end note
+
 package "Application Layer" as Application {
   [Use Cases] as UseCases
   [Services] as Services
   [Stores] as Stores
 }
+
+note right of Application
+  **Application Layer Responsibilities:**
+
+  🎯 **Use Cases**: Business logic implementation and orchestration
+  🔧 **Services**: Application-specific business logic and data transformation
+  🏪 **Stores**: Global state management and data persistence
+  🔄 **Coordination**: Orchestrates domain entities and external services
+  📊 **Data Flow**: Manages data flow between presentation and domain layers
+
+  **Key Patterns:**
+  • Use Case Pattern for business operations
+  • Service Layer for application logic
+  • Repository Pattern for data access abstraction
+  • Factory Pattern for dependency injection
+  • Command/Query separation (CQRS)
+
+  **State Management:**
+  • Zustand stores for global state
+  • TanStack Query for server state
+  • Local state for component-specific data
+end note
 
 package "Domain Layer" as Domain {
   [Interfaces] as Interfaces
@@ -23,16 +85,84 @@ package "Domain Layer" as Domain {
   [Value Objects] as ValueObjects
 }
 
+note right of Domain
+  **Domain Layer Responsibilities:**
+
+  🏛️ **Core Business Logic**: Pure business rules and domain knowledge
+  📋 **Interfaces**: Contracts for external dependencies (Dependency Inversion)
+  🏗️ **Entities**: Core business objects with identity and behavior
+  💎 **Value Objects**: Immutable objects representing domain concepts
+  📏 **Business Rules**: Validation rules and domain constraints
+
+  **Key Principles:**
+  • Framework-independent pure business logic
+  • No external dependencies (except interfaces)
+  • Rich domain models with behavior
+  • Domain-driven design (DDD) patterns
+  • Business rule encapsulation
+
+  **Domain Concepts:**
+  • AdminUser entity with business rules
+  • Permission and Role value objects
+  • Use case interfaces for business operations
+  • Domain events for business processes
+  • Validation rules and constraints
+end note
+
 package "Infrastructure Layer" as Infrastructure {
   [API Services] as APIServices
   [Storage Services] as StorageServices
   [External Services] as ExternalServices
 }
 
-' Dependencies
+note right of Infrastructure
+  **Infrastructure Layer Responsibilities:**
+
+  🌐 **API Services**: HTTP client implementations for external APIs
+  💾 **Storage Services**: Data persistence and retrieval implementations
+  🔌 **External Services**: Third-party service integrations
+  🔧 **Technical Concerns**: Framework-specific implementations
+  📡 **Data Access**: Repository pattern implementations
+
+  **Key Technologies:**
+  • Axios for HTTP client
+  • React Query for server state management
+  • Local Storage for client-side persistence
+  • RESTful API integration
+  • Error handling and retry logic
+
+  **Implementation Patterns:**
+  • Repository pattern for data access
+  • Adapter pattern for external services
+  • Factory pattern for service creation
+  • Strategy pattern for different implementations
+  • Observer pattern for event handling
+end note
+
+' Dependencies (Dependency Rule - inward only)
 Presentation --> Application : depends on
 Application --> Domain : depends on
 Application --> Infrastructure : depends on
+
+note as N_DependencyRule
+  **Dependency Rule:**
+
+  🔄 **Inward Dependencies Only**: Outer layers depend on inner layers
+  🚫 **No Outward Dependencies**: Inner layers never depend on outer layers
+  🎯 **Dependency Inversion**: Use interfaces to invert dependencies
+  🏗️ **Stable Core**: Domain layer is the most stable and independent
+
+  **Benefits:**
+  ✅ Business logic is framework-independent
+  ✅ Easy to test and mock dependencies
+  ✅ Technology changes don't affect core logic
+  ✅ Clear separation of concerns
+end note
+
+Presentation .. N_DependencyRule
+Application .. N_DependencyRule
+Domain .. N_DependencyRule
+Infrastructure .. N_DependencyRule
 
 ' Internal dependencies
 Pages --> Components
@@ -45,32 +175,45 @@ Services --> APIServices
 Services --> StorageServices
 Services --> ExternalServices
 
-note right of Presentation
-  React Components
-  - Pages
-  - UI Components
-  - Custom Hooks
+note as N_ImplementationExample
+  **Implementation Example:**
+
+  <code>
+  // Domain Layer (Pure Business Logic)
+  interface UserManagementUseCase {
+    approveUser(userId: string, data: UserApprovalRequest): Promise&lt;AdminUser&gt;;
+  }
+
+  // Application Layer (Use Case Implementation)
+  class UserManagementUseCaseImpl implements UserManagementUseCase {
+    constructor(private userService: IUserService) {}
+
+    async approveUser(userId: string, data: UserApprovalRequest): Promise&lt;AdminUser&gt; {
+      // Business logic validation
+      this.validateApprovalData(data);
+      return await this.userService.approveUser(userId, data);
+    }
+  }
+
+  // Infrastructure Layer (API Implementation)
+  class ApiUserService implements IUserService {
+    async approveUser(userId: string, data: UserApprovalRequest): Promise&lt;AdminUser&gt; {
+      return await this.apiClient.put(`/users/${userId}/approve`, data);
+    }
+  }
+
+  // Presentation Layer (React Hook)
+  const useUserApproval = () =&gt; {
+    return useMutation({
+      mutationFn: (data) => useCaseFactory.getUserManagementUseCase().approveUser(data.userId, data),
+    });
+  };
+  </code>
 end note
 
-note right of Application
-  Business Logic
-  - Use Case Implementations
-  - Application Services
-  - State Management
-end note
-
-note right of Domain
-  Core Business Rules
-  - Use Case Interfaces
-  - Domain Entities
-  - Business Rules
-end note
-
-note right of Infrastructure
-  External Concerns
-  - API Communication
-  - Data Persistence
-  - Third-party Services
-end note
+Presentation .. N_ImplementationExample
+Application .. N_ImplementationExample
+Domain .. N_ImplementationExample
+Infrastructure .. N_ImplementationExample
 
 @enduml

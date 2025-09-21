@@ -1,9 +1,32 @@
 @startuml State Management
 !theme plain
-skinparam backgroundColor #FFFFFF
-skinparam componentStyle rectangle
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
 
 title State Management Architecture
+
+legend top
+  **State Management Architecture Overview:**
+
+  🏗️ **Multi-Layer State**: Different types of state managed at appropriate layers
+  🔄 **Unidirectional Flow**: State changes flow in one direction for predictability
+  📊 **Single Source of Truth**: Each piece of state has one authoritative source
+  🧪 **Testable State**: State management is easily testable and debuggable
+  ⚡ **Performance Optimized**: Minimal re-renders and efficient updates
+
+  **State Management Principles:**
+  ✅ Local state for component-specific data
+  ✅ Global state for shared application data
+  ✅ Server state for cached API data
+  ✅ Form state for user input management
+  ✅ URL state for navigation and routing
+end legend
 
 package "Presentation Layer" as Presentation {
   class "React Component" as Component {
@@ -19,13 +42,37 @@ package "Presentation Layer" as Presentation {
   }
 }
 
+note right of Presentation
+  **Presentation Layer State:**
+
+  🎨 **React Component State**:
+  • Local state (useState) for UI-specific data
+  • Form state (useForm) for user input management
+  • Loading states for async operations
+  • Modal and dialog states
+  • Component-specific UI state
+
+  🪝 **Custom Hooks**:
+  • Encapsulate business logic and state
+  • Provide clean interface to components
+  • Handle complex state interactions
+  • Manage side effects and subscriptions
+  • Reusable across multiple components
+
+  **State Types**:
+  • UI state (modals, loading, errors)
+  • Form state (input values, validation)
+  • Component state (expanded, selected)
+  • Temporary state (animations, transitions)
+end note
+
 package "Application Layer" as Application {
   package "Zustand Stores" as ZustandStores {
     class "AuthStore" as AuthStore {
-      - user: AdminUser | null
+      - user: AdminUser (nullable)
       - permissions: Permission[]
       - isAuthenticated: boolean
-      + login(credentials): Promise<void>
+      + login(credentials): void
       + logout(): void
       + refreshTokens(): void
     }
@@ -42,7 +89,7 @@ package "Application Layer" as Application {
     class "PermissionStore" as PermissionStore {
       - permissions: Permission[]
       - roles: Role[]
-      + fetchPermissions(): Promise<void>
+      + fetchPermissions(): void
       + checkPermission(resource, action): boolean
     }
   }
@@ -64,16 +111,41 @@ package "Application Layer" as Application {
   }
 }
 
+note right of Application
+  **Application Layer State:**
+
+  🏪 **Zustand Stores**:
+  • Global state management for application data
+  • Selective subscriptions to prevent unnecessary re-renders
+  • Immutable state updates for predictability
+  • DevTools integration for debugging
+  • Lightweight and performant
+
+  📊 **TanStack Query**:
+  • Server state caching and synchronization
+  • Background refetching for fresh data
+  • Optimistic updates for better UX
+  • Request deduplication and caching
+  • Error handling and retry logic
+
+  **State Categories**:
+  • **Auth State**: User authentication and permissions
+  • **User State**: User management and selection
+  • **Permission State**: Role-based access control
+  • **Server State**: Cached API data and mutations
+  • **UI State**: Global UI preferences and settings
+end note
+
 package "Infrastructure Layer" as Infrastructure {
   package "API Services" as APIServices {
     class "AdminUserService" as UserService {
-      + getAllUsers(filters): Promise<AdminUser[]>
-      + approveUser(userId, data): Promise<AdminUser>
+      + getAllUsers(filters): AdminUser[]
+      + approveUser(userId, data): AdminUser
     }
 
     class "AuthService" as AuthService {
-      + login(credentials): Promise<AuthResponse>
-      + refreshToken(token): Promise<RefreshResponse>
+      + login(credentials): AuthResponse
+      + refreshToken(token): RefreshResponse
     }
   }
 
@@ -83,6 +155,31 @@ package "Infrastructure Layer" as Infrastructure {
     + removeItem(key): void
   }
 }
+
+note right of Infrastructure
+  **Infrastructure Layer State:**
+
+  🌐 **API Services**:
+  • Handle server state synchronization
+  • Manage API requests and responses
+  • Implement caching strategies
+  • Handle error states and retries
+  • Transform data between API and domain models
+
+  💾 **Local Storage**:
+  • Persist state across browser sessions
+  • Store user preferences and settings
+  • Cache frequently accessed data
+  • Handle offline state management
+  • Provide fallback for server state
+
+  **Data Sources**:
+  • **API State**: Server-side data and mutations
+  • **Local Storage**: Persistent client-side data
+  • **Session Storage**: Temporary session data
+  • **IndexedDB**: Large structured data storage
+  • **Cache**: In-memory data caching
+end note
 
 package "State Flow" as StateFlow {
   note "1. User Action" as UserAction
@@ -94,6 +191,33 @@ package "State Flow" as StateFlow {
   note "7. Cache Update" as CacheUpdate
   note "8. UI Re-render" as UIRerender
 }
+
+note right of StateFlow
+  **State Flow Process:**
+
+  🔄 **Unidirectional Data Flow**:
+  1. **User Action**: User interacts with UI
+  2. **Component Update**: Local state changes
+  3. **Hook Processing**: Business logic execution
+  4. **Store Update**: Global state synchronization
+  5. **API Call**: Server communication
+  6. **Server Response**: Data received
+  7. **Cache Update**: State persistence
+  8. **UI Re-render**: Visual updates
+
+  📊 **State Synchronization**:
+  • Local state updates immediately
+  • Global state updates after validation
+  • Server state updates after API response
+  • Cache updates for persistence
+  • UI updates reflect all state changes
+
+  🛡️ **Error Handling**:
+  • Validation errors prevent state updates
+  • Network errors trigger retry logic
+  • Fallback states for failed operations
+  • User feedback for all state changes
+end note
 
 ' Relationships
 Component --> Hooks : uses
@@ -120,37 +244,109 @@ PermissionStore --> AuthService : calls
 UseQuery --> UserService : calls
 UseMutation --> UserService : calls
 
-note right of Presentation
-  Local State:
-  - Component state (useState)
-  - Form state (useForm)
-  - UI state (modals, loading)
+note as N_StateManagementPatterns
+  **State Management Patterns:**
+
+  🎯 **State Selection Patterns**:
+  • **Local State**: Component-specific UI state
+  • **Global State**: Shared application state
+  • **Server State**: Cached API data
+  • **Form State**: User input management
+  • **URL State**: Navigation and routing
+
+  🔄 **Update Patterns**:
+  • **Immediate Updates**: Local state changes
+  • **Optimistic Updates**: UI updates before API response
+  • **Pessimistic Updates**: UI updates after API response
+  • **Batch Updates**: Multiple state changes together
+  • **Debounced Updates**: Delayed updates for performance
+
+  🛡️ **Error Handling Patterns**:
+  • **Error Boundaries**: Catch and handle errors
+  • **Fallback States**: Default states for errors
+  • **Retry Logic**: Automatic retry for failed operations
+  • **User Feedback**: Clear error messages
+  • **State Recovery**: Restore previous valid state
 end note
 
-note right of Application
-  Global State:
-  - Zustand stores
-  - TanStack Query cache
-  - State synchronization
+Component .. N_StateManagementPatterns
+Hooks .. N_StateManagementPatterns
+ZustandStores .. N_StateManagementPatterns
+TanStackQuery .. N_StateManagementPatterns
+
+note as N_ImplementationExample
+  **State Management Implementation Example:**
+
+  <code>
+  // Zustand Store
+  const useAuthStore = create((set, get) =&gt; ({
+    user: null,
+    permissions: [],
+    isAuthenticated: false,
+
+    login: async (credentials) =&gt; {
+      set({ isLoading: true });
+      try {
+        const response = await authService.login(credentials);
+        set({
+          user: response.user,
+          permissions: response.permissions,
+          isAuthenticated: true,
+          isLoading: false
+        });
+      } catch (error) {
+        set({ error, isLoading: false });
+      }
+    },
+
+    logout: () =&gt; {
+      set({ user: null, permissions: [], isAuthenticated: false });
+    }
+  }));
+
+  // TanStack Query
+  const useUsers = (filters) =&gt; {
+    return useQuery({
+      queryKey: ['users', filters],
+      queryFn: () =&gt; userService.getAllUsers(filters),
+      staleTime: 5 * 60 * 1000,
+    });
+  };
+
+  // Custom Hook
+  const useUserApproval = () =&gt; {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+      mutationFn: (data) =&gt; userService.approveUser(data.userId, data),
+      onSuccess: (newUser) =&gt; {
+        queryClient.setQueryData(['users'], (old) =&gt;
+          old?.map(user =&gt; user.id === newUser.id ? newUser : user)
+        );
+      },
+    });
+  };
+
+  // Component Usage
+  const UserManagementPage = () =&gt; {
+    const { user, isAuthenticated } = useAuthStore();
+    const { data: users, isLoading } = useUsers(filters);
+    const approveUser = useUserApproval();
+
+    if (!isAuthenticated) return &lt;LoginPage /&gt;;
+
+    return (
+      &lt;div&gt;
+        {isLoading ? &lt;LoadingSpinner /&gt; : &lt;UserTable users={users} /&gt;}
+      &lt;/div&gt;
+    );
+  };
+  </code>
 end note
 
-note right of Infrastructure
-  Data Sources:
-  - API services
-  - Local storage
-  - External services
-end note
-
-note right of StateFlow
-  State Flow:
-  1. User interaction
-  2. Component updates
-  3. Hook processes
-  4. Store updates
-  5. API calls
-  6. Server responses
-  7. Cache updates
-  8. UI re-renders
-end note
+Presentation .. N_ImplementationExample
+Application .. N_ImplementationExample
+Infrastructure .. N_ImplementationExample
+StateFlow .. N_ImplementationExample
 
 @enduml

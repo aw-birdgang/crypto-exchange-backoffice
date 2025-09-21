@@ -466,18 +466,21 @@ export const AdminUserManagementPage: React.FC = () => {
 
         {/* 통계 카드 */}
         <div style={{ marginBottom: '32px' }}>
-          <UserStatsCards stats={stats || {
-            totalUsers: 0,
-            activeUsers: 0,
-            pendingUsers: 0,
-            approvedUsers: 0,
-            rejectedUsers: 0,
-            suspendedUsers: 0,
-            todayRegistrations: 0,
-            weeklyRegistrations: 0,
-            monthlyRegistrations: 0,
-            roleStats: {},
-          }} isLoading={statsLoading} />
+          <UserStatsCards 
+            stats={stats || {
+              totalUsers: 0,
+              activeUsers: 0,
+              pendingUsers: 0,
+              approvedUsers: 0,
+              rejectedUsers: 0,
+              suspendedUsers: 0,
+              todayRegistrations: 0,
+              weeklyRegistrations: 0,
+              monthlyRegistrations: 0,
+              roleStats: {},
+            }} 
+            isLoading={statsLoading} 
+          />
         </div>
 
         {/* 필터 */}

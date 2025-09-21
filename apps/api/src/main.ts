@@ -31,6 +31,9 @@ async function bootstrap() {
       whitelist: true,
       forbidNonWhitelisted: true,
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: false, // 자동 변환 비활성화
+      },
     }),
   );
 
