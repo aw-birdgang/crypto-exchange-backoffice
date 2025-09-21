@@ -1,132 +1,124 @@
-import { useState, useEffect, useCallback } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { UserService } from '../services/user.service';
-import { 
-  AdminUser, 
-  UserStatus, 
-  AdminUserRole, 
-  UserApprovalRequest, 
-  UserBulkAction, 
-  UserStats, 
-  UserFilters 
-} from '@crypto-exchange/shared';
+import {useCallback, useState} from 'react';
+import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
+import {AdminUserService} from '../services/user.service';
+import {AdminUser, UserApprovalRequest, UserBulkAction, UserFilters, UserStatus} from '@crypto-exchange/shared';
 
-export const useUsers = (filters?: UserFilters) => {
-  const userService = new UserService();
-  
+export const useAdminUsers = (filters?: UserFilters) => {
+  const adminUserService = new AdminUserService();
+
   return useQuery({
-    queryKey: ['users', filters],
-    queryFn: () => userService.getAllUsers(filters),
+    queryKey: ['adminUsers', filters],
+    queryFn: () => adminUserService.getAllUsers(filters),
     staleTime: 5 * 60 * 1000, // 5분
   });
 };
 
-export const usePendingUsers = () => {
-  const userService = new UserService();
-  
+export const usePendingAdminUsers = () => {
+  const adminUserService = new AdminUserService();
+
   return useQuery({
-    queryKey: ['users', 'pending'],
-    queryFn: () => userService.getPendingUsers(),
+    queryKey: ['adminUsers', 'pending'],
+    queryFn: () => adminUserService.getPendingUsers(),
     staleTime: 2 * 60 * 1000, // 2분
     refetchInterval: 30 * 1000, // 30초마다 자동 새로고침
   });
 };
 
-export const useUsersByStatus = (status: UserStatus) => {
-  const userService = new UserService();
-  
+export const useAdminUsersByStatus = (status: UserStatus) => {
+  const adminUserService = new AdminUserService();
+
   return useQuery({
-    queryKey: ['users', 'status', status],
-    queryFn: () => userService.getUsersByStatus(status),
+    queryKey: ['adminUsers', 'status', status],
+    queryFn: () => adminUserService.getUsersByStatus(status),
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useUserStats = () => {
-  const userService = new UserService();
-  
+export const useAdminUserStats = () => {
+  const adminUserService = new AdminUserService();
+
   return useQuery({
-    queryKey: ['users', 'stats'],
-    queryFn: () => userService.getUserStats(),
+    queryKey: ['adminUsers', 'stats'],
+    queryFn: () => adminUserService.getUserStats(),
     staleTime: 10 * 60 * 1000, // 10분
   });
 };
 
-export const useUserApproval = () => {
+export const useAdminUserApproval = () => {
   const queryClient = useQueryClient();
-  const userService = new UserService();
-  
+  const adminUserService = new AdminUserService();
+
   return useMutation({
-    mutationFn: ({ userId, approvalData }: { userId: string; approvalData: UserApprovalRequest }) =>
-      userService.approveUser(userId, approvalData),
+    mutationFn: ({ adminUserId, approvalData }: { adminUserId: string; approvalData: UserApprovalRequest }) =>
+      adminUserService.approveUser(adminUserId, approvalData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['users', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers', 'stats'] });
     },
   });
 };
 
-export const useUserRejection = () => {
+export const useAdminUserRejection = () => {
   const queryClient = useQueryClient();
-  const userService = new UserService();
-  
+  const adminUserService = new AdminUserService();
+
   return useMutation({
-    mutationFn: (userId: string) => userService.rejectUser(userId),
+    mutationFn: (adminUserId: string) => adminUserService.rejectUser(adminUserId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['users', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers', 'stats'] });
     },
   });
 };
 
-export const useUserUpdate = () => {
+export const useAdminUserUpdate = () => {
   const queryClient = useQueryClient();
-  const userService = new UserService();
-  
+  const adminUserService = new AdminUserService();
+
   return useMutation({
-    mutationFn: ({ userId, userData }: { userId: string; userData: Partial<AdminUser> }) =>
-      userService.updateUser(userId, userData),
+    mutationFn: ({ adminUserId, adminUserData }: { adminUserId: string; adminUserData: Partial<AdminUser> }) =>
+      adminUserService.updateUser(adminUserId, adminUserData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
     },
   });
 };
 
-export const useUserDelete = () => {
+export const useAdminUserDelete = () => {
   const queryClient = useQueryClient();
-  const userService = new UserService();
-  
+  const adminUserService = new AdminUserService();
+
   return useMutation({
-    mutationFn: (userId: string) => userService.deleteUser(userId),
+    mutationFn: (adminUserId: string) => adminUserService.deleteUser(adminUserId),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['users', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers', 'stats'] });
     },
   });
 };
 
-export const useBulkUserAction = () => {
+export const useBulkAdminUserAction = () => {
   const queryClient = useQueryClient();
-  const userService = new UserService();
-  
+  const adminUserService = new AdminUserService();
+
   return useMutation({
-    mutationFn: (actionData: UserBulkAction) => userService.bulkUserAction(actionData),
+    mutationFn: (actionData: UserBulkAction) => adminUserService.bulkUserAction(actionData),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['users'] });
-      queryClient.invalidateQueries({ queryKey: ['users', 'stats'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers'] });
+      queryClient.invalidateQueries({ queryKey: ['adminUsers', 'stats'] });
     },
   });
 };
 
-export const useUserSearch = () => {
+export const useAdminUserSearch = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filters, setFilters] = useState<UserFilters>({});
-  
-  const userService = new UserService();
-  
+
+  const adminUserService = new AdminUserService();
+
   const { data: searchResults, isLoading, error } = useQuery({
-    queryKey: ['users', 'search', searchQuery, filters],
-    queryFn: () => userService.searchUsers(searchQuery, filters),
+    queryKey: ['adminUsers', 'search', searchQuery, filters],
+    queryFn: () => adminUserService.searchUsers(searchQuery, filters),
     enabled: searchQuery.length > 0,
     staleTime: 2 * 60 * 1000,
   });
@@ -154,7 +146,7 @@ export const useUserSearch = () => {
   };
 };
 
-export const useUserFilters = () => {
+export const useAdminUserFilters = () => {
   const [filters, setFilters] = useState<UserFilters>({
     page: 1,
     limit: 10,

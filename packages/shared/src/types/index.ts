@@ -153,16 +153,7 @@ export enum UserStatus {
   SUSPENDED = 'SUSPENDED',
 }
 
-export interface User {
-  id: string;
-  email: string;
-  firstName: string;
-  lastName: string;
-  role: AdminUserRole;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+// User interface removed - use AdminUser instead
 
 export interface AdminUser extends BaseEntity {
   email: string;

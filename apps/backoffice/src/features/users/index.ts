@@ -11,10 +11,10 @@ export { BulkActionModal } from './presentation/components/BulkActionModal';
 export { UserStatsCards } from './presentation/components/UserStatsCards';
 
 // Services
-export { UserService } from './application/services/user.service';
+export { AdminUserService } from './application/services/user.service';
 
 // Hooks
 export * from './application/hooks/useUsers';
 
 // Stores
-export { useUserStore, useUserSelectors } from './application/stores/user.store';
+export { useAdminUserStore, useAdminUserSelectors } from './application/stores/user.store';

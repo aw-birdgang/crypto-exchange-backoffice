@@ -8,16 +8,16 @@ import {UserStatsCards} from '../components/UserStatsCards';
 import {UserApprovalModal} from '../components/UserApprovalModal';
 import {BulkActionModal} from '../components/BulkActionModal';
 import {
-  useBulkUserAction,
-  usePendingUsers,
-  useUserApproval,
-  useUserFilters,
-  useUserRejection,
-  useUsers,
-  useUsersByStatus,
-  useUserStats
+  useBulkAdminUserAction,
+  usePendingAdminUsers,
+  useAdminUserApproval,
+  useAdminUserFilters,
+  useAdminUserRejection,
+  useAdminUsers,
+  useAdminUsersByStatus,
+  useAdminUserStats
 } from '../../application/hooks/useUsers';
-import {useUserSelectors, useUserStore} from '../../application/stores/user.store';
+import {useAdminUserSelectors, useAdminUserStore} from '../../application/stores/user.store';
 import {LoadingSpinner} from '@/shared/components/common/LoadingSpinner';
 
 const { TabPane } = Tabs;
@@ -32,8 +32,8 @@ interface UserManagementTabProps {
   onUserDelete: (userId: string) => void;
   showActions?: boolean;
   showSelection?: boolean;
-  selectedUsers?: string[];
-  onSelectionChange?: (selectedUsers: string[]) => void;
+  selectedAdminUsers?: string[];
+  onSelectionChange?: (selectedAdminUsers: string[]) => void;
   title: string;
   emptyMessage: string;
   emptyIcon?: React.ReactNode;
@@ -49,7 +49,7 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
   onUserDelete,
   showActions = false,
   showSelection = false,
-  selectedUsers = [],
+  selectedAdminUsers = [],
   onSelectionChange,
   title,
   emptyMessage,
@@ -97,13 +97,13 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
             </span>
           )}
         </h3>
-        {selectedUsers.length > 0 && (
+        {selectedAdminUsers.length > 0 && (
           <Space>
             <span style={{
               fontSize: '14px',
               color: '#8c8c8c'
             }}>
-              {selectedUsers.length}명 선택됨
+              {selectedAdminUsers.length}명 선택됨
             </span>
             <Button
               type="link"
@@ -132,7 +132,7 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
           onUserReject={onUserReject}
           onUserEdit={onUserEdit}
           onUserDelete={onUserDelete}
-          selectedUsers={selectedUsers}
+          selectedAdminUsers={selectedAdminUsers}
           onSelectionChange={onSelectionChange}
           showActions={showActions}
           showSelection={showSelection}
@@ -171,17 +171,17 @@ export const AdminUserManagementPage: React.FC = () => {
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
   const [activeTab, setActiveTab] = useState('all');
 
-  const { filters, updateFilter, resetFilters } = useUserFilters();
-  const { data: allUsers, isLoading: allUsersLoading, error: allUsersError } = useUsers(filters);
-  const { data: pendingUsers, isLoading: pendingUsersLoading, error: pendingUsersError } = usePendingUsers();
-  const { data: approvedUsers, isLoading: approvedUsersLoading, error: approvedUsersError } = useUsersByStatus(UserStatus.APPROVED);
-  const { data: rejectedUsers, isLoading: rejectedUsersLoading, error: rejectedUsersError } = useUsersByStatus(UserStatus.REJECTED);
-  const { data: suspendedUsers, isLoading: suspendedUsersLoading, error: suspendedUsersError } = useUsersByStatus(UserStatus.SUSPENDED);
-  const { data: stats, isLoading: statsLoading } = useUserStats();
+  const { filters, updateFilter, resetFilters } = useAdminUserFilters();
+  const { data: allAdminUsers, isLoading: allAdminUsersLoading, error: allAdminUsersError } = useAdminUsers(filters);
+  const { data: pendingAdminUsers, isLoading: pendingAdminUsersLoading, error: pendingAdminUsersError } = usePendingAdminUsers();
+  const { data: approvedAdminUsers, isLoading: approvedAdminUsersLoading, error: approvedAdminUsersError } = useAdminUsersByStatus(UserStatus.APPROVED);
+  const { data: rejectedAdminUsers, isLoading: rejectedAdminUsersLoading, error: rejectedAdminUsersError } = useAdminUsersByStatus(UserStatus.REJECTED);
+  const { data: suspendedAdminUsers, isLoading: suspendedAdminUsersLoading, error: suspendedAdminUsersError } = useAdminUsersByStatus(UserStatus.SUSPENDED);
+  const { data: stats, isLoading: statsLoading } = useAdminUserStats();
 
-  const approvalMutation = useUserApproval();
-  const rejectionMutation = useUserRejection();
-  const bulkActionMutation = useBulkUserAction();
+  const approvalMutation = useAdminUserApproval();
+  const rejectionMutation = useAdminUserRejection();
+  const bulkActionMutation = useBulkAdminUserAction();
 
   // deleteUser 함수 추가 (임시 구현)
   const deleteUser = async (userId: string) => {
@@ -197,39 +197,39 @@ export const AdminUserManagementPage: React.FC = () => {
   };
 
   const {
-    selectedUsers,
-    selectedUserObjects,
-  } = useUserSelectors();
+    selectedAdminUsers,
+    selectedAdminUserObjects,
+  } = useAdminUserSelectors();
 
-  const { setSelectedUsers, clearSelection } = useUserStore();
+  const { setSelectedAdminUsers, clearSelection } = useAdminUserStore();
 
-  const handleUserApprove = (userId: string) => {
-    const user = allUsers?.find(u => u.id === userId) ||
-                 pendingUsers?.find(u => u.id === userId) ||
-                 approvedUsers?.find(u => u.id === userId) ||
-                 rejectedUsers?.find(u => u.id === userId) ||
-                 suspendedUsers?.find(u => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
+  const handleAdminUserApprove = (adminUserId: string) => {
+    const adminUser = allAdminUsers?.find(u => u.id === adminUserId) ||
+                 pendingAdminUsers?.find(u => u.id === adminUserId) ||
+                 approvedAdminUsers?.find(u => u.id === adminUserId) ||
+                 rejectedAdminUsers?.find(u => u.id === adminUserId) ||
+                 suspendedAdminUsers?.find(u => u.id === adminUserId);
+    if (adminUser) {
+      setSelectedUser(adminUser);
       setIsApprovalModalOpen(true);
     }
   };
 
-  const handleUserReject = (userId: string) => {
-    const user = allUsers?.find(u => u.id === userId) ||
-                 pendingUsers?.find(u => u.id === userId) ||
-                 approvedUsers?.find(u => u.id === userId) ||
-                 rejectedUsers?.find(u => u.id === userId) ||
-                 suspendedUsers?.find(u => u.id === userId);
-    if (user) {
-      setSelectedUser(user);
+  const handleAdminUserReject = (adminUserId: string) => {
+    const adminUser = allAdminUsers?.find(u => u.id === adminUserId) ||
+                 pendingAdminUsers?.find(u => u.id === adminUserId) ||
+                 approvedAdminUsers?.find(u => u.id === adminUserId) ||
+                 rejectedAdminUsers?.find(u => u.id === adminUserId) ||
+                 suspendedAdminUsers?.find(u => u.id === adminUserId);
+    if (adminUser) {
+      setSelectedUser(adminUser);
       setIsApprovalModalOpen(true);
     }
   };
 
-  const handleApproval = (userId: string, approvalData: UserApprovalRequest) => {
+  const handleApproval = (adminUserId: string, approvalData: UserApprovalRequest) => {
     approvalMutation.mutate(
-      { userId, approvalData },
+      { adminUserId, approvalData },
       {
         onSuccess: () => {
           setIsApprovalModalOpen(false);
@@ -239,8 +239,8 @@ export const AdminUserManagementPage: React.FC = () => {
     );
   };
 
-  const handleRejection = (userId: string) => {
-    rejectionMutation.mutate(userId, {
+  const handleRejection = (adminUserId: string) => {
+    rejectionMutation.mutate(adminUserId, {
       onSuccess: () => {
         setIsApprovalModalOpen(false);
         setSelectedUser(null);
@@ -257,71 +257,71 @@ export const AdminUserManagementPage: React.FC = () => {
     });
   };
 
-  const handleUserEdit = (userId: string) => {
-    // 현재 활성 탭에 따라 사용자 데이터 선택
-    let users: AdminUser[] = [];
+  const handleAdminUserEdit = (adminUserId: string) => {
+    // 현재 활성 탭에 따라 어드민 사용자 데이터 선택
+    let adminUsers: AdminUser[] = [];
     switch (activeTab) {
       case 'all':
-        users = allUsers || [];
+        adminUsers = allAdminUsers || [];
         break;
       case 'pending':
-        users = pendingUsers || [];
+        adminUsers = pendingAdminUsers || [];
         break;
       case 'approved':
-        users = approvedUsers || [];
+        adminUsers = approvedAdminUsers || [];
         break;
       case 'rejected':
-        users = rejectedUsers || [];
+        adminUsers = rejectedAdminUsers || [];
         break;
       case 'suspended':
-        users = suspendedUsers || [];
+        adminUsers = suspendedAdminUsers || [];
         break;
     }
     
-    const user = users.find(u => u.id === userId);
-    if (user) {
-      // 사용자 수정 모달 열기
-      setEditingUser(user);
+    const adminUser = adminUsers.find(u => u.id === adminUserId);
+    if (adminUser) {
+      // 어드민 사용자 수정 모달 열기
+      setEditingUser(adminUser);
       setIsEditModalVisible(true);
     }
   };
 
-  const handleUserDelete = async (userId: string) => {
-    if (window.confirm('정말로 이 사용자를 삭제하시겠습니까?')) {
+  const handleAdminUserDelete = async (adminUserId: string) => {
+    if (window.confirm('정말로 이 어드민 사용자를 삭제하시겠습니까?')) {
       try {
-        await deleteUser(userId);
-        message.success('사용자가 성공적으로 삭제되었습니다.');
-        // 사용자 목록 새로고침
+        await deleteUser(adminUserId);
+        message.success('어드민 사용자가 성공적으로 삭제되었습니다.');
+        // 어드민 사용자 목록 새로고침
         refetch();
       } catch (error) {
-        message.error('사용자 삭제 중 오류가 발생했습니다.');
-        console.error('Delete user error:', error);
+        message.error('어드민 사용자 삭제 중 오류가 발생했습니다.');
+        console.error('Delete admin user error:', error);
       }
     }
   };
 
   const handleBulkActionClick = () => {
-    if (selectedUsers.length === 0) {
-      alert('작업할 사용자를 선택해주세요.');
+    if (selectedAdminUsers.length === 0) {
+      alert('작업할 어드민 사용자를 선택해주세요.');
       return;
     }
     setIsBulkActionModalOpen(true);
   };
 
-  const isLoading = allUsersLoading || approvalMutation.isPending || rejectionMutation.isPending || bulkActionMutation.isPending;
+  const isLoading = allAdminUsersLoading || approvalMutation.isPending || rejectionMutation.isPending || bulkActionMutation.isPending;
 
-  const getCurrentUsers = () => {
+  const getCurrentAdminUsers = () => {
     switch (activeTab) {
       case 'all':
-        return allUsers || [];
+        return allAdminUsers || [];
       case 'pending':
-        return pendingUsers || [];
+        return pendingAdminUsers || [];
       case 'approved':
-        return approvedUsers || [];
+        return approvedAdminUsers || [];
       case 'rejected':
-        return rejectedUsers || [];
+        return rejectedAdminUsers || [];
       case 'suspended':
-        return suspendedUsers || [];
+        return suspendedAdminUsers || [];
       default:
         return [];
     }
@@ -330,15 +330,15 @@ export const AdminUserManagementPage: React.FC = () => {
   const getCurrentLoading = () => {
     switch (activeTab) {
       case 'all':
-        return allUsersLoading;
+        return allAdminUsersLoading;
       case 'pending':
-        return pendingUsersLoading;
+        return pendingAdminUsersLoading;
       case 'approved':
-        return approvedUsersLoading;
+        return approvedAdminUsersLoading;
       case 'rejected':
-        return rejectedUsersLoading;
+        return rejectedAdminUsersLoading;
       case 'suspended':
-        return suspendedUsersLoading;
+        return suspendedAdminUsersLoading;
       default:
         return false;
     }
@@ -347,15 +347,15 @@ export const AdminUserManagementPage: React.FC = () => {
   const getCurrentError = () => {
     switch (activeTab) {
       case 'all':
-        return allUsersError;
+        return allAdminUsersError;
       case 'pending':
-        return pendingUsersError;
+        return pendingAdminUsersError;
       case 'approved':
-        return approvedUsersError;
+        return approvedAdminUsersError;
       case 'rejected':
-        return rejectedUsersError;
+        return rejectedAdminUsersError;
       case 'suspended':
-        return suspendedUsersError;
+        return suspendedAdminUsersError;
       default:
         return null;
     }
@@ -369,8 +369,8 @@ export const AdminUserManagementPage: React.FC = () => {
         emptyIcon: <span>👥</span>,
         showActions: true,
         showSelection: true,
-        onUserApprove: handleUserApprove,
-        onUserReject: handleUserReject,
+        onUserApprove: handleAdminUserApprove,
+        onUserReject: handleAdminUserReject,
       },
       pending: {
         title: '승인 대기 어드민 사용자',
@@ -378,8 +378,8 @@ export const AdminUserManagementPage: React.FC = () => {
         emptyIcon: <span>⏳</span>,
         showActions: true,
         showSelection: false,
-        onUserApprove: handleUserApprove,
-        onUserReject: handleUserReject,
+        onUserApprove: handleAdminUserApprove,
+        onUserReject: handleAdminUserReject,
       },
       approved: {
         title: '승인된 어드민 사용자',
@@ -446,13 +446,13 @@ export const AdminUserManagementPage: React.FC = () => {
             </p>
           </div>
           <Space>
-            {selectedUsers.length > 0 && (
+            {selectedAdminUsers.length > 0 && (
               <Button
                 type="primary"
                 onClick={handleBulkActionClick}
                 icon={<SettingOutlined />}
               >
-                대량 작업 ({selectedUsers.length})
+                대량 작업 ({selectedAdminUsers.length})
               </Button>
             )}
             <Button
@@ -498,17 +498,17 @@ export const AdminUserManagementPage: React.FC = () => {
                 label: '전체 어드민 사용자',
                 children: (
                   <UserManagementTab
-                    users={getCurrentUsers()}
+                    users={getCurrentAdminUsers()}
                     isLoading={getCurrentLoading()}
                     error={getCurrentError()}
                     onUserApprove={tabConfig.onUserApprove}
                     onUserReject={tabConfig.onUserReject}
-                    onUserEdit={handleUserEdit}
-                    onUserDelete={handleUserDelete}
+                    onUserEdit={handleAdminUserEdit}
+                    onUserDelete={handleAdminUserDelete}
                     showActions={tabConfig.showActions}
                     showSelection={tabConfig.showSelection}
-                    selectedUsers={selectedUsers}
-                    onSelectionChange={setSelectedUsers}
+                    selectedAdminUsers={selectedAdminUsers}
+                    onSelectionChange={setSelectedAdminUsers}
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
@@ -520,17 +520,17 @@ export const AdminUserManagementPage: React.FC = () => {
                 label: '승인 대기',
                 children: (
                   <UserManagementTab
-                    users={getCurrentUsers()}
+                    users={getCurrentAdminUsers()}
                     isLoading={getCurrentLoading()}
                     error={getCurrentError()}
                     onUserApprove={tabConfig.onUserApprove}
                     onUserReject={tabConfig.onUserReject}
-                    onUserEdit={handleUserEdit}
-                    onUserDelete={handleUserDelete}
+                    onUserEdit={handleAdminUserEdit}
+                    onUserDelete={handleAdminUserDelete}
                     showActions={tabConfig.showActions}
                     showSelection={tabConfig.showSelection}
-                    selectedUsers={selectedUsers}
-                    onSelectionChange={setSelectedUsers}
+                    selectedAdminUsers={selectedAdminUsers}
+                    onSelectionChange={setSelectedAdminUsers}
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
@@ -542,17 +542,17 @@ export const AdminUserManagementPage: React.FC = () => {
                 label: '승인됨',
                 children: (
                   <UserManagementTab
-                    users={getCurrentUsers()}
+                    users={getCurrentAdminUsers()}
                     isLoading={getCurrentLoading()}
                     error={getCurrentError()}
                     onUserApprove={tabConfig.onUserApprove}
                     onUserReject={tabConfig.onUserReject}
-                    onUserEdit={handleUserEdit}
-                    onUserDelete={handleUserDelete}
+                    onUserEdit={handleAdminUserEdit}
+                    onUserDelete={handleAdminUserDelete}
                     showActions={tabConfig.showActions}
                     showSelection={tabConfig.showSelection}
-                    selectedUsers={selectedUsers}
-                    onSelectionChange={setSelectedUsers}
+                    selectedAdminUsers={selectedAdminUsers}
+                    onSelectionChange={setSelectedAdminUsers}
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
@@ -564,17 +564,17 @@ export const AdminUserManagementPage: React.FC = () => {
                 label: '거부됨',
                 children: (
                   <UserManagementTab
-                    users={getCurrentUsers()}
+                    users={getCurrentAdminUsers()}
                     isLoading={getCurrentLoading()}
                     error={getCurrentError()}
                     onUserApprove={tabConfig.onUserApprove}
                     onUserReject={tabConfig.onUserReject}
-                    onUserEdit={handleUserEdit}
-                    onUserDelete={handleUserDelete}
+                    onUserEdit={handleAdminUserEdit}
+                    onUserDelete={handleAdminUserDelete}
                     showActions={tabConfig.showActions}
                     showSelection={tabConfig.showSelection}
-                    selectedUsers={selectedUsers}
-                    onSelectionChange={setSelectedUsers}
+                    selectedAdminUsers={selectedAdminUsers}
+                    onSelectionChange={setSelectedAdminUsers}
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
@@ -586,17 +586,17 @@ export const AdminUserManagementPage: React.FC = () => {
                 label: '정지됨',
                 children: (
                   <UserManagementTab
-                    users={getCurrentUsers()}
+                    users={getCurrentAdminUsers()}
                     isLoading={getCurrentLoading()}
                     error={getCurrentError()}
                     onUserApprove={tabConfig.onUserApprove}
                     onUserReject={tabConfig.onUserReject}
-                    onUserEdit={handleUserEdit}
-                    onUserDelete={handleUserDelete}
+                    onUserEdit={handleAdminUserEdit}
+                    onUserDelete={handleAdminUserDelete}
                     showActions={tabConfig.showActions}
                     showSelection={tabConfig.showSelection}
-                    selectedUsers={selectedUsers}
-                    onSelectionChange={setSelectedUsers}
+                    selectedAdminUsers={selectedAdminUsers}
+                    onSelectionChange={setSelectedAdminUsers}
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
@@ -622,7 +622,8 @@ export const AdminUserManagementPage: React.FC = () => {
 
         {/* 대량 작업 모달 */}
         <BulkActionModal
-          selectedUsers={selectedUserObjects}
+          selectedUsers={[]}
+          selectedAdminUsers={selectedAdminUserObjects}
           isOpen={isBulkActionModalOpen}
           onClose={() => setIsBulkActionModalOpen(false)}
           onAction={handleBulkAction}

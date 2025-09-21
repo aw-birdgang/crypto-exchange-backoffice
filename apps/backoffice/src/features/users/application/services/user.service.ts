@@ -11,7 +11,7 @@ import {
   API_ROUTES
 } from '@crypto-exchange/shared';
 
-export class UserService {
+export class AdminUserService {
   private apiService: ApiService;
 
   constructor(apiService?: ApiService) {

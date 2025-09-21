@@ -13,6 +13,9 @@ import {
 import { PermissionService } from '../services/permission.service';
 import { useAuthStore } from './auth.store';
 
+// PermissionService 인스턴스 생성
+const permissionService = new PermissionService();
+
 interface PermissionState {
   // 사용자 권한
   userPermissions: UserPermissions | null;
@@ -89,7 +92,7 @@ export const usePermissionStore = create<PermissionStore>()(
       fetchUserPermissions: async (userId: string) => {
         set({ permissionsLoading: true, error: null });
         try {
-          const permissions = await PermissionService.getUserPermissions(userId);
+          const permissions = await permissionService.getUserPermissions(userId);
           set({ userPermissions: permissions, permissionsLoading: false });
         } catch (error) {
           set({ 
@@ -103,7 +106,7 @@ export const usePermissionStore = create<PermissionStore>()(
         set({ permissionsLoading: true, error: null });
         try {
           console.log('🔄 Fetching permissions from server...');
-          const permissions = await PermissionService.getMyPermissions();
+          const permissions = await permissionService.getMyPermissions();
           console.log('✅ Permissions fetched successfully:', permissions);
           console.log('📊 Permission details:', {
             userId: permissions.userId,
@@ -121,12 +124,12 @@ export const usePermissionStore = create<PermissionStore>()(
           // 권한을 가져올 수 없으면 기본 권한 설정
           const { user } = useAuthStore.getState();
           if (user) {
-            console.log('🔧 Setting default permissions for role:', user.role);
-            const defaultPermissions = PermissionService.getDefaultRolePermissions(user.role);
+            console.log('🔧 Setting default permissions for role:', user.adminRole);
+            const defaultPermissions = permissionService.getDefaultRolePermissions(user.adminRole);
             console.log('🔧 Default permissions for role:', defaultPermissions);
             const permissions = {
               userId: user.id,
-              role: user.role,
+              role: user.adminRole,
               permissions: Object.entries(defaultPermissions)
                 .filter(([_, perms]) => perms && perms.length > 0)
                 .map(([resource, perms]) => ({
@@ -150,7 +153,7 @@ export const usePermissionStore = create<PermissionStore>()(
       fetchRoles: async () => {
         set({ rolesLoading: true, error: null });
         try {
-          const roles = await PermissionService.getRoles();
+          const roles = await permissionService.getRoles();
           set({ roles: Array.isArray(roles) ? roles : [], rolesLoading: false });
         } catch (error) {
           set({ 
@@ -164,7 +167,7 @@ export const usePermissionStore = create<PermissionStore>()(
       createRole: async (roleData) => {
         set({ error: null });
         try {
-          const newRole = await PermissionService.createRole(roleData);
+          const newRole = await permissionService.createRole(roleData);
           
           // 서버에서 최신 역할 목록을 다시 가져옴
           await get().fetchRoles();
@@ -179,7 +182,7 @@ export const usePermissionStore = create<PermissionStore>()(
       updateRole: async (roleId, roleData) => {
         set({ error: null });
         try {
-          const updatedRole = await PermissionService.updateRole(roleId, roleData);
+          const updatedRole = await permissionService.updateRole(roleId, roleData);
           
           // 서버에서 최신 역할 목록을 다시 가져옴
           await get().fetchRoles();
@@ -194,7 +197,7 @@ export const usePermissionStore = create<PermissionStore>()(
       deleteRole: async (roleId) => {
         set({ error: null });
         try {
-          await PermissionService.deleteRole(roleId);
+          await permissionService.deleteRole(roleId);
           
           // 서버에서 최신 역할 목록을 다시 가져옴
           await get().fetchRoles();
@@ -211,7 +214,7 @@ export const usePermissionStore = create<PermissionStore>()(
       fetchUserRoles: async (userId: string) => {
         set({ userRoleAssignmentsLoading: true, error: null });
         try {
-          const assignments = await PermissionService.getUserRoles(userId);
+          const assignments = await permissionService.getUserRoles(userId);
           set({ userRoleAssignments: assignments, userRoleAssignmentsLoading: false });
         } catch (error) {
           set({ 
@@ -224,7 +227,7 @@ export const usePermissionStore = create<PermissionStore>()(
       assignRoleToUser: async (userId, roleId, expiresAt) => {
         set({ error: null });
         try {
-          await PermissionService.assignRoleToUser(userId, roleId, expiresAt);
+          await permissionService.assignRoleToUser(userId, roleId, expiresAt);
           // 사용자 역할 목록을 다시 가져옴
           await get().fetchUserRoles(userId);
         } catch (error) {
@@ -236,7 +239,7 @@ export const usePermissionStore = create<PermissionStore>()(
       removeRoleFromUser: async (userId, roleId) => {
         set({ error: null });
         try {
-          await PermissionService.removeRoleFromUser(userId, roleId);
+          await permissionService.removeRoleFromUser(userId, roleId);
           // 사용자 역할 목록을 다시 가져옴
           await get().fetchUserRoles(userId);
         } catch (error) {
@@ -252,7 +255,7 @@ export const usePermissionStore = create<PermissionStore>()(
       fetchPermissionTemplates: async () => {
         set({ templatesLoading: true, error: null });
         try {
-          const templates = await PermissionService.getPermissionTemplates();
+          const templates = await permissionService.getPermissionTemplates();
           set({ permissionTemplates: templates, templatesLoading: false });
         } catch (error) {
           set({ 
@@ -265,7 +268,7 @@ export const usePermissionStore = create<PermissionStore>()(
       createPermissionTemplate: async (templateData) => {
         set({ error: null });
         try {
-          const newTemplate = await PermissionService.createPermissionTemplate(templateData);
+          const newTemplate = await permissionService.createPermissionTemplate(templateData);
           const currentTemplates = get().permissionTemplates;
           set({ permissionTemplates: [...currentTemplates, newTemplate] });
           return newTemplate;
@@ -332,7 +335,7 @@ export const usePermissionStore = create<PermissionStore>()(
       initializePermissions: async () => {
         set({ error: null });
         try {
-          await PermissionService.initializePermissions();
+          await permissionService.initializePermissions();
           // 초기화 후 필요한 데이터들을 다시 가져옴
           await Promise.all([
             get().fetchMyPermissions(),

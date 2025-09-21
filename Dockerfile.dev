@@ -1,0 +1,32 @@
+# Development Dockerfile for NestJS API
+FROM node:18-alpine
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install dependencies (including devDependencies for development)
+RUN pnpm install
+
+# Copy source code (for development)
+COPY packages/shared ./packages/shared
+COPY apps/api ./apps/api
+
+# Build shared package
+RUN pnpm --filter @crypto-exchange/shared build
+
+# Expose port
+EXPOSE 3001
+
+# Set working directory to API
+WORKDIR /app/apps/api
+
+# Start the application in development mode
+CMD ["pnpm", "start:dev"]

@@ -15,6 +15,7 @@ interface UserTableProps {
   onUserEdit?: (userId: string) => void;
   onUserDelete?: (userId: string) => void;
   selectedUsers?: string[];
+  selectedAdminUsers?: string[];
   onSelectionChange?: (userIds: string[]) => void;
   showActions?: boolean;
   showSelection?: boolean;
@@ -29,6 +30,7 @@ export const UserTable: React.FC<UserTableProps> = ({
   onUserEdit,
   onUserDelete,
   selectedUsers = [],
+  selectedAdminUsers = [],
   onSelectionChange,
   showActions = true,
   showSelection = true,
@@ -54,10 +56,11 @@ export const UserTable: React.FC<UserTableProps> = ({
   };
 
   const handleSelectUser = (userId: string, checked: boolean) => {
+    const currentSelected = selectedAdminUsers.length > 0 ? selectedAdminUsers : selectedUsers;
     if (checked) {
-      onSelectionChange?.([...selectedUsers, userId]);
+      onSelectionChange?.([...currentSelected, userId]);
     } else {
-      onSelectionChange?.(selectedUsers.filter(id => id !== userId));
+      onSelectionChange?.(currentSelected.filter(id => id !== userId));
     }
   };
 
@@ -76,14 +79,14 @@ export const UserTable: React.FC<UserTableProps> = ({
       key: 'select',
       title: (
         <Checkbox
-          checked={selectedUsers.length === users.length && users.length > 0}
+          checked={(selectedAdminUsers.length > 0 ? selectedAdminUsers : selectedUsers).length === users.length && users.length > 0}
           onChange={(e) => handleSelectAll(e.target.checked)}
         />
       ),
       width: 50,
       render: (_: any, user: AdminUser) => (
         <Checkbox
-          checked={selectedUsers.includes(user.id)}
+          checked={(selectedAdminUsers.length > 0 ? selectedAdminUsers : selectedUsers).includes(user.id)}
           onChange={(e) => handleSelectUser(user.id, e.target.checked)}
         />
       ),

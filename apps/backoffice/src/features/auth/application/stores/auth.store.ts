@@ -1,11 +1,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User, STORAGE_KEYS } from '@crypto-exchange/shared';
+import { AdminUser, STORAGE_KEYS } from '@crypto-exchange/shared';
 import { usePermissionStore } from './permission.store';
 import { authService } from '../services/auth.service';
 
 interface AuthState {
-  user: User | null;
+  user: AdminUser | null;
   accessToken: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
@@ -13,11 +13,11 @@ interface AuthState {
 }
 
 interface AuthActions {
-  setUser: (user: User) => void;
+  setAdminUser: (user: AdminUser) => void;
   setToken: (token: string) => void;
   setRefreshToken: (token: string) => void;
   setLoading: (loading: boolean) => void;
-  login: (user: User, accessToken: string, refreshToken: string) => void;
+  login: (user: AdminUser, accessToken: string, refreshToken: string) => void;
   refreshTokens: (accessToken: string, refreshToken: string) => void;
   logout: () => void;
   clearAuth: () => void;
@@ -36,7 +36,7 @@ export const useAuthStore = create<AuthStore>()(
       isLoading: true,
 
       // Actions
-      setUser: (user: User) => {
+      setAdminUser: (user: AdminUser) => {
         set({ user });
       },
 
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: loading });
       },
 
-      login: (user: User, accessToken: string, refreshToken: string) => {
+      login: (user: AdminUser, accessToken: string, refreshToken: string) => {
         // 로그아웃 플래그 제거
         localStorage.removeItem(STORAGE_KEYS.AUTH_LOGGED_OUT);
         
@@ -70,7 +70,7 @@ export const useAuthStore = create<AuthStore>()(
         });
 
         // 로그인 후 권한 초기화
-        console.log('🔐 User logged in, initializing permissions...');
+        console.log('🔐 AdminUser logged in, initializing permissions...');
         usePermissionStore.getState().fetchMyPermissions();
       },
 

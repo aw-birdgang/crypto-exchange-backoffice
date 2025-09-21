@@ -21,7 +21,7 @@ import {
   ClockCircleOutlined,
   CheckCircleOutlined,
 } from '@ant-design/icons';
-import { User, AdminUserRoleAssignment } from '@crypto-exchange/shared';
+import { AdminUser, AdminUserRoleAssignment } from '@crypto-exchange/shared';
 import { usePermissionStore } from '../../../features/auth/application/stores/permission.store';
 import { RoleSelector } from './RoleSelector';
 import dayjs from 'dayjs';
@@ -29,7 +29,7 @@ import dayjs from 'dayjs';
 const { Text } = Typography;
 
 interface UserPermissionManagerProps {
-  user: User;
+  user: AdminUser;
   onClose?: () => void;
 }
 

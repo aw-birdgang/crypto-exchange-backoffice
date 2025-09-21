@@ -8,6 +8,7 @@ const { Text, Title } = Typography;
 
 interface BulkActionModalProps {
   selectedUsers: AdminUser[];
+  selectedAdminUsers?: AdminUser[];
   isOpen: boolean;
   onClose: () => void;
   onAction: (action: UserBulkAction) => void;
@@ -16,6 +17,7 @@ interface BulkActionModalProps {
 
 export const BulkActionModal: React.FC<BulkActionModalProps> = ({
   selectedUsers,
+  selectedAdminUsers,
   isOpen,
   onClose,
   onAction,
@@ -27,8 +29,9 @@ export const BulkActionModal: React.FC<BulkActionModalProps> = ({
   if (!isOpen) return null;
 
   const handleAction = () => {
+    const currentSelected = selectedAdminUsers && selectedAdminUsers.length > 0 ? selectedAdminUsers : selectedUsers;
     const actionData: UserBulkAction = {
-      userIds: selectedUsers.map(user => user.id),
+      userIds: currentSelected.map(user => user.id),
       action,
       ...(action === 'approve' && { role: selectedRole }),
     };
@@ -53,17 +56,18 @@ export const BulkActionModal: React.FC<BulkActionModalProps> = ({
   };
 
   const getActionDescription = () => {
+    const currentSelected = selectedAdminUsers && selectedAdminUsers.length > 0 ? selectedAdminUsers : selectedUsers;
     switch (action) {
       case 'approve':
-        return `${selectedUsers.length}명의 사용자를 승인하시겠습니까?`;
+        return `${currentSelected.length}명의 어드민 사용자를 승인하시겠습니까?`;
       case 'reject':
-        return `${selectedUsers.length}명의 사용자를 거부하시겠습니까?`;
+        return `${currentSelected.length}명의 어드민 사용자를 거부하시겠습니까?`;
       case 'suspend':
-        return `${selectedUsers.length}명의 사용자를 정지하시겠습니까?`;
+        return `${currentSelected.length}명의 어드민 사용자를 정지하시겠습니까?`;
       case 'activate':
-        return `${selectedUsers.length}명의 사용자를 활성화하시겠습니까?`;
+        return `${currentSelected.length}명의 어드민 사용자를 활성화하시겠습니까?`;
       case 'deactivate':
-        return `${selectedUsers.length}명의 사용자를 비활성화하시겠습니까?`;
+        return `${currentSelected.length}명의 어드민 사용자를 비활성화하시겠습니까?`;
       default:
         return '';
     }
@@ -119,12 +123,12 @@ export const BulkActionModal: React.FC<BulkActionModalProps> = ({
         
         <Divider />
         
-        {/* 선택된 사용자 목록 */}
+        {/* 선택된 어드민 사용자 목록 */}
         <div style={{ marginBottom: '16px' }}>
-          <Title level={5}>선택된 사용자 ({selectedUsers.length}명)</Title>
+          <Title level={5}>선택된 어드민 사용자 ({(selectedAdminUsers && selectedAdminUsers.length > 0 ? selectedAdminUsers : selectedUsers).length}명)</Title>
           <List
             size="small"
-            dataSource={selectedUsers}
+            dataSource={selectedAdminUsers && selectedAdminUsers.length > 0 ? selectedAdminUsers : selectedUsers}
             renderItem={(user) => (
               <List.Item>
                 <List.Item.Meta

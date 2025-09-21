@@ -4,6 +4,9 @@ import { usePermissionStore } from '../stores/permission.store';
 import { Resource, Permission } from '@crypto-exchange/shared';
 import { PermissionService } from '../services/permission.service';
 
+// PermissionService 인스턴스 생성
+const permissionService = new PermissionService();
+
 export const usePermissions = () => {
   const { user, accessToken, isAuthenticated } = useAuthStore();
   const {
@@ -40,7 +43,7 @@ export const usePermissions = () => {
 
     // 서버에서 권한 확인
     try {
-      return await PermissionService.checkMenuAccess(menuKey);
+      return await permissionService.checkMenuAccess(menuKey);
     } catch (error) {
       console.error('Failed to check menu access:', error);
       return false;
@@ -51,7 +54,7 @@ export const usePermissions = () => {
     if (!user || !accessToken) return false;
     
     try {
-      const response = await PermissionService.checkPermission({
+      const response = await permissionService.checkPermission({
         resource,
         permission,
         userId: user.id,

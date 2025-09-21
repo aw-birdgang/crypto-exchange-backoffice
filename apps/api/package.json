@@ -18,7 +18,10 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "clean": "rm -rf dist",
     "clean:db": "ts-node src/scripts/clean-database.ts",
-    "init:db": "ts-node -r tsconfig-paths/register src/scripts/init-database.ts"
+    "init:db": "ts-node -r tsconfig-paths/register src/scripts/init-database-with-env.ts",
+    "init:db:local": "DB_HOST=localhost DB_PORT=3306 DB_USERNAME=crypto_user DB_PASSWORD=password DB_DATABASE=crypto_exchange JWT_SECRET=your-super-secret-jwt-key-change-in-production JWT_EXPIRES_IN=24h NODE_ENV=development ts-node -r tsconfig-paths/register src/scripts/init-database.ts",
+    "init:db:docker": "DB_HOST=mysql DB_PORT=3306 DB_USERNAME=crypto_user DB_PASSWORD=password DB_DATABASE=crypto_exchange JWT_SECRET=your-super-secret-jwt-key-change-in-production JWT_EXPIRES_IN=24h NODE_ENV=development ts-node -r tsconfig-paths/register src/scripts/init-database.ts",
+    "reset:db": "pnpm clean:db && pnpm init:db"
   },
   "dependencies": {
     "@crypto-exchange/shared": "workspace:*",

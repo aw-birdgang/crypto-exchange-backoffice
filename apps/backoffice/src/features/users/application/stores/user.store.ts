@@ -2,22 +2,22 @@ import {create} from 'zustand';
 import {devtools} from 'zustand/middleware';
 import {AdminUser, UserFilters, UserStatus} from '@crypto-exchange/shared';
 
-interface UserState {
+interface AdminUserState {
   // 상태
-  users: AdminUser[];
-  selectedUsers: string[];
+  adminUsers: AdminUser[];
+  selectedAdminUsers: string[];
   filters: UserFilters;
   searchQuery: string;
   isLoading: boolean;
   error: string | null;
 
   // 액션
-  setUsers: (users: AdminUser[]) => void;
-  addUser: (user: AdminUser) => void;
-  updateUser: (userId: string, userData: Partial<AdminUser>) => void;
-  removeUser: (userId: string) => void;
-  setSelectedUsers: (userIds: string[]) => void;
-  toggleUserSelection: (userId: string) => void;
+  setAdminUsers: (adminUsers: AdminUser[]) => void;
+  addAdminUser: (adminUser: AdminUser) => void;
+  updateAdminUser: (adminUserId: string, adminUserData: Partial<AdminUser>) => void;
+  removeAdminUser: (adminUserId: string) => void;
+  setSelectedAdminUsers: (adminUserIds: string[]) => void;
+  toggleAdminUserSelection: (adminUserId: string) => void;
   clearSelection: () => void;
   setFilters: (filters: Partial<UserFilters>) => void;
   setSearchQuery: (query: string) => void;
@@ -27,8 +27,8 @@ interface UserState {
 }
 
 const initialState = {
-  users: [],
-  selectedUsers: [],
+  adminUsers: [],
+  selectedAdminUsers: [],
   filters: {
     page: 1,
     limit: 10,
@@ -40,59 +40,59 @@ const initialState = {
   error: null,
 };
 
-export const useUserStore = create<UserState>()(
+export const useAdminUserStore = create<AdminUserState>()(
   devtools(
     (set, get) => ({
       ...initialState,
 
-      setUsers: (users) => set({ users }, false, 'setUsers'),
+      setAdminUsers: (adminUsers) => set({ adminUsers }, false, 'setAdminUsers'),
 
-      addUser: (user) => set(
-        (state) => ({ users: [...state.users, user] }),
+      addAdminUser: (adminUser) => set(
+        (state) => ({ adminUsers: [...state.adminUsers, adminUser] }),
         false,
-        'addUser'
+        'addAdminUser'
       ),
 
-      updateUser: (userId, userData) => set(
+      updateAdminUser: (adminUserId, adminUserData) => set(
         (state) => ({
-          users: state.users.map(user =>
-            user.id === userId ? { ...user, ...userData } : user
+          adminUsers: state.adminUsers.map(adminUser =>
+            adminUser.id === adminUserId ? { ...adminUser, ...adminUserData } : adminUser
           ),
         }),
         false,
-        'updateUser'
+        'updateAdminUser'
       ),
 
-      removeUser: (userId) => set(
+      removeAdminUser: (adminUserId) => set(
         (state) => ({
-          users: state.users.filter(user => user.id !== userId),
-          selectedUsers: state.selectedUsers.filter(id => id !== userId),
+          adminUsers: state.adminUsers.filter(adminUser => adminUser.id !== adminUserId),
+          selectedAdminUsers: state.selectedAdminUsers.filter(id => id !== adminUserId),
         }),
         false,
-        'removeUser'
+        'removeAdminUser'
       ),
 
-      setSelectedUsers: (userIds) => set(
-        { selectedUsers: userIds },
+      setSelectedAdminUsers: (adminUserIds) => set(
+        { selectedAdminUsers: adminUserIds },
         false,
-        'setSelectedUsers'
+        'setSelectedAdminUsers'
       ),
 
-      toggleUserSelection: (userId) => set(
+      toggleAdminUserSelection: (adminUserId) => set(
         (state) => {
-          const isSelected = state.selectedUsers.includes(userId);
+          const isSelected = state.selectedAdminUsers.includes(adminUserId);
           return {
-            selectedUsers: isSelected
-              ? state.selectedUsers.filter(id => id !== userId)
-              : [...state.selectedUsers, userId],
+            selectedAdminUsers: isSelected
+              ? state.selectedAdminUsers.filter(id => id !== adminUserId)
+              : [...state.selectedAdminUsers, adminUserId],
           };
         },
         false,
-        'toggleUserSelection'
+        'toggleAdminUserSelection'
       ),
 
       clearSelection: () => set(
-        { selectedUsers: [] },
+        { selectedAdminUsers: [] },
         false,
         'clearSelection'
       ),
@@ -124,60 +124,60 @@ export const useUserStore = create<UserState>()(
       reset: () => set(initialState, false, 'reset'),
     }),
     {
-      name: 'user-store',
+      name: 'admin-user-store',
     }
   )
 );
 
 // 선택적 셀렉터들
-export const useUserSelectors = () => {
-  const users = useUserStore(state => state.users);
-  const selectedUsers = useUserStore(state => state.selectedUsers);
-  const filters = useUserStore(state => state.filters);
-  const searchQuery = useUserStore(state => state.searchQuery);
-  const isLoading = useUserStore(state => state.isLoading);
-  const error = useUserStore(state => state.error);
+export const useAdminUserSelectors = () => {
+  const adminUsers = useAdminUserStore(state => state.adminUsers);
+  const selectedAdminUsers = useAdminUserStore(state => state.selectedAdminUsers);
+  const filters = useAdminUserStore(state => state.filters);
+  const searchQuery = useAdminUserStore(state => state.searchQuery);
+  const isLoading = useAdminUserStore(state => state.isLoading);
+  const error = useAdminUserStore(state => state.error);
 
-  // 필터링된 사용자 목록
-  const filteredUsers = users.filter(user => {
-    if (filters.status && user.status !== filters.status) return false;
-    if (filters.role && user.adminRole !== filters.role) return false;
-    if (filters.isActive !== undefined && user.isActive !== filters.isActive) return false;
+  // 필터링된 어드민 사용자 목록
+  const filteredAdminUsers = adminUsers.filter(adminUser => {
+    if (filters.status && adminUser.status !== filters.status) return false;
+    if (filters.role && adminUser.adminRole !== filters.role) return false;
+    if (filters.isActive !== undefined && adminUser.isActive !== filters.isActive) return false;
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        user.email.toLowerCase().includes(query) ||
-        user.firstName.toLowerCase().includes(query) ||
-        user.lastName.toLowerCase().includes(query) ||
-        user.username.toLowerCase().includes(query)
+        adminUser.email.toLowerCase().includes(query) ||
+        adminUser.firstName.toLowerCase().includes(query) ||
+        adminUser.lastName.toLowerCase().includes(query) ||
+        adminUser.username.toLowerCase().includes(query)
       );
     }
     return true;
   });
 
-  // 상태별 사용자 수
-  const userCounts = {
-    total: users.length,
-    pending: users.filter(user => user.status === UserStatus.PENDING).length,
-    approved: users.filter(user => user.status === UserStatus.APPROVED).length,
-    rejected: users.filter(user => user.status === UserStatus.REJECTED).length,
-    suspended: users.filter(user => user.status === UserStatus.SUSPENDED).length,
-    active: users.filter(user => user.isActive).length,
-    inactive: users.filter(user => !user.isActive).length,
+  // 상태별 어드민 사용자 수
+  const adminUserCounts = {
+    total: adminUsers.length,
+    pending: adminUsers.filter(adminUser => adminUser.status === UserStatus.PENDING).length,
+    approved: adminUsers.filter(adminUser => adminUser.status === UserStatus.APPROVED).length,
+    rejected: adminUsers.filter(adminUser => adminUser.status === UserStatus.REJECTED).length,
+    suspended: adminUsers.filter(adminUser => adminUser.status === UserStatus.SUSPENDED).length,
+    active: adminUsers.filter(adminUser => adminUser.isActive).length,
+    inactive: adminUsers.filter(adminUser => !adminUser.isActive).length,
   };
 
-  // 선택된 사용자들
-  const selectedUserObjects = users.filter(user => selectedUsers.includes(user.id));
+  // 선택된 어드민 사용자들
+  const selectedAdminUserObjects = adminUsers.filter(adminUser => selectedAdminUsers.includes(adminUser.id));
 
   return {
-    users,
-    filteredUsers,
-    selectedUsers,
-    selectedUserObjects,
+    adminUsers,
+    filteredAdminUsers,
+    selectedAdminUsers,
+    selectedAdminUserObjects,
     filters,
     searchQuery,
     isLoading,
     error,
-    userCounts,
+    adminUserCounts,
   };
 };

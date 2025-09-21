@@ -16,7 +16,7 @@ export class PermissionService {
   /**
    * 사용자의 권한 정보를 가져옵니다
    */
-  static async getUserPermissions(userId: string): Promise<UserPermissions> {
+  async getUserPermissions(userId: string): Promise<UserPermissions> {
     try {
       const response = await apiService.get<UserPermissions>(`${API_ROUTES.PERMISSIONS.USER_PERMISSIONS}/${userId}`);
       return response;
@@ -29,7 +29,7 @@ export class PermissionService {
   /**
    * 현재 사용자의 권한 정보를 가져옵니다
    */
-  static async getMyPermissions(): Promise<UserPermissions> {
+  async getMyPermissions(): Promise<UserPermissions> {
     try {
       const response = await apiService.get<UserPermissions>(API_ROUTES.PERMISSIONS.MY_PERMISSIONS);
       return response;
@@ -42,7 +42,7 @@ export class PermissionService {
   /**
    * 모든 역할 목록을 가져옵니다
    */
-  static async getRoles(): Promise<Role[]> {
+  async getRoles(): Promise<Role[]> {
     try {
       console.log('🔄 Fetching roles from API...');
       const response = await apiService.get<{ roles: Role[]; total: number }>('/api/v1/permissions/roles');
@@ -64,7 +64,7 @@ export class PermissionService {
   /**
    * 역할을 생성합니다
    */
-  static async createRole(roleData: Omit<Role, 'id' | 'createdAt' | 'updatedAt'>): Promise<Role> {
+  async createRole(roleData: Omit<Role, 'id' | 'createdAt' | 'updatedAt'>): Promise<Role> {
     try {
       const response = await apiService.post<Role>('/api/v1/permissions/roles', roleData);
       return response;
@@ -77,7 +77,7 @@ export class PermissionService {
   /**
    * 역할을 업데이트합니다
    */
-  static async updateRole(roleId: string, roleData: Partial<Role>): Promise<Role> {
+  async updateRole(roleId: string, roleData: Partial<Role>): Promise<Role> {
     try {
       const response = await apiService.put<Role>(`/api/v1/permissions/roles/${roleId}`, roleData);
       return response;
@@ -90,7 +90,7 @@ export class PermissionService {
   /**
    * 역할을 삭제합니다
    */
-  static async deleteRole(roleId: string): Promise<void> {
+  async deleteRole(roleId: string): Promise<void> {
     try {
       await apiService.delete(`/api/v1/permissions/roles/${roleId}`);
     } catch (error) {
@@ -102,7 +102,7 @@ export class PermissionService {
   /**
    * 사용자에게 역할을 할당합니다
    */
-  static async assignRoleToUser(
+  async assignRoleToUser(
     userId: string,
     roleId: string,
     expiresAt?: string
@@ -123,7 +123,7 @@ export class PermissionService {
   /**
    * 사용자의 역할 할당을 해제합니다
    */
-  static async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
+  async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
     try {
       await apiService.delete(`/api/v1/permissions/user-roles/${userId}/${roleId}`);
     } catch (error) {
@@ -135,7 +135,7 @@ export class PermissionService {
   /**
    * 사용자의 모든 역할을 가져옵니다
    */
-  static async getUserRoles(userId: string): Promise<AdminUserRoleAssignment[]> {
+  async getUserRoles(userId: string): Promise<AdminUserRoleAssignment[]> {
     try {
       const response = await apiService.get<AdminUserRoleAssignment[]>(`/api/v1/permissions/user-roles/${userId}`);
       return response;
@@ -148,7 +148,7 @@ export class PermissionService {
   /**
    * 권한 템플릿 목록을 가져옵니다
    */
-  static async getPermissionTemplates(): Promise<PermissionTemplate[]> {
+  async getPermissionTemplates(): Promise<PermissionTemplate[]> {
     try {
       const response = await apiService.get<PermissionTemplate[]>('/api/v1/permissions/templates');
       return response;
@@ -161,7 +161,7 @@ export class PermissionService {
   /**
    * 권한 템플릿을 생성합니다
    */
-  static async createPermissionTemplate(
+  async createPermissionTemplate(
     templateData: Omit<PermissionTemplate, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<PermissionTemplate> {
     try {
@@ -176,7 +176,7 @@ export class PermissionService {
   /**
    * 권한을 확인합니다
    */
-  static async checkPermission(request: PermissionCheckRequest): Promise<PermissionCheckResponse> {
+  async checkPermission(request: PermissionCheckRequest): Promise<PermissionCheckResponse> {
     try {
       const response = await apiService.post<PermissionCheckResponse>(API_ROUTES.PERMISSIONS.CHECK_PERMISSION, request);
       return response;
@@ -189,7 +189,7 @@ export class PermissionService {
   /**
    * 메뉴 접근 권한을 확인합니다
    */
-  static async checkMenuAccess(menuKey: string): Promise<boolean> {
+  async checkMenuAccess(menuKey: string): Promise<boolean> {
     try {
       const response = await apiService.post<{ hasAccess: boolean }>(API_ROUTES.PERMISSIONS.MENU_ACCESS, {
         menuKey,
@@ -204,7 +204,7 @@ export class PermissionService {
   /**
    * 권한 시스템을 초기화합니다 (개발/테스트용)
    */
-  static async initializePermissions(): Promise<void> {
+  async initializePermissions(): Promise<void> {
     try {
       await apiService.post(API_ROUTES.PERMISSIONS.INITIALIZE);
     } catch (error) {
@@ -216,7 +216,7 @@ export class PermissionService {
   /**
    * 역할별 기본 권한을 가져옵니다
    */
-  static getDefaultRolePermissions(role: AdminUserRole): Partial<Record<Resource, Permission[]>> {
+  getDefaultRolePermissions(role: AdminUserRole): Partial<Record<Resource, Permission[]>> {
     const defaultPermissions: Record<string, Partial<Record<Resource, Permission[]>>> = {
       super_admin: {
         [Resource.DASHBOARD]: [Permission.CREATE, Permission.READ, Permission.UPDATE, Permission.DELETE, Permission.MANAGE],

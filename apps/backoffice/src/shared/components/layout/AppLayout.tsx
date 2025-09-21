@@ -184,7 +184,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                   }}>
-                    {user?.role || AdminUserRole.SUPPORT}
+                    {user?.adminRole || AdminUserRole.SUPPORT}
                   </div>
                 </div>
               </div>

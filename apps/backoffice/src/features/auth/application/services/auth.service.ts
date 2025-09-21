@@ -1,5 +1,5 @@
 import { apiService } from '../../../../shared/services/api.service';
-import { API_ROUTES, User } from '@crypto-exchange/shared';
+import { API_ROUTES, AdminUser } from '@crypto-exchange/shared';
 
 export interface LoginRequest {
   email: string;
@@ -16,7 +16,7 @@ export interface RegisterRequest {
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  user: User;
+  user: AdminUser;
 }
 
 export interface RefreshResponse {
