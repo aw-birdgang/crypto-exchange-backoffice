@@ -19,6 +19,14 @@ interface UserTableProps {
   onSelectionChange?: (userIds: string[]) => void;
   showActions?: boolean;
   showSelection?: boolean;
+  // 페이징 관련 props
+  pagination?: {
+    current: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  onPageChange?: (page: number, pageSize: number) => void;
 }
 
 export const UserTable: React.FC<UserTableProps> = ({
@@ -34,6 +42,8 @@ export const UserTable: React.FC<UserTableProps> = ({
   onSelectionChange,
   showActions = true,
   showSelection = true,
+  pagination,
+  onPageChange,
 }) => {
   const [sortField, setSortField] = useState<keyof AdminUser>('createdAt');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
@@ -237,16 +247,18 @@ export const UserTable: React.FC<UserTableProps> = ({
         columns={columns}
         loading={isLoading}
         rowKey="id"
-        pagination={{
-          current: 1,
-          pageSize: 10,
-          total: users.length,
+        pagination={pagination ? {
+          current: pagination.current,
+          pageSize: pagination.pageSize,
+          total: pagination.total,
           showSizeChanger: true,
           showQuickJumper: true,
           showTotal: (total, range) => 
             `${range[0]}-${range[1]} of ${total} items`,
-          onChange: () => {},
-        }}
+          onChange: onPageChange || (() => {}),
+          onShowSizeChange: onPageChange || (() => {}),
+          pageSizeOptions: ['5', '10', '20', '50', '100'],
+        } : false}
         scroll={{ x: 800 }}
         size="middle"
       />

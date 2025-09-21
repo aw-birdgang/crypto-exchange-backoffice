@@ -19,9 +19,17 @@ export class AdminUserService {
   }
 
   /**
-   * 모든 사용자 목록 조회
+   * 모든 사용자 목록 조회 (페이징 정보 포함)
    */
-  async getAllUsers(filters?: UserFilters): Promise<AdminUser[]> {
+  async getAllUsers(filters?: UserFilters): Promise<{
+    users: AdminUser[];
+    pagination: {
+      current: number;
+      pageSize: number;
+      total: number;
+      totalPages: number;
+    };
+  }> {
     const params = new URLSearchParams();
 
     if (filters?.status) params.append('status', filters.status);
@@ -40,8 +48,17 @@ export class AdminUserService {
     console.log('🔍 AdminUserService.getAllUsers - API Response:', response);
     console.log('🔍 AdminUserService.getAllUsers - AdminUsers count:', response.adminUsers?.length || 0);
     
-    // API 응답에서 adminUsers 배열만 반환
-    return response.adminUsers || [];
+    const totalPages = Math.ceil((response.total || 0) / (response.limit || 10));
+    
+    return {
+      users: response.adminUsers || [],
+      pagination: {
+        current: response.page || 1,
+        pageSize: response.limit || 10,
+        total: response.total || 0,
+        totalPages,
+      },
+    };
   }
 
   /**
@@ -177,7 +194,8 @@ export class AdminUserService {
    * 사용자 검색
    */
   async searchUsers(query: string, filters?: Omit<UserFilters, 'search'>): Promise<AdminUser[]> {
-    return this.getAllUsers({ ...filters, search: query });
+    const result = await this.getAllUsers({ ...filters, search: query });
+    return result.users;
   }
 
   /**

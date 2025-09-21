@@ -87,6 +87,7 @@ async function initDatabase() {
     // 2. 관리자 사용자 생성
     console.log('👑 Creating admin users...');
     const adminUsers = [
+      // 기본 시스템 관리자들
       {
         id: 'admin-super-admin',
         email: 'superadmin@crypto-exchange.com',
@@ -102,7 +103,9 @@ async function initDatabase() {
           'permissions:assign', 'users:change_role', 'audit:read',
           'system:backup', 'system:restore', 'security:manage'
         ],
-        password: 'superadmin123!'
+        password: 'superadmin123!',
+        isActive: true,
+        status: 'APPROVED'
       },
       {
         id: 'admin-admin',
@@ -117,7 +120,9 @@ async function initDatabase() {
           'notifications:read', 'notifications:create', 'notifications:delete',
           'logs:read', 'cache:manage', 'audit:read'
         ],
-        password: 'admin123!'
+        password: 'admin123!',
+        isActive: true,
+        status: 'APPROVED'
       },
       {
         id: 'admin-moderator',
@@ -131,7 +136,9 @@ async function initDatabase() {
           'notifications:read', 'notifications:create',
           'logs:read', 'content:moderate', 'reports:read'
         ],
-        password: 'moderator123!'
+        password: 'moderator123!',
+        isActive: true,
+        status: 'APPROVED'
       },
       {
         id: 'admin-support',
@@ -144,7 +151,9 @@ async function initDatabase() {
           'users:read', 'notifications:read', 'notifications:create',
           'logs:read', 'tickets:read', 'tickets:create', 'tickets:update'
         ],
-        password: 'support123!'
+        password: 'support123!',
+        isActive: true,
+        status: 'APPROVED'
       },
       {
         id: 'admin-auditor',
@@ -156,7 +165,261 @@ async function initDatabase() {
         permissions: [
           'users:read', 'logs:read', 'audit:read', 'reports:read'
         ],
-        password: 'auditor123!'
+        password: 'auditor123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      
+      // 추가 관리자들 - 다양한 상태와 역할
+      {
+        id: 'admin-kim-james',
+        email: 'james.kim@crypto-exchange.com',
+        username: 'james.kim',
+        firstName: 'James',
+        lastName: 'Kim',
+        adminRole: AdminUserRole.ADMIN,
+        permissions: ['users:read', 'users:create', 'users:update', 'system:configure'],
+        password: 'james123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-lee-sarah',
+        email: 'sarah.lee@crypto-exchange.com',
+        username: 'sarah.lee',
+        firstName: 'Sarah',
+        lastName: 'Lee',
+        adminRole: AdminUserRole.MODERATOR,
+        permissions: ['users:read', 'users:suspend', 'content:moderate'],
+        password: 'sarah123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-park-mike',
+        email: 'mike.park@crypto-exchange.com',
+        username: 'mike.park',
+        firstName: 'Mike',
+        lastName: 'Park',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: ['users:read', 'tickets:read', 'tickets:create'],
+        password: 'mike123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-choi-lisa',
+        email: 'lisa.choi@crypto-exchange.com',
+        username: 'lisa.choi',
+        firstName: 'Lisa',
+        lastName: 'Choi',
+        adminRole: AdminUserRole.AUDITOR,
+        permissions: ['users:read', 'logs:read', 'audit:read'],
+        password: 'lisa123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-jung-tom',
+        email: 'tom.jung@crypto-exchange.com',
+        username: 'tom.jung',
+        firstName: 'Tom',
+        lastName: 'Jung',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: ['users:read', 'tickets:read'],
+        password: 'tom123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      
+      // 승인 대기 중인 사용자들
+      {
+        id: 'admin-pending-alice',
+        email: 'alice.pending@crypto-exchange.com',
+        username: 'alice.pending',
+        firstName: 'Alice',
+        lastName: 'Johnson',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: ['users:read'],
+        password: 'alice123!',
+        isActive: false,
+        status: 'PENDING'
+      },
+      {
+        id: 'admin-pending-bob',
+        email: 'bob.pending@crypto-exchange.com',
+        username: 'bob.pending',
+        firstName: 'Bob',
+        lastName: 'Smith',
+        adminRole: AdminUserRole.MODERATOR,
+        permissions: ['users:read'],
+        password: 'bob123!',
+        isActive: false,
+        status: 'PENDING'
+      },
+      {
+        id: 'admin-pending-charlie',
+        email: 'charlie.pending@crypto-exchange.com',
+        username: 'charlie.pending',
+        firstName: 'Charlie',
+        lastName: 'Brown',
+        adminRole: AdminUserRole.ADMIN,
+        permissions: ['users:read'],
+        password: 'charlie123!',
+        isActive: false,
+        status: 'PENDING'
+      },
+      {
+        id: 'admin-pending-diana',
+        email: 'diana.pending@crypto-exchange.com',
+        username: 'diana.pending',
+        firstName: 'Diana',
+        lastName: 'Wilson',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: ['users:read'],
+        password: 'diana123!',
+        isActive: false,
+        status: 'PENDING'
+      },
+      {
+        id: 'admin-pending-eve',
+        email: 'eve.pending@crypto-exchange.com',
+        username: 'eve.pending',
+        firstName: 'Eve',
+        lastName: 'Davis',
+        adminRole: AdminUserRole.AUDITOR,
+        permissions: ['users:read'],
+        password: 'eve123!',
+        isActive: false,
+        status: 'PENDING'
+      },
+      
+      // 거부된 사용자들
+      {
+        id: 'admin-rejected-frank',
+        email: 'frank.rejected@crypto-exchange.com',
+        username: 'frank.rejected',
+        firstName: 'Frank',
+        lastName: 'Miller',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: [],
+        password: 'frank123!',
+        isActive: false,
+        status: 'REJECTED'
+      },
+      {
+        id: 'admin-rejected-grace',
+        email: 'grace.rejected@crypto-exchange.com',
+        username: 'grace.rejected',
+        firstName: 'Grace',
+        lastName: 'Taylor',
+        adminRole: AdminUserRole.MODERATOR,
+        permissions: [],
+        password: 'grace123!',
+        isActive: false,
+        status: 'REJECTED'
+      },
+      
+      // 정지된 사용자들
+      {
+        id: 'admin-suspended-henry',
+        email: 'henry.suspended@crypto-exchange.com',
+        username: 'henry.suspended',
+        firstName: 'Henry',
+        lastName: 'Anderson',
+        adminRole: AdminUserRole.ADMIN,
+        permissions: ['users:read'],
+        password: 'henry123!',
+        isActive: false,
+        status: 'SUSPENDED'
+      },
+      {
+        id: 'admin-suspended-ivy',
+        email: 'ivy.suspended@crypto-exchange.com',
+        username: 'ivy.suspended',
+        firstName: 'Ivy',
+        lastName: 'Thomas',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: ['users:read'],
+        password: 'ivy123!',
+        isActive: false,
+        status: 'SUSPENDED'
+      },
+      
+      // 비활성화된 사용자들
+      {
+        id: 'admin-inactive-jack',
+        email: 'jack.inactive@crypto-exchange.com',
+        username: 'jack.inactive',
+        firstName: 'Jack',
+        lastName: 'Jackson',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: ['users:read'],
+        password: 'jack123!',
+        isActive: false,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-inactive-kate',
+        email: 'kate.inactive@crypto-exchange.com',
+        username: 'kate.inactive',
+        firstName: 'Kate',
+        lastName: 'White',
+        adminRole: AdminUserRole.MODERATOR,
+        permissions: ['users:read'],
+        password: 'kate123!',
+        isActive: false,
+        status: 'APPROVED'
+      },
+      
+      // 추가 활성 사용자들
+      {
+        id: 'admin-luke',
+        email: 'luke.martin@crypto-exchange.com',
+        username: 'luke.martin',
+        firstName: 'Luke',
+        lastName: 'Martin',
+        adminRole: AdminUserRole.SUPPORT,
+        permissions: ['users:read', 'tickets:read', 'tickets:create'],
+        password: 'luke123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-mary',
+        email: 'mary.garcia@crypto-exchange.com',
+        username: 'mary.garcia',
+        firstName: 'Mary',
+        lastName: 'Garcia',
+        adminRole: AdminUserRole.AUDITOR,
+        permissions: ['users:read', 'logs:read', 'audit:read'],
+        password: 'mary123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-nick',
+        email: 'nick.rodriguez@crypto-exchange.com',
+        username: 'nick.rodriguez',
+        firstName: 'Nick',
+        lastName: 'Rodriguez',
+        adminRole: AdminUserRole.MODERATOR,
+        permissions: ['users:read', 'users:suspend', 'content:moderate'],
+        password: 'nick123!',
+        isActive: true,
+        status: 'APPROVED'
+      },
+      {
+        id: 'admin-olivia',
+        email: 'olivia.martinez@crypto-exchange.com',
+        username: 'olivia.martinez',
+        firstName: 'Olivia',
+        lastName: 'Martinez',
+        adminRole: AdminUserRole.ADMIN,
+        permissions: ['users:read', 'users:create', 'users:update', 'system:configure'],
+        password: 'olivia123!',
+        isActive: true,
+        status: 'APPROVED'
       }
     ];
 
@@ -164,7 +427,6 @@ async function initDatabase() {
       const hashedPassword = await bcrypt.hash(adminData.password, 10);
       
       const adminUser = adminUserRepository.create({
-        id: adminData.id,
         email: adminData.email,
         username: adminData.username,
         password: hashedPassword,
@@ -172,16 +434,16 @@ async function initDatabase() {
         lastName: adminData.lastName,
         adminRole: adminData.adminRole,
         permissions: adminData.permissions,
-        isActive: true,
-        status: 'APPROVED',
-        approvedBy: 'system',
-        approvedAt: new Date(),
+        isActive: adminData.isActive,
+        status: adminData.status,
+        approvedBy: adminData.status === 'APPROVED' ? 'system' : null,
+        approvedAt: adminData.status === 'APPROVED' ? new Date() : null,
         createdBy: 'system',
         updatedBy: 'system',
-      });
+      } as any);
 
       await adminUserRepository.save(adminUser);
-      console.log(`✅ ${adminData.adminRole} user created: ${adminData.email}`);
+      console.log(`✅ ${adminData.adminRole} user created: ${adminData.email} (${adminData.status}, Active: ${adminData.isActive})`);
     }
 
     // 3. 역할 권한 생성
@@ -239,6 +501,23 @@ async function initDatabase() {
     console.log('  MODERATOR:   moderator@crypto-exchange.com / moderator123!');
     console.log('  SUPPORT:     support@crypto-exchange.com / support123!');
     console.log('  AUDITOR:     auditor@crypto-exchange.com / auditor123!');
+    console.log('');
+    console.log('📊 User Statistics:');
+    console.log(`  Total Users: ${adminUsers.length}`);
+    console.log(`  Active Users: ${adminUsers.filter(u => u.isActive).length}`);
+    console.log(`  Approved Users: ${adminUsers.filter(u => u.status === 'APPROVED').length}`);
+    console.log(`  Pending Users: ${adminUsers.filter(u => u.status === 'PENDING').length}`);
+    console.log(`  Rejected Users: ${adminUsers.filter(u => u.status === 'REJECTED').length}`);
+    console.log(`  Suspended Users: ${adminUsers.filter(u => u.status === 'SUSPENDED').length}`);
+    console.log('');
+    console.log('🎭 Role Distribution:');
+    const roleCounts = adminUsers.reduce((acc, user) => {
+      acc[user.adminRole] = (acc[user.adminRole] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    Object.entries(roleCounts).forEach(([role, count]) => {
+      console.log(`  ${role}: ${count} users`);
+    });
     
   } catch (error) {
     console.error('❌ Database initialization failed:', error);

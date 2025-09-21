@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useRef, useState } from 'react';
 import { Input, Select, Button, Row, Col, Card } from 'antd';
 import { UserStatus, AdminUserRole } from '@crypto-exchange/shared';
 import { UserFilters as UserFiltersType } from '@crypto-exchange/shared';
@@ -16,6 +16,7 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
   onFiltersChange,
   onReset,
 }) => {
+  const [searchInput, setSearchInput] = useState(filters.search || '');
   const handleStatusChange = (status: UserStatus | '') => {
     onFiltersChange({ 
       status: status === '' ? undefined : status as UserStatus,
@@ -37,12 +38,25 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
     });
   };
 
-  const handleSearchChange = (search: string) => {
-    onFiltersChange({ 
-      search: search || undefined,
-      page: 1 
-    });
-  };
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSearchInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchInput(value);
+    
+    // 이전 타이머 취소
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // 500ms 디바운싱
+    searchTimeoutRef.current = setTimeout(() => {
+      onFiltersChange({ 
+        search: value || undefined,
+        page: 1 
+      });
+    }, 500);
+  }, [onFiltersChange]);
 
   const handleSortChange = (sortBy: string) => {
     onFiltersChange({ 
@@ -82,8 +96,8 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
             </label>
             <Input
               placeholder="이메일, 이름으로 검색..."
-              value={filters.search || ''}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              value={searchInput}
+              onChange={handleSearchInputChange}
             />
           </div>
         </Col>
@@ -242,7 +256,10 @@ export const UserFilters: React.FC<UserFiltersProps> = ({
         </Col>
 
         <Col>
-          <Button onClick={onReset}>
+          <Button onClick={() => {
+            setSearchInput('');
+            onReset();
+          }}>
             필터 초기화
           </Button>
         </Col>

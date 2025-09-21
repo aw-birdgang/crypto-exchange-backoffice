@@ -37,6 +37,14 @@ interface UserManagementTabProps {
   title: string;
   emptyMessage: string;
   emptyIcon?: React.ReactNode;
+  // 페이징 관련 props
+  pagination?: {
+    current: number;
+    pageSize: number;
+    total: number;
+    totalPages: number;
+  };
+  onPageChange?: (page: number, pageSize: number) => void;
 }
 
 const UserManagementTab: React.FC<UserManagementTabProps> = ({
@@ -53,7 +61,9 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
   onSelectionChange,
   title,
   emptyMessage,
-  emptyIcon
+  emptyIcon,
+  pagination,
+  onPageChange
 }) => {
   if (error) {
     return (
@@ -136,6 +146,8 @@ const UserManagementTab: React.FC<UserManagementTabProps> = ({
           onSelectionChange={onSelectionChange}
           showActions={showActions}
           showSelection={showSelection}
+                    pagination={pagination}
+                    onPageChange={onPageChange}
         />
       ) : (
         <div style={{
@@ -172,12 +184,18 @@ export const AdminUserManagementPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState('all');
 
   const { filters, updateFilter, resetFilters } = useAdminUserFilters();
-  const { data: allAdminUsers, isLoading: allAdminUsersLoading, error: allAdminUsersError } = useAdminUsers(filters);
+  
+  // 검색이 있을 때는 통합 검색, 없을 때는 탭별 데이터 로딩
+  const { data: allAdminUsersData, isLoading: allAdminUsersLoading, error: allAdminUsersError } = useAdminUsers(filters);
   const { data: pendingAdminUsers, isLoading: pendingAdminUsersLoading, error: pendingAdminUsersError } = usePendingAdminUsers();
   const { data: approvedAdminUsers, isLoading: approvedAdminUsersLoading, error: approvedAdminUsersError } = useAdminUsersByStatus(UserStatus.APPROVED);
   const { data: rejectedAdminUsers, isLoading: rejectedAdminUsersLoading, error: rejectedAdminUsersError } = useAdminUsersByStatus(UserStatus.REJECTED);
   const { data: suspendedAdminUsers, isLoading: suspendedAdminUsersLoading, error: suspendedAdminUsersError } = useAdminUsersByStatus(UserStatus.SUSPENDED);
   const { data: stats, isLoading: statsLoading } = useAdminUserStats();
+
+  // 페이징 데이터 추출
+  const allAdminUsers = allAdminUsersData?.users || [];
+  const pagination = allAdminUsersData?.pagination;
 
   const approvalMutation = useAdminUserApproval();
   const rejectionMutation = useAdminUserRejection();
@@ -308,101 +326,151 @@ export const AdminUserManagementPage: React.FC = () => {
     setIsBulkActionModalOpen(true);
   };
 
+  // 페이지 변경 핸들러
+  const handlePageChange = (page: number, pageSize: number) => {
+    updateFilter({ page, limit: pageSize });
+  };
+
   const isLoading = allAdminUsersLoading || approvalMutation.isPending || rejectionMutation.isPending || bulkActionMutation.isPending;
 
   const getCurrentAdminUsers = () => {
-    switch (activeTab) {
-      case 'all':
-        return allAdminUsers || [];
-      case 'pending':
-        return pendingAdminUsers || [];
-      case 'approved':
-        return approvedAdminUsers || [];
-      case 'rejected':
-        return rejectedAdminUsers || [];
-      case 'suspended':
-        return suspendedAdminUsers || [];
-      default:
-        return [];
+    // 검색이 있으면 필터링된 결과를 사용, 없으면 탭별 데이터 사용
+    if (filters.search && filters.search.trim().length > 0) {
+      // 검색이 있을 때는 allAdminUsers에서 현재 탭에 맞는 상태로 필터링
+      const searchResults = allAdminUsers || [];
+      console.log('🔍 검색 모드 - 검색어:', filters.search, '전체 결과:', searchResults.length);
+      
+      let filteredResults;
+      switch (activeTab) {
+        case 'all':
+          filteredResults = searchResults;
+          break;
+        case 'pending':
+          filteredResults = searchResults.filter(user => user.status === UserStatus.PENDING);
+          break;
+        case 'approved':
+          filteredResults = searchResults.filter(user => user.status === UserStatus.APPROVED);
+          break;
+        case 'rejected':
+          filteredResults = searchResults.filter(user => user.status === UserStatus.REJECTED);
+          break;
+        case 'suspended':
+          filteredResults = searchResults.filter(user => user.status === UserStatus.SUSPENDED);
+          break;
+        default:
+          filteredResults = searchResults;
+      }
+      
+      console.log('🔍 검색 모드 - 탭:', activeTab, '필터링된 결과:', filteredResults.length);
+      return filteredResults;
+    } else {
+      // 검색이 없을 때는 기존 탭별 데이터 사용
+      switch (activeTab) {
+        case 'all':
+          return allAdminUsers || [];
+        case 'pending':
+          return pendingAdminUsers || [];
+        case 'approved':
+          return approvedAdminUsers || [];
+        case 'rejected':
+          return rejectedAdminUsers || [];
+        case 'suspended':
+          return suspendedAdminUsers || [];
+        default:
+          return [];
+      }
     }
   };
 
   const getCurrentLoading = () => {
-    switch (activeTab) {
-      case 'all':
-        return allAdminUsersLoading;
-      case 'pending':
-        return pendingAdminUsersLoading;
-      case 'approved':
-        return approvedAdminUsersLoading;
-      case 'rejected':
-        return rejectedAdminUsersLoading;
-      case 'suspended':
-        return suspendedAdminUsersLoading;
-      default:
-        return false;
+    // 검색이 있으면 allAdminUsersLoading 사용, 없으면 탭별 로딩 상태 사용
+    if (filters.search && filters.search.trim().length > 0) {
+      return allAdminUsersLoading;
+    } else {
+      switch (activeTab) {
+        case 'all':
+          return allAdminUsersLoading;
+        case 'pending':
+          return pendingAdminUsersLoading;
+        case 'approved':
+          return approvedAdminUsersLoading;
+        case 'rejected':
+          return rejectedAdminUsersLoading;
+        case 'suspended':
+          return suspendedAdminUsersLoading;
+        default:
+          return false;
+      }
     }
   };
 
   const getCurrentError = () => {
-    switch (activeTab) {
-      case 'all':
-        return allAdminUsersError;
-      case 'pending':
-        return pendingAdminUsersError;
-      case 'approved':
-        return approvedAdminUsersError;
-      case 'rejected':
-        return rejectedAdminUsersError;
-      case 'suspended':
-        return suspendedAdminUsersError;
-      default:
-        return null;
+    // 검색이 있으면 allAdminUsersError 사용, 없으면 탭별 에러 상태 사용
+    if (filters.search && filters.search.trim().length > 0) {
+      return allAdminUsersError;
+    } else {
+      switch (activeTab) {
+        case 'all':
+          return allAdminUsersError;
+        case 'pending':
+          return pendingAdminUsersError;
+        case 'approved':
+          return approvedAdminUsersError;
+        case 'rejected':
+          return rejectedAdminUsersError;
+        case 'suspended':
+          return suspendedAdminUsersError;
+        default:
+          return null;
+      }
     }
   };
 
   const getTabConfig = () => {
+    const isSearchMode = filters.search && filters.search.trim().length > 0;
+    const searchSuffix = isSearchMode ? ` (검색: "${filters.search}")` : '';
+    
     const configs = {
       all: {
-        title: '전체 어드민 사용자',
-        emptyMessage: '어드민 사용자가 없습니다',
-        emptyIcon: <span>👥</span>,
+        title: `전체 어드민 사용자${searchSuffix}`,
+        emptyMessage: isSearchMode ? '검색 결과가 없습니다' : '어드민 사용자가 없습니다',
+        emptyIcon: <span>{isSearchMode ? '🔍' : '👥'}</span>,
         showActions: true,
         showSelection: true,
         onUserApprove: handleAdminUserApprove,
         onUserReject: handleAdminUserReject,
       },
       pending: {
-        title: '승인 대기 어드민 사용자',
-        emptyMessage: '승인 대기 어드민 사용자가 없습니다',
-        emptyIcon: <span>⏳</span>,
+        title: `승인 대기 어드민 사용자${searchSuffix}`,
+        emptyMessage: isSearchMode ? '승인 대기 중인 검색 결과가 없습니다' : '승인 대기 어드민 사용자가 없습니다',
+        emptyIcon: <span>{isSearchMode ? '🔍' : '⏳'}</span>,
         showActions: true,
         showSelection: false,
         onUserApprove: handleAdminUserApprove,
         onUserReject: handleAdminUserReject,
       },
       approved: {
-        title: '승인된 어드민 사용자',
-        emptyMessage: '승인된 어드민 사용자가 없습니다',
-        emptyIcon: <span>✅</span>,
+        title: `승인된 어드민 사용자${searchSuffix}`,
+        emptyMessage: isSearchMode ? '승인된 검색 결과가 없습니다' : '승인된 어드민 사용자가 없습니다',
+        emptyIcon: <span>{isSearchMode ? '🔍' : '✅'}</span>,
         showActions: false,
         showSelection: false,
         onUserApprove: undefined,
         onUserReject: undefined,
       },
       rejected: {
-        title: '거부된 어드민 사용자',
-        emptyMessage: '거부된 어드민 사용자가 없습니다',
-        emptyIcon: <span>❌</span>,
+        title: `거부된 어드민 사용자${searchSuffix}`,
+        emptyMessage: isSearchMode ? '거부된 검색 결과가 없습니다' : '거부된 어드민 사용자가 없습니다',
+        emptyIcon: <span>{isSearchMode ? '🔍' : '❌'}</span>,
         showActions: false,
         showSelection: false,
         onUserApprove: undefined,
         onUserReject: undefined,
       },
       suspended: {
-        title: '정지된 어드민 사용자',
-        emptyMessage: '정지된 어드민 사용자가 없습니다',
-        emptyIcon: <span>⛔</span>,
+        title: `정지된 어드민 사용자${searchSuffix}`,
+        emptyMessage: isSearchMode ? '정지된 검색 결과가 없습니다' : '정지된 어드민 사용자가 없습니다',
+        emptyIcon: <span>{isSearchMode ? '🔍' : '⛔'}</span>,
         showActions: false,
         showSelection: false,
         onUserApprove: undefined,
@@ -515,6 +583,8 @@ export const AdminUserManagementPage: React.FC = () => {
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
                   />
                 ),
               },
@@ -537,6 +607,8 @@ export const AdminUserManagementPage: React.FC = () => {
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
                   />
                 ),
               },
@@ -559,6 +631,8 @@ export const AdminUserManagementPage: React.FC = () => {
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
                   />
                 ),
               },
@@ -581,6 +655,8 @@ export const AdminUserManagementPage: React.FC = () => {
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
                   />
                 ),
               },
@@ -603,6 +679,8 @@ export const AdminUserManagementPage: React.FC = () => {
                     title={tabConfig.title}
                     emptyMessage={tabConfig.emptyMessage}
                     emptyIcon={tabConfig.emptyIcon}
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
                   />
                 ),
               },
