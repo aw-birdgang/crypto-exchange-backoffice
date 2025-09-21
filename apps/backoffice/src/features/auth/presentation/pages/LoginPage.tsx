@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Form, Input, Button, Card, Typography, message, Space, Divider } from 'antd';
+import { Form, Input, Button, Card, Typography, App } from 'antd';
 import { UserOutlined, LockOutlined, EyeInvisibleOutlined, EyeTwoTone } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
@@ -14,6 +14,7 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { login } = useAuthStore();
   const { theme } = useTheme();
+  const { message } = App.useApp();
   const [rememberMe, setRememberMe] = useState(false);
 
   const loginMutation = useMutation({
@@ -21,7 +22,7 @@ export const LoginPage: React.FC = () => {
     onSuccess: (data) => {
       login(data.user, data.accessToken, data.refreshToken);
       message.success('로그인에 성공했습니다.');
-      navigate('/dashboard');
+      navigate('/wallet/transactions');
     },
     onError: (error: any) => {
       message.error(error.response?.data?.message || '로그인에 실패했습니다.');
@@ -186,37 +187,6 @@ export const LoginPage: React.FC = () => {
               로그인
             </Button>
           </Form.Item>
-
-          <Divider style={{ margin: '16px 0' }}>
-            <Text type="secondary" style={{ fontSize: '12px' }}>
-              또는
-            </Text>
-          </Divider>
-
-          <Space direction="vertical" style={{ width: '100%' }} size="small">
-            <Button
-              type="text"
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: '8px',
-                border: `1px solid ${theme.colors.semantic.border.primary}`,
-              }}
-            >
-              Google로 로그인
-            </Button>
-            <Button
-              type="text"
-              style={{
-                width: '100%',
-                height: 40,
-                borderRadius: '8px',
-                border: `1px solid ${theme.colors.semantic.border.primary}`,
-              }}
-            >
-              Microsoft로 로그인
-            </Button>
-          </Space>
         </Form>
       </Card>
 

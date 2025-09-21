@@ -73,11 +73,13 @@ export const StatsCard: React.FC<StatsCardProps> = ({
         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
         border: `1px solid ${theme.colors.semantic.border.primary}`,
       }}
-      bodyStyle={{
-        padding: '20px',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
+      styles={{
+        body: {
+          padding: '20px',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+        }
       }}
     >
       <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 16 }}>

@@ -1,5 +1,6 @@
 import {Navigate, Route, Routes} from 'react-router-dom';
-import {useEffect, lazy} from 'react';
+import {useEffect, lazy, useState} from 'react';
+import {App as AntdApp} from 'antd';
 import {useAuthStore} from './features/auth/application/stores/auth.store';
 import {usePermissionStore} from './features/auth/application/stores/permission.store';
 import {LoginPage} from './features/auth/presentation/pages/LoginPage';
@@ -10,14 +11,14 @@ import {ROUTES} from '@crypto-exchange/shared';
 
 // 동적 import를 사용한 코드 스플리팅
 const PermissionManagementPage = lazy(() => import('./features/auth/presentation/pages/PermissionManagementPage').then(m => ({ default: m.PermissionManagementPage })));
-const DashboardPage = lazy(() => import('./features/dashboard/presentation/pages/DashboardPage').then(m => ({ default: m.DashboardPage })));
 const AdminUserManagementPage = lazy(() => import('./features/users/presentation/pages/AdminUserManagementPage').then(m => ({ default: m.AdminUserManagementPage })));
 const WalletTransactionsPage = lazy(() => import('./features/wallet/presentation/pages/WalletTransactionsPage').then(m => ({ default: m.WalletTransactionsPage })));
 const CustomerSupportPage = lazy(() => import('./features/customer/presentation/pages/CustomerSupportPage').then(m => ({ default: m.CustomerSupportPage })));
 
-function App() {
+function AppComponent() {
   const { isAuthenticated, isLoading, user, accessToken } = useAuthStore();
   const { permissionsLoading } = usePermissionStore();
+  const [isAppReady, setIsAppReady] = useState(false);
 
   // 초기 로딩 상태 확인
   useEffect(() => {
@@ -26,6 +27,15 @@ function App() {
       useAuthStore.getState().setLoading(false);
     }
   }, [accessToken, user]);
+
+  // 앱 준비 상태 설정
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAppReady(true);
+    }, 200); // 앱 초기화 완료 후 레이아웃 안정화
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // 로딩 중이면 스피너 표시 (인증 로딩 또는 권한 로딩)
   if (isLoading || (isAuthenticated && permissionsLoading)) {
@@ -39,8 +49,9 @@ function App() {
 
   // 인증된 사용자는 메인 레이아웃 표시
   return (
-    <AppLayout>
-      <Routes>
+    <div className={`app-container ${isAppReady ? 'app-ready' : 'app-loading'}`}>
+      <AppLayout>
+        <Routes>
         <Route path="/" element={<Navigate to={ROUTES.WALLET.TRANSACTIONS} replace />} />
 
         {/* 지갑관리 라우트 */}
@@ -83,14 +94,6 @@ function App() {
 
         {/* 기존 라우트 (호환성을 위해 유지) */}
         <Route 
-          path={ROUTES.DASHBOARD} 
-          element={
-            <LazyPage>
-              <DashboardPage />
-            </LazyPage>
-          } 
-        />
-        <Route 
           path={ROUTES.PERMISSIONS} 
           element={
             <LazyPage>
@@ -108,8 +111,17 @@ function App() {
         />
 
         <Route path="*" element={<Navigate to={ROUTES.WALLET.TRANSACTIONS} replace />} />
-      </Routes>
-    </AppLayout>
+        </Routes>
+      </AppLayout>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <AntdApp>
+      <AppComponent />
+    </AntdApp>
   );
 }
 

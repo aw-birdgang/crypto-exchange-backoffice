@@ -39,7 +39,6 @@ export const API_ROUTES = {
 
 export const ROUTES = {
   LOGIN: '/login',
-  DASHBOARD: '/dashboard',
   
   // 지갑관리 라우트
   WALLET: {

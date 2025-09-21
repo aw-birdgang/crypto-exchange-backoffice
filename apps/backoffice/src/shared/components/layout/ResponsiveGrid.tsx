@@ -216,6 +216,20 @@ export const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
   style,
 }) => {
   const { isMobile, isTablet } = useResponsive();
+  const [isReady, setIsReady] = React.useState(false);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    // 컴포넌트 마운트 상태 설정
+    setIsMounted(true);
+    
+    // 레이아웃 안정화
+    const timer = setTimeout(() => {
+      setIsReady(true);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, []);
 
   const getMaxWidth = () => {
     const maxWidths = {
@@ -242,12 +256,15 @@ export const ResponsiveContainer: React.FC<ResponsiveContainerProps> = ({
 
   return (
     <div
-      className={className}
+      className={`${className || ''} ${isReady ? 'container-ready' : 'container-loading'} ${isMounted ? 'container-mounted' : 'container-unmounted'}`}
       style={{
         maxWidth: getMaxWidth(),
         margin: '0 auto',
         padding: getPadding(),
         width: '100%',
+        opacity: isReady && isMounted ? 1 : 0.7,
+        transform: isReady && isMounted ? 'translateY(0)' : 'translateY(15px)',
+        transition: 'opacity 0.4s ease-in-out, transform 0.4s ease-in-out',
         ...style,
       }}
     >

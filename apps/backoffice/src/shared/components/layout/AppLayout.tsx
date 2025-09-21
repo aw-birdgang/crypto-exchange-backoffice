@@ -30,6 +30,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const [collapsed, setCollapsed] = useState(false);
   const [activeCategory, setActiveCategory] = useState<MainCategory>('wallet');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isLayoutReady, setIsLayoutReady] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthStore();
@@ -37,6 +39,24 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const { theme: appTheme, toggleTheme } = useTheme();
   const { token } = theme.useToken();
   const { isMobile, isTablet, getSidebarMode } = useResponsive();
+
+  // 레이아웃 준비 상태 설정
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLayoutReady(true);
+    }, 100); // 짧은 지연으로 레이아웃 안정화
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  // 초기 로드 완료 상태 설정
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoad(false);
+    }, 300); // 초기 로드 완료 후 안정화
+
+    return () => clearTimeout(timer);
+  }, []);
 
   // 현재 경로에 따라 활성 카테고리 결정
   const getCategoryFromPath = (pathname: string): MainCategory => {
@@ -290,11 +310,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           
           {/* 메인 콘텐츠 */}
           <Content 
-            className="fade-in"
+            className={`fade-in ${isLayoutReady ? 'layout-ready' : 'layout-loading'} ${isInitialLoad ? 'initial-loading' : 'initial-loaded'}`}
             style={{
               padding: isMobile ? '16px' : '24px',
               background: '#f8fafc',
               minHeight: 'calc(100vh - 64px)',
+              opacity: isLayoutReady && !isInitialLoad ? 1 : 0.8,
+              transform: isInitialLoad ? 'translateY(20px)' : 'translateY(0)',
+              transition: 'opacity 0.4s ease-in-out, transform 0.4s ease-in-out',
             }}
           >
             {children}

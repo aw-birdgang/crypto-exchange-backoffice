@@ -16,8 +16,22 @@ export type Breakpoint = keyof typeof breakpoints;
 // 현재 브레이크포인트를 반환하는 훅
 export const useBreakpoint = () => {
   const { token } = theme.useToken();
-  const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>('lg');
-  const [windowWidth, setWindowWidth] = useState<number>(0);
+  const [currentBreakpoint, setCurrentBreakpoint] = useState<Breakpoint>(() => {
+    // 초기값을 현재 화면 크기로 설정
+    if (typeof window !== 'undefined') {
+      const width = window.innerWidth;
+      if (width < breakpoints.xs) return 'xs';
+      if (width < breakpoints.sm) return 'sm';
+      if (width < breakpoints.md) return 'md';
+      if (width < breakpoints.lg) return 'lg';
+      if (width < breakpoints.xl) return 'xl';
+      return '2xl';
+    }
+    return 'lg'; // SSR fallback
+  });
+  const [windowWidth, setWindowWidth] = useState<number>(() => {
+    return typeof window !== 'undefined' ? window.innerWidth : 1024;
+  });
 
   useEffect(() => {
     const updateBreakpoint = () => {
