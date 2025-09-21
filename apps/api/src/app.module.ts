@@ -9,7 +9,7 @@ import {ResponseInterceptor} from './common/interceptors/response.interceptor';
 import {CacheModule} from './common/cache/cache.module';
 import {LoggerModule} from './common/logger/logger.module';
 import {HealthModule} from './common/health/health.module';
-import {LoggingMiddleware, RequestIdMiddleware, CorsMiddleware, SecurityMiddleware} from './common/middleware';
+import {LoggingMiddleware, RequestIdMiddleware, CorsMiddleware, SecurityMiddleware, ApiVersionMiddleware} from './common/middleware';
 import {RateLimitGuard} from './common/guards/rate-limit.guard';
 import {PerformanceInterceptor} from './common/interceptors/performance.interceptor';
 import appConfig from './config/app.config';
@@ -72,7 +72,7 @@ import {validationSchema} from './config/validation.schema';
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(RequestIdMiddleware, SecurityMiddleware, CorsMiddleware, LoggingMiddleware)
+      .apply(ApiVersionMiddleware, RequestIdMiddleware, SecurityMiddleware, CorsMiddleware, LoggingMiddleware)
       .forRoutes('*');
   }
 }

@@ -1,4 +1,5 @@
 import {ApiService} from '@/shared/services/api.service';
+import {ApiPathBuilder} from '@/shared/utils/api-path-builder';
 import {
   AdminUser,
   AdminUserRole,
@@ -6,7 +7,8 @@ import {
   UserBulkAction,
   UserFilters,
   UserStats,
-  UserStatus
+  UserStatus,
+  API_ROUTES
 } from '@crypto-exchange/shared';
 
 export class UserService {
@@ -31,35 +33,35 @@ export class UserService {
     if (filters?.sortBy) params.append('sortBy', filters.sortBy);
     if (filters?.sortOrder) params.append('sortOrder', filters.sortOrder);
 
-    return await this.apiService.get<AdminUser[]>(`/admin/admins?${params.toString()}`);
+    return await this.apiService.get<AdminUser[]>(ApiPathBuilder.buildWithParams(API_ROUTES.ADMIN.ADMINS, Object.fromEntries(params.entries())));
   }
 
   /**
    * 대기 중인 사용자 목록 조회
    */
   async getPendingUsers(): Promise<AdminUser[]> {
-    return await this.apiService.get<AdminUser[]>('/admin/users/pending');
+    return await this.apiService.get<AdminUser[]>(ApiPathBuilder.admin('USERS') + '/pending');
   }
 
   /**
    * 상태별 사용자 목록 조회
    */
   async getUsersByStatus(status: UserStatus): Promise<AdminUser[]> {
-    return await this.apiService.get<AdminUser[]>(`/admin/users/status/${status}`);
+    return await this.apiService.get<AdminUser[]>(ApiPathBuilder.buildWithVariables('/admin/users/status/:status', { status }));
   }
 
   /**
    * 사용자 승인
    */
   async approveUser(userId: string, approvalData: UserApprovalRequest): Promise<AdminUser> {
-    return await this.apiService.put<AdminUser>(`/admin/users/${userId}/approve`, approvalData);
+    return await this.apiService.put<AdminUser>(ApiPathBuilder.buildWithVariables('/admin/users/:userId/approve', { userId }), approvalData);
   }
 
   /**
    * 사용자 거부
    */
   async rejectUser(userId: string): Promise<AdminUser> {
-    return await this.apiService.put<AdminUser>(`/admin/users/${userId}/reject`);
+    return await this.apiService.put<AdminUser>(ApiPathBuilder.buildWithVariables('/admin/users/:userId/reject', { userId }));
   }
 
   /**
@@ -73,14 +75,14 @@ export class UserService {
       delete mappedData.role;
     }
     
-    return await this.apiService.put<AdminUser>(`/admin/users/${userId}`, mappedData);
+    return await this.apiService.put<AdminUser>(ApiPathBuilder.buildWithVariables('/admin/users/:userId', { userId }), mappedData);
   }
 
   /**
    * 사용자 삭제
    */
   async deleteUser(userId: string): Promise<void> {
-    await this.apiService.delete(`/admin/users/${userId}`);
+    await this.apiService.delete(ApiPathBuilder.buildWithVariables('/admin/users/:userId', { userId }));
   }
 
   /**
@@ -95,21 +97,21 @@ export class UserService {
       success: number;
       failed: number;
       errors: string[];
-    }>('/admin/users/bulk-action', actionData);
+    }>(ApiPathBuilder.admin('USERS') + '/bulk-action', actionData);
   }
 
   /**
    * 사용자 통계 조회
    */
   async getUserStats(): Promise<UserStats> {
-    return await this.apiService.get<UserStats>('/admin/stats');
+    return await this.apiService.get<UserStats>(ApiPathBuilder.admin('STATS'));
   }
 
   /**
    * 사용자 상세 정보 조회
    */
   async getUserById(userId: string): Promise<AdminUser> {
-    return await this.apiService.get<AdminUser>(`/admin/admins/${userId}`);
+    return await this.apiService.get<AdminUser>(ApiPathBuilder.buildWithVariables('/admin/admins/:userId', { userId }));
   }
 
   /**

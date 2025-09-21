@@ -7,7 +7,8 @@ import {
   PermissionCheckResponse,
   Resource,
   Permission,
-  AdminUserRole
+  AdminUserRole,
+  API_ROUTES
 } from '@crypto-exchange/shared';
 import { apiService } from '../../../../shared/services/api.service';
 
@@ -17,7 +18,7 @@ export class PermissionService {
    */
   static async getUserPermissions(userId: string): Promise<UserPermissions> {
     try {
-      const response = await apiService.get<UserPermissions>(`/permissions/user/${userId}`);
+      const response = await apiService.get<UserPermissions>(`${API_ROUTES.PERMISSIONS.USER_PERMISSIONS}/${userId}`);
       return response;
     } catch (error) {
       console.error('Failed to fetch user permissions:', error);
@@ -30,7 +31,7 @@ export class PermissionService {
    */
   static async getMyPermissions(): Promise<UserPermissions> {
     try {
-      const response = await apiService.get<UserPermissions>('/permissions/my-permissions');
+      const response = await apiService.get<UserPermissions>(API_ROUTES.PERMISSIONS.MY_PERMISSIONS);
       return response;
     } catch (error) {
       console.error('Failed to fetch my permissions:', error);
@@ -44,7 +45,7 @@ export class PermissionService {
   static async getRoles(): Promise<Role[]> {
     try {
       console.log('🔄 Fetching roles from API...');
-      const response = await apiService.get<{ roles: Role[]; total: number }>('/permissions/roles');
+      const response = await apiService.get<{ roles: Role[]; total: number }>('/api/v1/permissions/roles');
       console.log('✅ Roles response received:', response);
       return Array.isArray(response.roles) ? response.roles : [];
     } catch (error) {
@@ -65,7 +66,7 @@ export class PermissionService {
    */
   static async createRole(roleData: Omit<Role, 'id' | 'createdAt' | 'updatedAt'>): Promise<Role> {
     try {
-      const response = await apiService.post<Role>('/permissions/roles', roleData);
+      const response = await apiService.post<Role>('/api/v1/permissions/roles', roleData);
       return response;
     } catch (error) {
       console.error('Failed to create role:', error);
@@ -78,7 +79,7 @@ export class PermissionService {
    */
   static async updateRole(roleId: string, roleData: Partial<Role>): Promise<Role> {
     try {
-      const response = await apiService.put<Role>(`/permissions/roles/${roleId}`, roleData);
+      const response = await apiService.put<Role>(`/api/v1/permissions/roles/${roleId}`, roleData);
       return response;
     } catch (error) {
       console.error('Failed to update role:', error);
@@ -91,7 +92,7 @@ export class PermissionService {
    */
   static async deleteRole(roleId: string): Promise<void> {
     try {
-      await apiService.delete(`/permissions/roles/${roleId}`);
+      await apiService.delete(`/api/v1/permissions/roles/${roleId}`);
     } catch (error) {
       console.error('Failed to delete role:', error);
       throw error;
@@ -107,7 +108,7 @@ export class PermissionService {
     expiresAt?: string
   ): Promise<AdminUserRoleAssignment> {
     try {
-      const response = await apiService.post<AdminUserRoleAssignment>('/permissions/user-roles', {
+      const response = await apiService.post<AdminUserRoleAssignment>('/api/v1/permissions/user-roles', {
         userId,
         roleId,
         expiresAt,
@@ -124,7 +125,7 @@ export class PermissionService {
    */
   static async removeRoleFromUser(userId: string, roleId: string): Promise<void> {
     try {
-      await apiService.delete(`/permissions/user-roles/${userId}/${roleId}`);
+      await apiService.delete(`/api/v1/permissions/user-roles/${userId}/${roleId}`);
     } catch (error) {
       console.error('Failed to remove role from user:', error);
       throw error;
@@ -136,7 +137,7 @@ export class PermissionService {
    */
   static async getUserRoles(userId: string): Promise<AdminUserRoleAssignment[]> {
     try {
-      const response = await apiService.get<AdminUserRoleAssignment[]>(`/permissions/user-roles/${userId}`);
+      const response = await apiService.get<AdminUserRoleAssignment[]>(`/api/v1/permissions/user-roles/${userId}`);
       return response;
     } catch (error) {
       console.error('Failed to fetch user roles:', error);
@@ -149,7 +150,7 @@ export class PermissionService {
    */
   static async getPermissionTemplates(): Promise<PermissionTemplate[]> {
     try {
-      const response = await apiService.get<PermissionTemplate[]>('/permissions/templates');
+      const response = await apiService.get<PermissionTemplate[]>('/api/v1/permissions/templates');
       return response;
     } catch (error) {
       console.error('Failed to fetch permission templates:', error);
@@ -164,7 +165,7 @@ export class PermissionService {
     templateData: Omit<PermissionTemplate, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<PermissionTemplate> {
     try {
-      const response = await apiService.post<PermissionTemplate>('/permissions/templates', templateData);
+      const response = await apiService.post<PermissionTemplate>('/api/v1/permissions/templates', templateData);
       return response;
     } catch (error) {
       console.error('Failed to create permission template:', error);
@@ -177,7 +178,7 @@ export class PermissionService {
    */
   static async checkPermission(request: PermissionCheckRequest): Promise<PermissionCheckResponse> {
     try {
-      const response = await apiService.post<PermissionCheckResponse>('/permissions/check', request);
+      const response = await apiService.post<PermissionCheckResponse>(API_ROUTES.PERMISSIONS.CHECK_PERMISSION, request);
       return response;
     } catch (error) {
       console.error('Failed to check permission:', error);
@@ -190,7 +191,7 @@ export class PermissionService {
    */
   static async checkMenuAccess(menuKey: string): Promise<boolean> {
     try {
-      const response = await apiService.post<{ hasAccess: boolean }>('/permissions/menu-access', {
+      const response = await apiService.post<{ hasAccess: boolean }>(API_ROUTES.PERMISSIONS.MENU_ACCESS, {
         menuKey,
       });
       return response.hasAccess;
@@ -205,7 +206,7 @@ export class PermissionService {
    */
   static async initializePermissions(): Promise<void> {
     try {
-      await apiService.post('/permissions/initialize');
+      await apiService.post(API_ROUTES.PERMISSIONS.INITIALIZE);
     } catch (error) {
       console.error('Failed to initialize permissions:', error);
       throw error;

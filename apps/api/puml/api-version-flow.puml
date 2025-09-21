@@ -1,0 +1,121 @@
+@startuml API Version Processing Flow
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
+
+title API 버전 처리 플로우
+
+actor Client as C
+participant "NestJS Router" as R
+participant "ApiVersionMiddleware" as M
+participant "ApiVersionGuard" as G
+participant "AuthController" as AC
+participant "AuthService" as AS
+
+== 요청 수신 ==
+C -> R: HTTP Request
+note right
+  URL: /api/v1/auth/login
+  Headers: api-version: v1
+  Body: { email, password }
+end note
+
+== 미들웨어 처리 ==
+R -> M: Process Request
+activate M
+
+M -> M: Extract Version from Headers
+note right
+  - api-version: v1
+  - accept-version: v1
+end note
+
+M -> M: Extract Version from URL
+note right
+  Pattern: /api/(v\d+)/
+  Result: v1
+end note
+
+M -> M: Determine Final Version
+note right
+  Priority:
+  1. Header api-version
+  2. Header accept-version
+  3. URL pattern
+  4. Default: v1
+end note
+
+M -> M: Set req.apiVersion = "v1"
+M -> M: Set Response Header X-API-Version
+
+M -> R: Continue to Next Middleware
+deactivate M
+
+== 가드 검증 ==
+R -> G: Execute Guards
+activate G
+
+G -> G: Get Required Version from Metadata
+note right
+  @ApiVersion('v1') decorator
+  Method level > Class level
+end note
+
+G -> G: Get Request Version
+note right
+  From req.apiVersion = "v1"
+end note
+
+G -> G: Validate Version Compatibility
+note right
+  - Format check: /^v\d+$/
+  - Compatibility check: v1 === v1
+end note
+
+alt Version Valid
+  G -> R: Allow Request
+  note right: Version validation passed
+else Version Invalid
+  G -> C: BadRequestException
+  note right: Version compatibility error
+  deactivate G
+  return
+end
+
+G -> R: Continue to Controller
+deactivate G
+
+== 컨트롤러 실행 ==
+R -> AC: Execute Controller Method
+activate AC
+
+AC -> AC: Check Method Metadata
+note right
+  @ApiVersion('v1') on method
+  or inherited from class
+end note
+
+AC -> AS: Call Service Method
+activate AS
+AS -> AS: Execute Business Logic
+AS -> AC: Return Result
+deactivate AS
+
+AC -> R: Return Response
+deactivate AC
+
+== 응답 처리 ==
+R -> C: HTTP Response
+note right
+  Status: 200 OK
+  Headers: X-API-Version: v1
+  Body: { token, user, ... }
+end note
+
+@enduml

@@ -1,10 +1,35 @@
 export const appConfig = {
   // API Configuration
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+  api: {
+    baseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001',
+    version: import.meta.env.VITE_API_VERSION || 'v1',
+    get baseApiUrl() {
+      return `${this.baseUrl}/api/${this.version}`;
+    },
+    get healthUrl() {
+      return `${this.baseUrl}/health`;
+    },
+    get docsUrl() {
+      return `${this.baseUrl}/api-docs`;
+    },
+  },
   
   // Application Configuration
-  appName: 'Crypto Exchange Backoffice',
-  version: '1.0.0',
+  app: {
+    name: 'Crypto Exchange Backoffice',
+    version: '1.0.0',
+  },
+  
+  // Environment
+  environment: {
+    mode: import.meta.env.MODE || 'development',
+    get isDevelopment() {
+      return this.mode === 'development';
+    },
+    get isProduction() {
+      return this.mode === 'production';
+    },
+  },
   
   // Query Configuration
   query: {

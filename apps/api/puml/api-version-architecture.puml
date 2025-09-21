@@ -1,0 +1,142 @@
+@startuml API_Version_Architecture
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
+
+title API 버전 시스템 아키텍처
+
+package "Client Layer" {
+  [Web Client] as WC
+  [Mobile App] as MA
+  [API Client] as AC
+}
+
+package "API Gateway" {
+  [Nginx] as NG
+}
+
+package "NestJS Application" {
+
+  package "Middleware Layer" {
+    [ApiVersionMiddleware] as AVM
+    [RequestIdMiddleware] as RIM
+    [SecurityMiddleware] as SM
+    [CorsMiddleware] as CM
+    [LoggingMiddleware] as LM
+  }
+
+  package "Guard Layer" {
+    [ApiVersionGuard] as AVG
+    [JwtAuthGuard] as JAG
+    [RateLimitGuard] as RLG
+  }
+
+  package "Controller Layer" {
+    [AuthController v1] as AC1
+    [AuthController v2] as AC2
+    [UserController v1] as UC1
+    [UserController v2] as UC2
+  }
+
+  package "Service Layer" {
+    [AuthService] as AS
+    [UserService] as US
+    [AdminService] as ADS
+  }
+
+  package "Repository Layer" {
+    [AdminUserRepository] as AUR
+    [RoleRepository] as RR
+    [PermissionRepository] as PR
+  }
+
+  package "Database Layer" {
+    [MySQL Database] as DB
+  }
+}
+
+package "External Services" {
+  [Redis Cache] as RC
+  [JWT Service] as JS
+}
+
+' Client to Gateway
+WC --> NG : HTTP Request
+MA --> NG : HTTP Request
+AC --> NG : HTTP Request
+
+' Gateway to Application
+NG --> AVM : Route Request
+
+' Middleware Chain
+AVM --> RIM : Process Version
+RIM --> SM : Add Request ID
+SM --> CM : Security Check
+CM --> LM : Log Request
+
+' Guard Chain
+LM --> AVG : Version Check
+AVG --> JAG : Auth Check
+JAG --> RLG : Rate Limit
+
+' Controller Routing
+RLG --> AC1 : v1 Requests
+RLG --> AC2 : v2 Requests
+RLG --> UC1 : v1 Requests
+RLG --> UC2 : v2 Requests
+
+' Service Layer
+AC1 --> AS : Business Logic
+AC2 --> AS : Business Logic
+UC1 --> US : Business Logic
+UC2 --> US : Business Logic
+
+' Repository Layer
+AS --> AUR : Data Access
+US --> AUR : Data Access
+AS --> RR : Data Access
+US --> RR : Data Access
+
+' Database Access
+AUR --> DB : SQL Queries
+RR --> DB : SQL Queries
+
+' External Services
+AS --> RC : Cache Operations
+AS --> JS : Token Operations
+
+note right of AVM
+**ApiVersionMiddleware**
+- Extract version from headers/URL
+- Set req.apiVersion
+- Add X-API-Version header
+end note
+
+note right of AVG
+**ApiVersionGuard**
+- Get required version from metadata
+- Validate version compatibility
+- Route to appropriate controller
+end note
+
+note right of AC1
+**Version 1 Controllers**
+- @ApiVersion('v1')
+- Basic functionality
+- Legacy support
+end note
+
+note right of AC2
+**Version 2 Controllers**
+- @ApiVersion('v2')
+- Enhanced functionality
+- New features
+end note
+
+@enduml

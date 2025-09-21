@@ -1,0 +1,165 @@
+@startuml API_Version_Sequence_Diagram
+!theme plain
+skinparam componentStyle uml2
+skinparam shadowing false
+skinparam roundcorner 15
+skinparam monochrome true
+skinparam backgroundColor #F9F9F9
+skinparam ArrowColor Black
+skinparam ArrowFontColor Black
+skinparam defaultFontName "Nanum Gothic"
+
+title API 버전 처리 시퀀스 다이어그램
+
+actor Client as C
+participant "NestJS Router" as R
+participant "ApiVersionMiddleware" as M
+participant "RequestIdMiddleware" as RIM
+participant "SecurityMiddleware" as SM
+participant "CorsMiddleware" as CM
+participant "LoggingMiddleware" as LM
+participant "ApiVersionGuard" as G
+participant "JwtAuthGuard" as JAG
+participant "RateLimitGuard" as RLG
+participant "AuthController" as AC
+participant "AuthService" as AS
+participant "Database" as DB
+
+== 요청 수신 및 라우팅 ==
+C -> R: POST /api/v1/auth/login
+note right: Headers: api-version: v1, content-type: application/json
+
+R -> R: Route Matching
+note right: Pattern: /api/v1/auth/login, Method: POST
+
+== 미들웨어 체인 처리 ==
+R -> M: Process Request
+activate M
+
+M -> M: Extract Version from Headers
+note right: api-version: v1, accept-version: null
+
+M -> M: Extract Version from URL
+note right: Pattern: /api/(v\\d+)/, Match: v1
+
+M -> M: Determine Final Version
+note right: Priority: header > URL > default, Result: v1
+
+M -> M: Set req.apiVersion = "v1"
+M -> M: Set Response Header
+note right: X-API-Version: v1
+
+M -> RIM: Continue to Next Middleware
+deactivate M
+
+RIM -> RIM: Generate Request ID
+note right: RequestId: req-12345-67890
+
+RIM -> SM: Continue to Security Middleware
+deactivate RIM
+
+SM -> SM: Security Validation
+note right: CSRF, XSS Protection, Security Headers
+
+SM -> CM: Continue to CORS Middleware
+deactivate SM
+
+CM -> CM: CORS Validation
+note right: Origin, Method, Headers Check
+
+CM -> LM: Continue to Logging Middleware
+deactivate CM
+
+LM -> LM: Log Request
+note right: Timestamp, Method, URL, Version, RequestId
+
+LM -> G: Continue to Guards
+deactivate LM
+
+== 가드 체인 처리 ==
+G -> G: Get Required Version from Metadata
+note right: Reflector.getAllAndOverride(), Result: v1
+
+G -> G: Get Request Version
+note right: From req.apiVersion: v1
+
+G -> G: Validate Version Format
+note right: Pattern: /^v\\d+$/, Input: v1, Result: Valid
+
+G -> G: Check Version Compatibility
+note right: Required: v1, Request: v1, Compatible: true
+
+G -> JAG: Version Check Passed
+deactivate G
+
+JAG -> JAG: Extract JWT Token
+note right: From Authorization header
+
+JAG -> JAG: Validate JWT Token
+note right: Signature verification, Expiration check
+
+JAG -> RLG: Authentication Passed
+deactivate JAG
+
+RLG -> RLG: Check Rate Limit
+note right: IP: 192.168.1.100, Current: 5/min, Limit: 10/min
+
+RLG -> AC: Rate Limit Check Passed
+deactivate RLG
+
+== 컨트롤러 실행 ==
+AC -> AC: Check Method Metadata
+note right: @ApiVersion('v1') on method or class
+
+AC -> AC: Validate Request Body
+note right: DTO Validation: email format, password length
+
+AC -> AS: Call AuthService.login()
+activate AS
+
+AS -> AS: Validate Credentials
+note right: Hash password, Compare with stored hash
+
+AS -> DB: Query User Data
+note right: SELECT * FROM admin_users WHERE email = 'user@example.com'
+
+DB -> AS: Return User Data
+note right: User: id, email, name, role_id
+
+AS -> AS: Generate JWT Token
+note right: Payload: sub, email, role, iat, exp
+
+AS -> AS: Generate Refresh Token
+note right: Random string, Store in database
+
+AS -> AC: Return Auth Response
+note right: accessToken, refreshToken, user, expiresIn
+deactivate AS
+
+AC -> R: Return Response
+note right: Status: 200 OK, Headers: X-API-Version, X-Request-ID
+
+== 응답 처리 ==
+R -> LM: Log Response
+activate LM
+
+LM -> LM: Log Response Details
+note right: Timestamp, Status, Duration, RequestId, Version
+
+LM -> C: Send HTTP Response
+deactivate LM
+
+C -> C: Process Response
+note right: Response Body: success, data, message
+
+== 에러 처리 시나리오 ==
+note over C, DB
+**에러 처리 예시:**
+만약 API 버전이 호환되지 않는 경우:
+G -> G: Check Version Compatibility
+G -> C: BadRequestException
+Status: 400 Bad Request
+Message: "API version v1 is not compatible with required version v2"
+end note
+
+@enduml

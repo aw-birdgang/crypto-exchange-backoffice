@@ -3,7 +3,7 @@ import { STORAGE_KEYS, ApiResponse } from '@crypto-exchange/shared';
 import { appConfig } from '../../config/app.config';
 import { ErrorHandler } from '../utils/error-handler';
 
-const API_BASE_URL = appConfig.apiBaseUrl;
+const API_BASE_URL = appConfig.api.baseUrl;
 
 export class ApiService {
   private api: AxiosInstance;

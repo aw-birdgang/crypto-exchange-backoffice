@@ -38,6 +38,11 @@ async function bootstrap() {
   const corsConfig = configService.get('app.cors');
   app.enableCors(corsConfig);
 
+  // 글로벌 API 버전 설정
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['/health', '/api-docs', '/api-docs-json'],
+  });
+
   // 쿠키 파싱을 위한 최적화된 미들웨어
   app.use((req: any, res: any, next: any) => {
     // 쿠키가 있는 경우에만 파싱

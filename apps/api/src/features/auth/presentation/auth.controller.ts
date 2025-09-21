@@ -6,13 +6,14 @@ import {Public} from '../application/decorators/public.decorator';
 import {ApiBodyHelpers} from './constants/api-body.constants';
 import {JwtAuthGuard} from './guards/jwt-auth.guard';
 import {PermissionService} from '../application/services/permission.service';
-import {CurrentUser, RequestId} from '../../../common/decorators';
+import {CurrentUser, RequestId, ApiVersion} from '../../../common/decorators';
 import {AdminUser} from '../domain/entities/admin-user.entity';
 import {ParseBooleanPipe, ParseIntPipe, ParseUuidPipe, TrimPipe, CustomValidationPipe} from '../../../common/pipes';
 import {AuthSwagger} from './swagger/auth.swagger';
 
 @ApiTags('Authentication')
 @Controller('auth')
+@ApiVersion('v1')
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
