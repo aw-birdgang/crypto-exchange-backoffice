@@ -293,27 +293,105 @@ pnpm test:cov
 - **통합 테스트**: `*.integration.test.ts`
 - **E2E 테스트**: `cypress/e2e/*.cy.ts`
 
-## 🚀 배포
+## 🚀 멀티스테이징 배포
 
-### Docker 배포
+### 환경 구성
+- **Development**: 로컬 개발 환경 (포트: API 3001, Backoffice 3000)
+- **Staging**: 스테이징 환경 (포트: API 3002, Backoffice 3003)
+- **Production**: 프로덕션 환경 (포트: API 3004, Backoffice 3005)
+
+### 환경별 배포
+
+#### Development 환경
 ```bash
-# 이미지 빌드
-pnpm docker:build
+# 개발 환경 빌드
+pnpm build:dev
 
-# 프로덕션 실행
-pnpm docker:prod
+# 개발 환경 배포
+pnpm deploy:dev
+
+# 개발 환경 상태 확인
+pnpm deploy:dev:status
+
+# 개발 환경 로그 확인
+pnpm deploy:dev:logs
 ```
 
-### 환경별 설정
-- **개발**: `docker-compose.dev.yml`
-- **프로덕션**: `docker-compose.yml`
+#### Staging 환경
+```bash
+# 스테이징 환경 빌드
+pnpm build:staging
 
-### 배포 체크리스트
-- [ ] 환경 변수 설정
-- [ ] 데이터베이스 마이그레이션
-- [ ] SSL 인증서 설정
-- [ ] 도메인 설정
-- [ ] 모니터링 설정
+# 스테이징 환경 배포
+pnpm deploy:staging
+
+# 스테이징 환경 상태 확인
+pnpm deploy:staging:status
+
+# 스테이징 환경 로그 확인
+pnpm deploy:staging:logs
+```
+
+#### Production 환경
+```bash
+# 프로덕션 환경 빌드
+pnpm build:prod
+
+# 프로덕션 환경 배포
+pnpm deploy:prod
+
+# 프로덕션 환경 상태 확인
+pnpm deploy:prod:status
+
+# 프로덕션 환경 로그 확인
+pnpm deploy:prod:logs
+```
+
+### Docker Compose 배포
+
+#### Development
+```bash
+# 개발 환경 시작
+docker compose -f docker-compose.dev.yml up -d
+
+# 개발 환경 중지
+docker compose -f docker-compose.dev.yml down
+```
+
+#### Staging
+```bash
+# 스테이징 환경 시작
+docker compose -f docker-compose.staging.yml up -d
+
+# 스테이징 환경 중지
+docker compose -f docker-compose.staging.yml down
+```
+
+#### Production
+```bash
+# 프로덕션 환경 시작
+docker compose -f docker-compose.production.yml up -d
+
+# 프로덕션 환경 중지
+docker compose -f docker-compose.production.yml down
+```
+
+### 헬스체크
+```bash
+# 환경별 헬스체크
+pnpm health:dev
+pnpm health:staging
+pnpm health:prod
+
+# 또는 스크립트 직접 실행
+./scripts/health-check.sh dev
+./scripts/health-check.sh staging
+./scripts/health-check.sh prod
+```
+
+### 배포 가이드
+- [상세 배포 가이드](./docs/DEPLOYMENT.md)
+- [환경 설정 가이드](./docs/ENVIRONMENT_SETUP.md)
 
 ## 📖 문서
 

@@ -3,7 +3,7 @@ import * as Joi from 'joi';
 export const validationSchema = Joi.object({
   // Server Configuration
   NODE_ENV: Joi.string()
-    .valid('development', 'production', 'test')
+    .valid('development', 'production', 'test', 'staging')
     .default('development'),
   PORT: Joi.number().default(3001),
 
@@ -34,6 +34,6 @@ export const validationSchema = Joi.object({
   // Redis Configuration
   REDIS_HOST: Joi.string().default('localhost'),
   REDIS_PORT: Joi.number().default(6379),
-  REDIS_PASSWORD: Joi.string().optional(),
+  REDIS_PASSWORD: Joi.string().allow('').optional(),
   REDIS_DB: Joi.number().min(0).max(15).default(0),
 });

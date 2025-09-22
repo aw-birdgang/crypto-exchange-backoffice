@@ -1,0 +1,91 @@
+services:
+  # MySQL Database for Staging
+  mysql:
+    image: mysql:8.0
+    container_name: crypto-exchange-db-staging
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-staging_root_password_123}
+      MYSQL_DATABASE: crypto_exchange_staging
+      MYSQL_USER: ${MYSQL_USER:-crypto_user_staging}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-staging_password_123}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data_staging:/var/lib/mysql
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER:-crypto_user_staging}", "-p${MYSQL_PASSWORD:-staging_password_123}"]
+      timeout: 20s
+      retries: 10
+      interval: 10s
+      start_period: 40s
+    networks:
+      - crypto-exchange-staging-network
+
+  # Redis for Staging
+  redis:
+    image: redis:7-alpine
+    container_name: crypto-exchange-redis-staging
+    restart: unless-stopped
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_data_staging:/data
+    command: redis-server --requirepass ${REDIS_PASSWORD:-staging_redis_password_123}
+    networks:
+      - crypto-exchange-staging-network
+
+  # API Server for Staging
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api.staging
+      args:
+        NODE_ENV: staging
+    container_name: crypto-exchange-api-staging
+    restart: unless-stopped
+    env_file:
+      - config/environments/staging.env
+    environment:
+      NODE_ENV: staging
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_USERNAME: ${MYSQL_USER:-crypto_user_staging}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-staging_password_123}
+      DB_DATABASE: crypto_exchange_staging
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-staging_redis_password_123}
+      JWT_SECRET: ${JWT_SECRET:-staging_jwt_secret_key_change_in_production_123456789}
+      JWT_EXPIRES_IN: 24h
+      PORT: 3001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3010}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3002}
+      # Swagger 환경별 서버 URL 설정
+      DEV_SERVER_URL: http://localhost:3001
+      STAGING_SERVER_URL: http://localhost:3002
+      PROD_SERVER_URL: http://localhost:3004
+    ports:
+      - "3002:3001"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - /app/node_modules
+    networks:
+      - crypto-exchange-staging-network
+
+
+volumes:
+  mysql_data_staging:
+    driver: local
+  redis_data_staging:
+    driver: local
+
+networks:
+  crypto-exchange-staging-network:
+    driver: bridge

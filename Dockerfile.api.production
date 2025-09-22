@@ -1,0 +1,70 @@
+# Multi-stage build for Production API
+FROM node:18-alpine AS base
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install dependencies (including devDependencies for build)
+RUN pnpm install
+
+# Copy source code
+COPY packages/shared ./packages/shared
+COPY apps/api ./apps/api
+
+# Build shared package first
+RUN pnpm --filter @crypto-exchange/shared build
+
+# Build API
+RUN pnpm --filter @crypto-exchange/api build
+
+# Production stage
+FROM node:18-alpine AS production
+
+# Install pnpm
+RUN npm install -g pnpm
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs
+RUN adduser -S nestjs -u 1001
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY apps/api/package.json ./apps/api/
+COPY packages/shared/package.json ./packages/shared/
+
+# Install all dependencies (including devDependencies for scripts)
+RUN pnpm install
+
+# Copy built application and source files (for scripts)
+COPY --from=base /app/packages/shared/dist ./packages/shared/dist
+COPY --from=base /app/apps/api/dist ./apps/api/dist
+COPY --from=base /app/apps/api/src ./apps/api/src
+COPY --from=base /app/apps/api/package.json ./apps/api/package.json
+COPY --from=base /app/apps/api/tsconfig.json ./apps/api/tsconfig.json
+
+# Change ownership to non-root user
+RUN chown -R nestjs:nodejs /app
+USER nestjs
+
+# Expose port
+EXPOSE 3001
+
+# Set working directory to API
+WORKDIR /app/apps/api
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1) })"
+
+# Start the application
+CMD ["node", "dist/apps/api/src/main.js"]

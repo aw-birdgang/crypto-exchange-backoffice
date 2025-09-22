@@ -8,12 +8,20 @@ export class CacheService {
   private redis: Redis;
 
   constructor(private configService: ConfigService) {
-    this.redis = new Redis({
+    const redisConfig: any = {
       host: this.configService.get<string>('app.redis.host', 'localhost'),
       port: this.configService.get<number>('app.redis.port', 6379),
       enableReadyCheck: false,
       maxRetriesPerRequest: null,
-    });
+    };
+
+    // Redis 비밀번호가 설정된 경우 추가
+    const redisPassword = this.configService.get<string>('app.redis.password');
+    if (redisPassword) {
+      redisConfig.password = redisPassword;
+    }
+
+    this.redis = new Redis(redisConfig);
 
     this.redis.on('error', (error) => {
       this.logger.error('Redis connection error:', error);

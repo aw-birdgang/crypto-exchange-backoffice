@@ -5,10 +5,10 @@ services:
     container_name: crypto-exchange-db-dev
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: password
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-dev_root_password_123}
       MYSQL_DATABASE: crypto_exchange
-      MYSQL_USER: crypto_user
-      MYSQL_PASSWORD: password
+      MYSQL_USER: ${MYSQL_USER:-crypto_user_dev}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-dev_password_123}
     ports:
       - "3306:3306"
     volumes:
@@ -16,7 +16,7 @@ services:
       - ./docker/mysql/init:/docker-entrypoint-initdb.d
     command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "crypto_user", "-ppassword"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "${MYSQL_USER:-crypto_user_dev}", "-p${MYSQL_PASSWORD:-dev_password_123}"]
       timeout: 20s
       retries: 10
       interval: 10s
@@ -29,6 +29,7 @@ services:
     image: redis:7-alpine
     container_name: crypto-exchange-redis-dev
     restart: unless-stopped
+    command: redis-server --requirepass dev_redis_password_123
     ports:
       - "6379:6379"
     volumes:
@@ -40,21 +41,30 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.api.dev
     container_name: crypto-exchange-api-dev
     restart: unless-stopped
+    env_file:
+      - config/environments/development.env
     environment:
       NODE_ENV: development
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: crypto_user
-      DB_PASSWORD: password
+      DB_USERNAME: ${MYSQL_USER:-crypto_user_dev}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-dev_password_123}
       DB_DATABASE: crypto_exchange
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_key_change_in_production_123456789}
       JWT_EXPIRES_IN: 24h
       PORT: 3001
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:3001}
+      # Swagger 환경별 서버 URL 설정
+      DEV_SERVER_URL: http://localhost:3001
+      STAGING_SERVER_URL: http://localhost:3002
+      PROD_SERVER_URL: http://localhost:3004
     ports:
       - "3001:3001"
     depends_on:
@@ -72,18 +82,21 @@ services:
   db-init:
     build:
       context: .
-      dockerfile: Dockerfile.dev
+      dockerfile: Dockerfile.api.dev
     container_name: crypto-exchange-db-init-dev
+    env_file:
+      - config/environments/development.env
     environment:
       NODE_ENV: development
       DB_HOST: mysql
       DB_PORT: 3306
-      DB_USERNAME: crypto_user
-      DB_PASSWORD: password
+      DB_USERNAME: ${MYSQL_USER:-crypto_user_dev}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-dev_password_123}
       DB_DATABASE: crypto_exchange
       REDIS_HOST: redis
       REDIS_PORT: 6379
-      JWT_SECRET: your-super-secret-jwt-key-change-in-production
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_key_change_in_production_123456789}
       JWT_EXPIRES_IN: 24h
     depends_on:
       mysql:

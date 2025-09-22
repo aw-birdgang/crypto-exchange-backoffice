@@ -1,4 +1,4 @@
-# Multi-stage build for NestJS API
+# Multi-stage build for Staging API
 FROM node:18-alpine AS base
 
 # Install pnpm
@@ -25,11 +25,8 @@ RUN pnpm --filter @crypto-exchange/shared build
 # Build API
 RUN pnpm --filter @crypto-exchange/api build
 
-# Verify build output
-RUN ls -la /app/apps/api/dist/
-
-# Production stage
-FROM node:18-alpine AS production
+# Staging stage
+FROM node:18-alpine AS staging
 
 # Install pnpm
 RUN npm install -g pnpm
@@ -41,21 +38,24 @@ COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY apps/api/package.json ./apps/api/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install all dependencies (including typeorm which is needed at runtime)
+# Install all dependencies (including devDependencies for scripts)
 RUN pnpm install
 
-# Copy built application
+# Copy built application and source files (for scripts)
 COPY --from=base /app/packages/shared/dist ./packages/shared/dist
 COPY --from=base /app/apps/api/dist ./apps/api/dist
-
-# Verify copied files
-RUN ls -la /app/apps/api/dist/
+COPY --from=base /app/apps/api/src ./apps/api/src
+COPY --from=base /app/apps/api/package.json ./apps/api/package.json
+COPY --from=base /app/apps/api/tsconfig.json ./apps/api/tsconfig.json
 
 # Expose port
 EXPOSE 3001
 
 # Set working directory to API
 WORKDIR /app/apps/api
+
+# Debug: List files to verify build
+RUN ls -la dist/
 
 # Start the application
 CMD ["node", "dist/apps/api/src/main.js"]

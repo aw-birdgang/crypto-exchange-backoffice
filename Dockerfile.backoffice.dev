@@ -1,4 +1,4 @@
-# Development Dockerfile for NestJS API
+# Development Dockerfile for Backoffice
 FROM node:18-alpine
 
 # Install pnpm
@@ -9,24 +9,24 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY apps/api/package.json ./apps/api/
+COPY apps/backoffice/package.json ./apps/backoffice/
 COPY packages/shared/package.json ./packages/shared/
 
-# Install dependencies (including devDependencies for development)
+# Install dependencies
 RUN pnpm install
 
-# Copy source code (for development)
+# Copy source code
 COPY packages/shared ./packages/shared
-COPY apps/api ./apps/api
+COPY apps/backoffice ./apps/backoffice
 
 # Build shared package
 RUN pnpm --filter @crypto-exchange/shared build
 
 # Expose port
-EXPOSE 3001
+EXPOSE 3000
 
-# Set working directory to API
-WORKDIR /app/apps/api
+# Set working directory to backoffice
+WORKDIR /app/apps/backoffice
 
 # Start the application in development mode
-CMD ["pnpm", "start:dev"]
+CMD ["pnpm", "dev", "--host", "0.0.0.0"]

@@ -14,8 +14,8 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
     database: process.env.DB_DATABASE || 'crypto_exchange',
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
     
-    // 프로덕션에서는 synchronize를 false로 설정 (마이그레이션 사용)
-    synchronize: !isProduction,
+    // 모든 환경에서 synchronize 활성화 (개발/테스트용)
+    synchronize: true,
     
     // 로깅 설정
     logging: isDevelopment ? ['query', 'error', 'warn'] : ['error'],
@@ -30,18 +30,15 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
     // 연결 풀 설정
     extra: {
       connectionLimit: parseInt(process.env.DB_CONNECTION_LIMIT || '10', 10),
-      acquireTimeout: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '60000', 10),
-      timeout: parseInt(process.env.DB_TIMEOUT || '60000', 10),
-      reconnect: true,
+      // MySQL2에서 지원하는 옵션만 사용
+      supportBigNumbers: true,
+      bigNumberStrings: false,
+      dateStrings: false,
+      debug: false,
+      trace: false,
       // MySQL 특정 설정
       ...(isProduction && {
         ssl: { rejectUnauthorized: false },
-        // 프로덕션 최적화 설정
-        supportBigNumbers: true,
-        bigNumberStrings: false,
-        dateStrings: false,
-        debug: false,
-        trace: false,
       }),
     },
     
@@ -52,9 +49,9 @@ export default registerAs('database', (): TypeOrmModuleOptions => {
     // 연결 타임아웃 설정
     connectTimeout: parseInt(process.env.DB_CONNECT_TIMEOUT || '60000', 10),
     
-    // 마이그레이션 설정 (프로덕션에서 사용)
-    migrations: isProduction ? [__dirname + '/../migrations/*{.ts,.js}'] : undefined,
-    migrationsRun: isProduction,
-    migrationsTableName: 'migrations',
+    // 마이그레이션 설정 (개발용으로 비활성화)
+    // migrations: isProduction ? [__dirname + '/../migrations/*{.ts,.js}'] : undefined,
+    // migrationsRun: isProduction,
+    // migrationsTableName: 'migrations',
   };
 });
