@@ -14,6 +14,7 @@ const PermissionManagementPage = lazy(() => import('./features/auth/presentation
 const AdminUserManagementPage = lazy(() => import('./features/users/presentation/pages/AdminUserManagementPage').then(m => ({ default: m.AdminUserManagementPage })));
 const WalletTransactionsPage = lazy(() => import('./features/wallet/presentation/pages/WalletTransactionsPage').then(m => ({ default: m.WalletTransactionsPage })));
 const CustomerSupportPage = lazy(() => import('./features/customer/presentation/pages/CustomerSupportPage').then(m => ({ default: m.CustomerSupportPage })));
+const AuditLogPage = lazy(() => import('./features/audit-log/presentation/pages/AuditLogPage').then(m => ({ default: m.AuditLogPage })));
 
 function AppComponent() {
   const { isAuthenticated, isLoading, user, accessToken } = useAuthStore();
@@ -88,6 +89,16 @@ function AppComponent() {
           element={
             <LazyPage>
               <PermissionManagementPage />
+            </LazyPage>
+          } 
+        />
+
+        {/* 감사 로그 라우트 */}
+        <Route 
+          path={ROUTES.AUDIT.LOGS} 
+          element={
+            <LazyPage>
+              <AuditLogPage />
             </LazyPage>
           } 
         />

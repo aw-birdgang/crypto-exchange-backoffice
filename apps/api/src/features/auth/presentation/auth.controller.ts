@@ -10,6 +10,7 @@ import {CurrentUser, RequestId, ApiVersion} from '../../../common/decorators';
 import {AdminUser} from '../domain/entities/admin-user.entity';
 import {ParseBooleanPipe, ParseIntPipe, ParseUuidPipe, TrimPipe, CustomValidationPipe} from '../../../common/pipes';
 import {AuthSwagger} from './swagger/auth.swagger';
+import {AuditLogService} from '../../audit-log/application/services/audit-log.service';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -18,6 +19,7 @@ export class AuthController {
   constructor(
     private readonly authService: AuthService,
     private readonly permissionService: PermissionService,
+    private readonly auditLogService: AuditLogService,
   ) {}
 
   @Post('register')
@@ -33,9 +35,54 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiBodyHelpers.login()
   @AuthSwagger.login()
-  async login(@Body(TrimPipe, CustomValidationPipe) loginDto: LoginDto): Promise<AuthResponseDto> {
-    const result = await this.authService.login(loginDto);
-    return result;
+  async login(
+    @Body(TrimPipe, CustomValidationPipe) loginDto: LoginDto,
+    @Request() req: any,
+  ): Promise<AuthResponseDto> {
+    try {
+      const result = await this.authService.login(loginDto);
+      
+      // 로그인 성공 로깅
+      if (result.user) {
+        // AuthResponseDto의 user를 AdminUser 형태로 변환
+        const adminUser = {
+          id: result.user.id,
+          email: result.user.email,
+          username: result.user.firstName, // 임시로 firstName을 username으로 사용
+          adminRole: result.user.role as any,
+        } as AdminUser;
+        
+        await this.auditLogService.logLogin(
+          adminUser,
+          req.ip || 'unknown',
+          req.headers['user-agent'] || 'unknown',
+          req.sessionID || 'unknown',
+          req.headers['x-request-id'] || 'unknown',
+          true
+        );
+      }
+      
+      return result;
+    } catch (error) {
+      // 로그인 실패 로깅 (사용자 정보가 없으므로 기본값 사용)
+      const mockUser = {
+        id: 'unknown',
+        email: loginDto.email,
+        username: 'unknown',
+        adminRole: 'USER' as any,
+      } as AdminUser;
+      
+      await this.auditLogService.logLogin(
+        mockUser,
+        req.ip || 'unknown',
+        req.headers['user-agent'] || 'unknown',
+        req.sessionID || 'unknown',
+        req.headers['x-request-id'] || 'unknown',
+        false
+      );
+      
+      throw error;
+    }
   }
 
   @Post('refresh')
@@ -52,6 +99,17 @@ export class AuthController {
   @AuthSwagger.logout()
   async logout(@Request() req: any): Promise<{ message: string }> {
     console.log('🚪 User logged out');
+
+    // 로그아웃 로깅
+    if (req.user) {
+      await this.auditLogService.logLogout(
+        req.user,
+        req.ip || 'unknown',
+        req.headers['user-agent'] || 'unknown',
+        req.sessionID || 'unknown',
+        req.headers['x-request-id'] || 'unknown'
+      );
+    }
 
     // 개발 환경에서 쿠키 정리
     if (process.env.NODE_ENV === 'development') {

@@ -19,12 +19,14 @@ import { AdminUserRepositoryInterface } from '../domain/repositories/admin-user.
 import { RoleRepositoryInterface } from '../domain/repositories/role.repository.interface';
 import { JwtStrategy } from '../application/strategies/jwt.strategy';
 import { mapperProviders } from '../application/providers/mapper.providers';
+import { AuditLogModule } from '../../audit-log/presentation/audit-log.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([AdminUser, RolePermission, Role]),
     PassportModule,
     JwtModule,
+    AuditLogModule,
   ],
   controllers: [AuthController, PermissionController, AdminController],
   providers: [

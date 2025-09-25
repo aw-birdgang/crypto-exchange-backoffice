@@ -56,6 +56,11 @@ export const ROUTES = {
     USERS: '/admin/users',
   },
   
+  // 감사 로그 라우트
+  AUDIT: {
+    LOGS: '/audit-logs',
+  },
+  
   // 기존 라우트 (호환성을 위해 유지)
   PERMISSIONS: '/admin/permissions',
   USERS: '/customer/users',

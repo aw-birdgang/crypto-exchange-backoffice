@@ -4,6 +4,7 @@ import {TypeOrmModule} from '@nestjs/typeorm';
 import {JwtModule} from '@nestjs/jwt';
 import {APP_FILTER, APP_GUARD, APP_INTERCEPTOR} from '@nestjs/core';
 import {AuthModule} from './features/auth/presentation/auth.module';
+import {AuditLogModule} from './features/audit-log/presentation/audit-log.module';
 import {HttpExceptionFilter} from './common/exceptions/http-exception.filter';
 import {ResponseInterceptor} from './common/interceptors/response.interceptor';
 import {CacheModule} from './common/cache/cache.module';
@@ -43,6 +44,7 @@ import {validationSchema} from './config/validation.schema';
     LoggerModule,
     HealthModule,
     AuthModule,
+    AuditLogModule,
   ],
   providers: [
     // JWT 가드를 전역에서 제거하고 각 컨트롤러에서 개별적으로 적용
